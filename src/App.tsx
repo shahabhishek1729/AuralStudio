@@ -9,6 +9,8 @@ import TabsComponent from "./TabsComponent";
 
 import { FileTree } from "./FileTree.tsx";
 import TreeChart from "./CodeTree.tsx";
+import { BinTree } from "./BinTree.jsx";
+import TestTree from "./Tree4.tsx";
 import { Token, TokenTree } from "./Token.tsx";
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
@@ -94,9 +96,11 @@ function App() {
           <Token token_type={"library"} metadata={{ name: "assert_eq" }} />
           <div style={{ height: "10px" }} />
 
-          <TreeChart
-            data={{ name: "function", children: [{ name: "variable" }] }}
-          />
+          {/* <TreeChart */}
+          {/* data={{ name: "function", children: [{ name: "variable" }] }} */}
+          {/* /> */}
+          {/* {<BinTree />} */}
+          {<TestTree />}
 
           <div
             style={{
