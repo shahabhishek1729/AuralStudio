@@ -1,0 +1,5 @@
+grab pydub dot AudioSegment alias AudioSegment
+
+let audio_file be AudioSegment dot from_mp3 of string example.mp3 done done
+let louder_audio_file be audio_file plus 18 
+louder_audio_file dot export of string example_louder.mp3 done and string mp3 done done

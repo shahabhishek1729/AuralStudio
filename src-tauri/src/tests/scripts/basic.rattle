@@ -1,0 +1,9 @@
+define factorial of x
+if x equals 1
+return 1
+done if
+
+return x times factorial of x minus 1 done
+done define
+
+output factorial of 4 done done

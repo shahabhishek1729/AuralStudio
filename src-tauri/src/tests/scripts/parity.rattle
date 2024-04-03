@@ -1,0 +1,10 @@
+define parity of x 
+if x modulo 2 equals 0 
+output string even done
+done if
+otherwise
+output string odd done
+done otherwise
+done define
+
+output parity of 3 done
