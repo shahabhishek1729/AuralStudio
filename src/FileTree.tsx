@@ -132,7 +132,6 @@ function BuildTreeItem(obj, id: number) {
 
 export function FileTree() {
   let [hier, setHier] = useState({ name: ".", children: [] });
-  console.log(hier.children);
   useEffect(() => {
     invoke("get_file_hierarchy", { rootPath: "." }).then((obj) => setHier(obj));
   }, []);

@@ -8,10 +8,8 @@ import refresh_files from "./assets/refresh_files.png";
 import TabsComponent from "./TabsComponent";
 
 import { FileTree } from "./FileTree.tsx";
-import TreeChart from "./CodeTree.tsx";
-import { BinTree } from "./BinTree.jsx";
 import TestTree from "./Tree4.tsx";
-import { Token, TokenTree } from "./Token.tsx";
+import { Token, Symbol } from "./Token.tsx";
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 
@@ -21,7 +19,7 @@ function App() {
 
   function handleSubmit() {
     invoke("run_code", { code: codeText, path: "thisisatest.rattle" }).then(
-      (o) => setCodeOutput(o)
+      (o: any) => setCodeOutput(o)
     );
   }
 
@@ -85,21 +83,12 @@ function App() {
             onChange={(e) => setCodeText(e.target.value)}
           />
           <button onClick={handleSubmit}>Submit</button>
-          <TokenTree />
-          <div style={{ height: "30px" }} />
-          <Token token_type={"function"} metadata={{ name: "execute()" }} />
-          <div style={{ height: "10px" }} />
-          <Token token_type={"variable"} metadata={{ name: "instances" }} />
-          <div style={{ height: "10px" }} />
-          <Token token_type={"conditional"} metadata={{ name: "name == 4" }} />
-          <div style={{ height: "10px" }} />
-          <Token token_type={"library"} metadata={{ name: "assert_eq" }} />
-          <div style={{ height: "10px" }} />
+          {Token("output", "string hello world done")}
+          {Symbol("operator", "+")}
+          {Symbol("arrow", "->")}
+          {Symbol("constant", "true")}
+          <div style={{ height: "20px" }} />
 
-          {/* <TreeChart */}
-          {/* data={{ name: "function", children: [{ name: "variable" }] }} */}
-          {/* /> */}
-          {/* {<BinTree />} */}
           {<TestTree />}
 
           <div
