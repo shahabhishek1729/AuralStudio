@@ -9,22 +9,28 @@ import TabsComponent from "./TabsComponent";
 
 import { FileTree } from "./FileTree.tsx";
 import TestTree from "./Tree4.tsx";
-import { Token, Symbol } from "./Token.tsx";
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 
 function App() {
-  let [codeText, setCodeText] = useState("");
-  let [codeOutput, setCodeOutput] = useState("Code output will appear here...");
+  // let [codeText, setCodeText] = useState("");
+  let [codeOutput] = useState("Code output will appear here...");
 
-  function handleSubmit() {
-    invoke("run_code", { code: codeText, path: "thisisatest.rattle" }).then(
-      (o: any) => setCodeOutput(o)
-    );
-  }
+  invoke("parse_file").then((o: any) => {
+	  console.log("The parsed JSON was:");
+	  console.log(o)
+	  }
+  );
+
+  // function handleSubmit() {
+  // invoke("run_code", { code: codeText, path: "thisisatest.rattle" }).then(
+  // (o: any) => setCodeOutput(o)
+  // );
+  // }
+  //
 
   return (
-    <div className="container">
+    <div className="container" style={{overflow: "hidden"}}>
       <div
         data-tauri-drag-region
         style={{
@@ -77,19 +83,15 @@ function App() {
           }}
         >
           <TabsComponent />
-          <input
+          {/* <input
             type="text"
             value={codeText}
             onChange={(e) => setCodeText(e.target.value)}
           />
-          <button onClick={handleSubmit}>Submit</button>
-          {Token("output", "string hello world done")}
-          {Symbol("operator", "+")}
-          {Symbol("arrow", "->")}
-          {Symbol("constant", "true")}
+          <button onClick={handleSubmit}>Submit</button> */}
           <div style={{ height: "20px" }} />
 
-          {<TestTree />}
+          <div style={{ overflow: "auto", height: "60%" }}>{<TestTree />}</div>
 
           <div
             style={{

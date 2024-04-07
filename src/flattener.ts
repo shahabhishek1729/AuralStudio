@@ -1,14 +1,18 @@
 export interface node {
   id: number;
-  type: string;
-  name: string;
   children: node[];
+  blocks: block[];
+}
+
+export interface block {
+  kind: string;
+  name?: string;
+  value?: string | number | boolean;
+  line: number;
 }
 
 export interface flatnode {
   id: number;
-  type: string;
-  name: string;
   parent: parent_id;
   level: number;
 }
@@ -24,8 +28,6 @@ function flatten(
   for (let i = 0; i < data.length; i++) {
     result.push({
       id: data[i].id,
-      type: data[i].type,
-      name: data[i].name,
       level: level,
       parent: parent,
     });

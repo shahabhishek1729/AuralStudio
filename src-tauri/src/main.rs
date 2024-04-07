@@ -3,6 +3,7 @@
 
 pub mod error;
 pub mod file_utils;
+pub mod parser;
 pub mod prelude;
 pub mod runner;
 pub mod scanner;
@@ -15,6 +16,8 @@ extern crate lazy_static;
 use crate::runner::compile;
 use serde_derive::{Deserialize, Serialize};
 use std::fs;
+
+use crate::parser::parser::{parse, Node};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -62,14 +65,24 @@ fn get_file_hierarchy(root_path: &str) -> FileType {
     })
 }
 
+// This runs a Rattle script at a specified path and returns output of the script
 #[tauri::command]
 fn run_code(code: &str, path: &str) -> String {
-    return compile(code.to_string(), path.to_string()).unwrap();
+    compile(code.to_string(), path.to_string()).unwrap()
+}
+
+#[tauri::command]
+fn parse_file() -> Vec<Node> {
+    parse()
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_file_hierarchy, run_code])
+        .invoke_handler(tauri::generate_handler![
+            get_file_hierarchy,
+            run_code,
+            parse_file
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

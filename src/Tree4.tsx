@@ -1,5 +1,5 @@
 import { ArcherContainer, ArcherElement } from "react-archer";
-import { Token, FileToken } from "./Token";
+import { FileToken, RenderBlock } from "./Token";
 
 import flatten, { node, flatnode } from "./flattener";
 
@@ -12,93 +12,90 @@ const rowStyle = {
   justifyContent: "center",
 };
 
-const childNodes: node[] = [
+const childNodes = [
   {
     id: 1,
-    type: "library",
-    name: "numpy",
-    children: [
+    children: [],
+	blocks: [
       {
-        id: 2,
-        type: "library",
-        name: "pandas",
-        children: [
-          {
-            id: 3,
-            type: "library",
-            name: "matplotlib",
-            children: [],
-          },
-        ],
+        kind: "library",
+        line: 1,
+        name: "numpy",
       },
-    ],
+    ]
   },
   {
-    id: 4,
-    type: "function",
-    name: "main",
+    id: 2,
     children: [
       {
-        id: 5,
-        type: "variable",
-        name: "global_count",
+        id: 3,
         children: [],
+		blocks: [
+		  {
+			kind: "output",
+			name: "hello",
+			line: 1,
+		  },
+		]
       },
       {
-        id: 6,
-        type: "conditional",
-        name: "global_count == 1",
-        children: [
-          {
-            id: 7,
-            type: "variable",
-            name: "helloworld",
-            children: [],
-          },
-          {
-            id: 9,
-            type: "variable",
-            name: "byeworld",
-            children: [],
-          },
-        ],
+        id: 4,
+        children: [],
+		blocks: [
+		  {
+			kind: "output",
+			name: "bye",
+			line: 1,
+		  },
+		]
       },
     ],
-  },
-  {
-    id: 10,
-    type: "function",
-    name: "print_all",
-    children: [
+	blocks: [
       {
-        id: 11,
-        type: "variable",
-        name: "global_count -> 1",
-        children: [],
+        kind: "function",
+        name: "main(int argc, char **argv)",
+        line: 1,
       },
       {
-        id: 12,
-        type: "conditional",
-        name: "global_count == 1",
-        children: [
-          {
-            id: 13,
-            type: "variable",
-            name: "helloworld",
-            children: [],
-          },
-          {
-            id: 14,
-            type: "output",
-            name: "string how are you done",
-            children: [],
-          },
-        ],
+        kind: "output",
+        line: 2,
+        name: "hello + 42",
       },
-    ],
+      {
+        kind: "variable",
+        name: "hello",
+        line: 3,
+      },
+      {
+        kind: "arrow",
+        value: "->",
+        line: 3,
+      },
+      {
+        kind: "constant",
+        value: 6,
+        line: 3,
+      },
+      {
+        kind: "operator",
+        value: "+",
+        line: 3,
+      },
+      {
+        kind: "constant",
+        value: 43,
+        line: 3,
+      },
+      {
+        kind: "conditional",
+        name: "hello == 49",
+        line: 4,
+      },
+    ]
   },
 ];
 
+// TODO: When selected, set border to `3px solid #FAD70F`
 function renderRow(nodes: node[], flattened: flatnode[]) {
   return (
     <div style={rowStyle}>
@@ -109,11 +106,12 @@ function renderRow(nodes: node[], flattened: flatnode[]) {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              backgroundColor: "#282828",
+			  border: "1px dashed gray",
               borderRadius: "20px",
               padding: "10px",
               minWidth: "200px",
             }}
+			key={d.id}
           >
             <ArcherElement
               id={`node${d.id}`}
@@ -127,7 +125,7 @@ function renderRow(nodes: node[], flattened: flatnode[]) {
                   };
                 })}
             >
-              {Token(d.type, d.name)}
+              {RenderBlock(d.blocks)}
             </ArcherElement>
 
             {d.children.length > 0 ? renderRow(d.children, flattened) : null}
@@ -140,10 +138,12 @@ function renderRow(nodes: node[], flattened: flatnode[]) {
 
 function TestTree() {
   let flattened = flatten(childNodes);
+  console.log("Flattened:")
+  console.log(flattened);
 
   return (
     <div>
-      <ArcherContainer strokeColor="white" lineStyle="curve" endMarker={false}>
+      <ArcherContainer strokeColor="white" lineStyle="curve" endShape={{arrow: {arrowLength: 6, arrowThickness: 5}}} endMarker={true}>
         <div style={rootStyle}>
           <ArcherElement
             id="root"

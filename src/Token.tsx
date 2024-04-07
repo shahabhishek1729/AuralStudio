@@ -4,6 +4,9 @@ import cube from "./assets/value_box.png";
 import book from "./assets/vuesax/bold/book.png";
 import rattle_icon from "./assets/rattle_icon.png";
 import output from "./assets/output_icon.png";
+import function_arrow from "./assets/function_arrow.png";
+import { ReactNode } from "react";
+import { block } from "./flattener";
 
 interface token_metadata {
   file: [string, string];
@@ -20,38 +23,8 @@ const TOKEN_MAP = {
   variable: ["#49A7FE", cube],
   conditional: ["#06975A", question],
   library: ["#B140B4", book],
-  output: ["#7E8E1C", output],
+  output: ["#000000", output],
 };
-
-// export function TokenTree() {
-//   return (
-//     <div
-//       style={{
-//         display: "flex",
-//         width: "100%",
-//         flexDirection: "column",
-//         alignItems: "center",
-//       }}
-//     >
-//       <FileToken fname="helloworld.rattle" />
-//       <div style={{ height: "30px" }} />
-//       <div
-//         style={{
-//           display: "flex",
-//           width: "100%",
-//           flexDirection: "row",
-//           justifyContent: "space-between",
-//         }}
-//       >
-//         <Token token_type={"library"} metadata={{ name: "numpy" }} />
-//         <Token token_type={"library"} metadata={{ name: "pandas" }} />
-//         <Token token_type={"variable"} metadata={{ name: "global" }} />
-//         <Token token_type={"function"} metadata={{ name: "execute1()" }} />
-//         <Token token_type={"function"} metadata={{ name: "execute2()" }} />
-//       </div>
-//     </div>
-//   );
-// }
 
 export function FileToken(fname: string) {
   return (
@@ -97,44 +70,53 @@ export function FileToken(fname: string) {
   );
 }
 
-export function Token(token_type: string, name: string) {
+export function Token(
+  token_type: string,
+  name?: string,
+  internals: ReactNode | null = null
+) {
   return (
-    <div
-      style={{
-        background: TOKEN_MAP[token_type as keyof token_metadata][0],
-        height: "40px",
-        width: "fit-content",
-        borderRadius: "10px",
-        display: "flex",
-        flexDirection: "row",
-        justifyContent: "center", //Centered vertically
-        alignItems: "center", //Centered horizontally
-        paddingLeft: "15px",
-        paddingRight: "15px",
-      }}
-    >
-      <img
-        src={TOKEN_MAP[token_type as keyof token_metadata][1]}
-        height="32px"
-        style={{
-          marginLeft: "-8px",
-          marginRight: "4px",
-        }}
-      />
-
+    <div style={{ display: "flex", flexDirection: "row" }}>
       <div
-        style={{ height: "40px", width: "1px", backgroundColor: "#FFFFFF" }}
-      ></div>
-
-      <p
         style={{
-          fontFamily: "JetBrains Mono",
-          textAlign: "start",
-          marginLeft: "7px",
+          background: TOKEN_MAP[token_type as keyof token_metadata][0],
+          height: "40px",
+          width: "fit-content",
+          borderRadius: "10px",
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "center", //Centered vertically
+          alignItems: "center", //Centered horizontally
+          paddingLeft: "15px",
+          paddingRight: "10px",
         }}
       >
-        {name}
-      </p>
+        <img
+          src={TOKEN_MAP[token_type as keyof token_metadata][1]}
+          height="32px"
+          style={{
+            marginLeft: "-8px",
+            marginRight: "4px",
+          }}
+        />
+
+        <div
+          style={{ height: "40px", width: "1px", backgroundColor: "#FFFFFF" }}
+        ></div>
+
+        <p
+          style={{
+            fontFamily: "JetBrains Mono",
+            textAlign: "start",
+            marginLeft: "7px",
+          }}
+        >
+          {name}
+        </p>
+
+        <div style={{ width: "5px" }} />
+      </div>
+      {internals}
     </div>
   );
 }
@@ -143,12 +125,14 @@ interface symbol_metadata {
   constant: [string, string, number, number];
   arrow: [string, string, number, number];
   operator: [string, string, number, number];
+  text: [string, string, number, number];
 }
 
 const SYMBOL_MAP: symbol_metadata = {
-  constant: ["#FF8A00", "#FFFFFF", 16, 40],
+  constant: ["#FF8A00", "#FFFFFF", 16, 30],
   arrow: ["transparent", "#FFCD4E", 20, 30],
-  operator: ["#701490", "#FFFFFF", 20, 30],
+  operator: ["#701490", "#FFFFFF", 20, 25],
+  text: ["#7E8E1C", "#FFFFFF", 16, 30],
 };
 
 export function Symbol(type: string, symbol: string) {
@@ -182,34 +166,113 @@ export function Symbol(type: string, symbol: string) {
   );
 }
 
-interface rtl_token {
-  type: string;
-  value?: string | number | boolean;
-  line: number;
-}
-const render_line: rtl_token[] = [
+const expr_: block[] = [
   {
-    type: "output",
-    value: undefined,
+    kind: "output",
     line: 1,
+    name: "output",
   },
   {
-    type: "string",
+    kind: "text",
     value: "hello ",
     line: 1,
   },
   {
-    type: "operator",
+    kind: "operator",
     value: "+",
     line: 1,
   },
   {
-    type: "number",
+    kind: "constant",
     value: 42,
     line: 1,
   },
+  {
+    kind: "variable",
+    name: "hello",
+    line: 2,
+  },
+  {
+    kind: "arrow",
+    value: "->",
+    line: 2,
+  },
+  {
+    kind: "constant",
+    value: 6,
+    line: 2,
+  },
+  {
+    kind: "operator",
+    value: "+",
+    line: 2,
+  },
+  {
+    kind: "constant",
+    value: 42,
+    line: 2,
+  },
+  {
+    kind: "function",
+    name: "main(x, y, z)",
+    line: 3,
+  },
 ];
-export function RenderExpr(expr: string) {
-  // TODO: Implement
-  expr;
+
+export function RenderBlock(block_: block[] = expr_) {
+  let numLines = block_[block_.length - 1].line;
+  let indents = 0;
+  let next = false; // Whether or not to update indents on the next iteration
+  let after_next = false; // Whether or not to update indents on the next iteration
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      {[...Array(numLines)].map((_, idx) => {
+        const currTokens = block_.filter((d) => d.line === idx + 1);
+        if (next) indents++;
+        after_next = next;
+        next = currTokens[0].type === "function";
+
+        return (
+          <div style={{ display: "flex", flexDirection: "row" }}>
+            {after_next ? (
+              <img style={{ height: "24px" }} src={function_arrow} />
+            ) : null}
+            {
+              <div
+                style={{
+                  width: `${36 * (indents - +after_next)}px`,
+                }}
+              />
+            }
+            {RenderExpr(block_.filter((d) => d.line === idx + 1))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function RenderExpr(expr: rtl_token[]) {
+  const internals = (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+      }}
+    >
+      {expr.slice(1).map((e: rtl_token) => {
+        return (
+          <>
+            {e.kind === "operator" ? <div style={{ width: "6px" }} /> : null}
+            {Symbol(e.kind, e.value as string)}
+            {e.kind === "operator" ? <div style={{ width: "6px" }} /> : null}
+          </>
+        );
+      })}
+    </div>
+  );
+
+  return Token(expr[0].kind, expr[0].name, internals);
 }
