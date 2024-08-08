@@ -14,6 +14,19 @@ pub type RESULT = Result<(), Box<dyn SyntaxError>>;
 ///    must be one of the nine defined errors in the language.
 pub type RESVAL<T> = Result<T, Box<dyn SyntaxError>>;
 
+/// A Rust equivalent of the ternary operator in C/C++.
+/// cpp: bool ? yes : no ||| rust: check!(bool => yes ; no)
+#[macro_export]
+macro_rules! check {
+    ($test:expr => $true_expr:expr ; $false_expr:expr) => {
+        if $test {
+            $true_expr
+        } else {
+            $false_expr
+        }
+    };
+}
+
 /// Blank tokens will be 'end of file' tokens
 const BLANK_TOKEN_KIND: RTLToken = RTLToken::EOF;
 

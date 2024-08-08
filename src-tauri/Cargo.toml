@@ -3,7 +3,7 @@ name = "AuralStudio"
 version = "0.0.0"
 description = "Digraph parsing and the Rattle programming language"
 authors = ["Abhishek Shah"]
-edition = "2024"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -22,6 +22,7 @@ lazy_static = "1.4.0"
 dualsense-rs = "0.5.0"
 anyhow = "1.0.82"
 thiserror = "1.0.59"
+phf = { version = "0.11", features = ["macros"] }
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!

@@ -1,9 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+pub mod digraph;
 pub mod error;
 pub mod file_utils;
-pub mod parser;
 pub mod prelude;
 pub mod runner;
 pub mod scanner;
@@ -18,7 +18,7 @@ use crate::runner::compile;
 use serde_derive::{Deserialize, Serialize};
 use std::fs;
 
-use crate::parser::parser::{Node, Parser};
+use crate::digraph::parser::{Node, Parser};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
