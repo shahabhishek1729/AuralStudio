@@ -1,0 +1,72 @@
+[
+	{
+		"type": "function",
+		"name": "start",
+		"args": "",
+		"children": [
+			{
+				"type": "variable",
+				"name": "x",
+				"value": 42
+			},
+			{
+				"type": "variable",
+				"name": "y",
+				"value": 36
+			},
+			{
+				"type": "conditional",
+				"name": "x + 3 equals y or x equals y",
+				"yes": [
+					{
+						"type": "output",
+						"name": "x was somewhat equal to y"
+					},
+					{
+						"type": "variable",
+						"name": "x",
+						"value": 7
+					}
+				],
+				"no": [
+					{
+						"type": "output",
+						"name": "x was not equal to y"
+					}
+				]
+			},
+			{
+				"type": "call",
+				"name": "doMath",
+				"args": ""
+			}
+		]
+	},
+	{
+		"type": "function",
+		"name": "doMath",
+		"args": "",
+		"children": [
+			{
+				"type": "variable",
+				"name": "a",
+				"value": "1
+			},
+			{
+				"type": "for",
+				"name": "i from 1 to 100",
+				"body": [
+					{
+						"type": "variable",
+						"name": "a",
+						"value": "a + 1"
+					}
+				]
+			},
+			{
+				"type": "output",
+				"name": "a"
+			}
+		]
+	}
+]

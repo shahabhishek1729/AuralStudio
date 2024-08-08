@@ -68,3 +68,72 @@ pub const RTL_SYMBOLS: &[&'static str] = &[
     r"\s*colons? sign\s*",
     r"\s*spaces? sign\s*",
 ];
+
+/// A wrapper around Rust's `Vec` that only supports LIFO operations.
+///
+/// # Examples
+/// ```
+/// use crate::*;
+///
+/// // Creates an empty stack that we can manually fill up
+/// let mut stack: Stack<usize> = Stack::new();
+/// stack.push(3);
+/// stack.push(2);
+/// stack.push(6);
+/// assert_eq!(stack.len(), 3);
+/// assert_eq!(stack.pop(), 6);
+/// assert_eq!(stack.len(), 2);
+/// let _ = stack.pop();
+/// let _ = stack.pop();
+/// assert!(stack.is_empty());
+/// ```
+///
+/// ```
+/// // We can also initialize `Stack`s from `Vec`s
+/// use crate::*;
+///
+/// let vec: Vec<usize> = vec![3, 6, 2];
+/// let mut stack: Stack<usize> = Stack::from_vec(vec);
+/// assert_eq!(stack.len(), 3);
+/// assert_eq!(stack.pop(), 6);
+/// assert_eq!(stack.len(), 2);
+/// let _ = stack.pop();
+/// let _ = stack.pop();
+/// assert!(stack.is_empty());
+/// ```
+#[derive(Debug, Clone)]
+pub(crate) struct Stack<T>
+where
+    T: Clone,
+{
+    pub elements: Vec<T>,
+}
+
+impl<T> Stack<T>
+where
+    T: Clone,
+{
+    pub(crate) fn new() -> Self {
+        Self { elements: vec![] }
+    }
+
+    pub(crate) fn push(&mut self, elem: T) {
+        self.elements.push(elem);
+    }
+
+    pub(crate) fn pop(&mut self) -> Option<T> {
+        self.elements.pop()
+    }
+
+    pub(crate) fn peek(&mut self) -> Option<&T> {
+        self.elements.last()
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.elements.is_empty()
+    }
+
+    pub(crate) fn len(&self) -> usize {
+        self.elements.len()
+    }
+}

@@ -27,7 +27,11 @@ pub fn compile(code: String, path: String) -> Result<String, ()> {
             match compiler_.decompile() {
                 Ok(_) => (),
                 Err(msg) => return Ok(format!("Failed: {}", msg)),
-            };
+            }
+
+            compiler_
+                .py
+                .push_str("\nif __name__ == '__main__':\n\tstart([])");
 
             if &path[path.len() - 7..] != ".rattle" {
                 return Ok("Failed: Rattle files must end in .rattle".to_string());

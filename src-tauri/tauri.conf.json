@@ -6,7 +6,7 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "final-tauri",
+    "productName": "AuralStudio",
     "version": "0.0.0"
   },
   "tauri": {

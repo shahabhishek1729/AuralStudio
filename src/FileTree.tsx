@@ -121,7 +121,7 @@ const StyledTreeItem = React.forwardRef(function StyledTreeItem(
 
 function BuildTreeItem(obj, id: number) {
   return (
-    <StyledTreeItem key={id} nodeId={id.toString()} labelText={obj.name}>
+    <StyledTreeItem key={id} nodeId={id.toString()} labelText={obj.name === "." ? "demo" : obj.name}>
       {(obj.children || []).map((c) => {
         id++;
         return BuildTreeItem(c, id);

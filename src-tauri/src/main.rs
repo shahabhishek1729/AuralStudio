@@ -14,10 +14,11 @@ pub mod transpiler;
 #[macro_use]
 extern crate lazy_static;
 use crate::runner::compile;
+// use dualsense_rs::DualSense;
 use serde_derive::{Deserialize, Serialize};
 use std::fs;
 
-use crate::parser::parser::{parse, Node};
+use crate::parser::parser::{Node, Parser};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -68,20 +69,124 @@ fn get_file_hierarchy(root_path: &str) -> FileType {
 // This runs a Rattle script at a specified path and returns output of the script
 #[tauri::command]
 fn run_code(code: &str, path: &str) -> String {
-    compile(code.to_string(), path.to_string()).unwrap()
+    let part1 = compile(code.to_string(), path.to_string()).unwrap();
+    let output1 = std::process::Command::new("python")
+        .arg("../linalg.py")
+        .output()
+        .expect("failed to run")
+        .stdout;
+    dbg!(&output1);
+    format!("{}: {}", part1, std::str::from_utf8(&output1).unwrap())
 }
 
 #[tauri::command]
-fn parse_file() -> Vec<Node> {
-    parse()
+fn parse_file(source: String) -> Vec<Node> {
+    let mut parser = Parser::new(source).unwrap();
+    parser.parse().unwrap()
 }
 
+//static GLOBAL_WINDOW: Mutex<Option<tauri::AppHandle>> = Mutex::new(None);
+//
+//#[tauri::command]
+//fn grab_window(window: tauri::AppHandle) {
+//    *GLOBAL_WINDOW.lock().unwrap() = Some(window);
+//    println!("I got the window!");
+//}
+//
+//fn send_message(window: &tauri::Window, message: &bool) {
+//    window.emit("rustysocket-message", message).unwrap();
+//}
+//
+//static mut CONTROLLER: Mutex<Option<DualSense>> = Mutex::new(None);
+//
+//static mut EXECUTED: RwLock<bool> = RwLock::new(false);
+//
+//static mut SELECTED_IDX: Mutex<u64> = Mutex::new(1u64);
+//
+//#[derive(Debug, Clone, Serialize, Deserialize)]
+//struct Payload {
+//    event_type: u64,
+//}
+//
+//#[tauri::command]
+//async fn send_true() {
+//    unsafe {
+//        CONTROLLER
+//            .lock()
+//            .unwrap()
+//            .as_mut()
+//            .unwrap()
+//            .on_right_pad_x_changed(&|lpx| {
+//                if lpx > 200 {
+//                    if !*EXECUTED.read().unwrap() {
+//                        println!("Rust received right signal, moving to JS");
+//                        //let _ = GLOBAL_WINDOW
+//                        //    .lock()
+//                        //    .unwrap()
+//                        //    .clone()
+//                        //    .unwrap()
+//                        //    .emit("rustysocket-message", 1)
+//                        //    .unwrap();
+//                        //
+//                        *SELECTED_IDX.lock().unwrap() += 1;
+//
+//                        GLOBAL_WINDOW
+//                            .lock()
+//                            .unwrap()
+//                            .clone()
+//                            .unwrap()
+//                            .emit_all(
+//                                "nav_event",
+//                                Payload {
+//                                    event_type: *SELECTED_IDX.lock().unwrap(),
+//                                },
+//                            )
+//                            .unwrap();
+//                        *EXECUTED.write().unwrap() = true;
+//                    }
+//                } else if lpx < 20 {
+//                    if !*EXECUTED.read().unwrap() {
+//                        println!("Rust received left signal, moving to JS");
+//                        *SELECTED_IDX.lock().unwrap() -= 1;
+//
+//                        GLOBAL_WINDOW
+//                            .lock()
+//                            .unwrap()
+//                            .clone()
+//                            .unwrap()
+//                            .emit_all(
+//                                "nav_event",
+//                                Payload {
+//                                    event_type: *SELECTED_IDX.lock().unwrap(),
+//                                },
+//                            )
+//                            .unwrap();
+//                        *EXECUTED.write().unwrap() = true;
+//                    }
+//                } else {
+//                    if *EXECUTED.read().unwrap() {
+//                        println!("Rust received a no signal, moving to JS");
+//                        *EXECUTED.write().unwrap() = false;
+//                    }
+//                }
+//            });
+//
+//        let _handle = CONTROLLER.lock().unwrap().as_mut().unwrap().run();
+//    }
+//}
+
 fn main() {
+    //unsafe {
+    //    (*CONTROLLER.lock().unwrap()) = Some(DualSense::new());
+    //}
+
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             get_file_hierarchy,
             run_code,
-            parse_file
+            parse_file,
+            //grab_window,
+            //send_true
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

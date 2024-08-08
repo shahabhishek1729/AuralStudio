@@ -6,8 +6,7 @@ export interface node {
 
 export interface block {
   kind: string;
-  name?: string;
-  value?: string | number | boolean;
+  name?: string | number | boolean;
   line: number;
 }
 

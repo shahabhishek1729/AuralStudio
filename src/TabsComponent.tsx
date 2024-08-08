@@ -8,7 +8,7 @@ function TabsComponent() {
   
   return (
   <div style={{backgroundColor: "#111315", display: "flex", flexDirection: "row", borderBottom: "0.3px solid #636363"}}>
-  {["addition.rattle", "addition.py"].map((item, index) => (
+  {["addition.rattle", "linalg.rattle"].map((item, index) => (
     <div key={index} style={{display: "flex", flexDirection: "row", backgroundImage: 'url("./assets/tab_3x.png")', marginRight: "0px", alignItems: "center"}}>
       <div style={{display: "block", position: "relative"}}>
       <div>

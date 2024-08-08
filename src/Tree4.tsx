@@ -12,101 +12,18 @@ const rowStyle = {
   justifyContent: "center",
 };
 
-const childNodes = [
-  {
-    id: 1,
-    children: [],
-	blocks: [
-      {
-        kind: "library",
-        line: 1,
-        name: "numpy",
-      },
-    ]
-  },
-  {
-    id: 2,
-    children: [
-      {
-        id: 3,
-        children: [],
-		blocks: [
-		  {
-			kind: "output",
-			name: "hello",
-			line: 1,
-		  },
-		]
-      },
-      {
-        id: 4,
-        children: [],
-		blocks: [
-		  {
-			kind: "output",
-			name: "bye",
-			line: 1,
-		  },
-		]
-      },
-    ],
-	blocks: [
-      {
-        kind: "function",
-        name: "main(int argc, char **argv)",
-        line: 1,
-      },
-      {
-        kind: "output",
-        line: 2,
-        name: "hello + 42",
-      },
-      {
-        kind: "variable",
-        name: "hello",
-        line: 3,
-      },
-      {
-        kind: "arrow",
-        value: "->",
-        line: 3,
-      },
-      {
-        kind: "constant",
-        value: 6,
-        line: 3,
-      },
-      {
-        kind: "operator",
-        value: "+",
-        line: 3,
-      },
-      {
-        kind: "constant",
-        value: 43,
-        line: 3,
-      },
-      {
-        kind: "conditional",
-        name: "hello == 49",
-        line: 4,
-      },
-    ]
-  },
-];
-
 // TODO: When selected, set border to `3px solid #FAD70F`
-function renderRow(nodes: node[], flattened: flatnode[]) {
+function renderRow(nodes: node[], flattened: flatnode[], selectedIdx: number) {
   return (
     <div style={rowStyle}>
-      {nodes.map((d) => {
+      {nodes.map(d => {
         return (
           <div
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-			  border: "1px dashed gray",
+			  border: selectedIdx === d.id ? "3px solid #FAD70F" : "1px dashed gray",
               borderRadius: "20px",
               padding: "10px",
               minWidth: "200px",
@@ -128,7 +45,7 @@ function renderRow(nodes: node[], flattened: flatnode[]) {
               {RenderBlock(d.blocks)}
             </ArcherElement>
 
-            {d.children.length > 0 ? renderRow(d.children, flattened) : null}
+            {d.children.length > 0 ? renderRow(d.children, flattened, selectedIdx=selectedIdx) : null}
           </div>
         );
       })}
@@ -136,10 +53,8 @@ function renderRow(nodes: node[], flattened: flatnode[]) {
   );
 }
 
-function TestTree() {
-  let flattened = flatten(childNodes);
-  console.log("Flattened:")
-  console.log(flattened);
+function TestTree({ source, selectedIdx }) {
+  let flattened = flatten(source);
 
   return (
     <div>
@@ -161,7 +76,7 @@ function TestTree() {
           </ArcherElement>
         </div>
 
-        {renderRow(childNodes, flattened)}
+        {renderRow(source, flattened, selectedIdx=selectedIdx)}
       </ArcherContainer>
     </div>
   );

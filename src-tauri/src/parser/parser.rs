@@ -1,97 +1,990 @@
+use crate::parser::address::Address;
+use crate::prelude::Stack;
+use crate::scanner::rtl_token::RTLToken;
+use crate::scanner::scanner::{Scanner, Token};
 use serde_derive::{Deserialize, Serialize};
+use thiserror::Error;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Node {
-    pub id: usize,
-    pub children: Vec<Node>,
-    pub blocks: Vec<Block>,
+pub(super) const HORIZ_CHILDREN: &[NodeKind; 3] =
+    &[NodeKind::FNDEF, NodeKind::CONDTLY, NodeKind::CONDTLN];
+
+/// Represents a single line of code, which is rendered in a digraph as a single node.
+///
+/// A node consists of several blocks (for instance, an `output` node may consist of a `string`
+/// block, an `addition` operator block and another `string block`), and a node can have several
+/// children (which are themselves nodes, and are analogous to indented segments of code in other
+/// programming languages).
+///
+/// # Examples
+/// ```
+/// use crate::*;
+/// // The following node represents the code `print("Hello, World!")` on line 1 of a Rattle file.
+/// let node = Node {
+///   line: 1,
+///   children: vec![],
+///   kind: NodeKind::OUTPUT,
+///   blocks: vec!(Block::TEXT(String::from("Hello, World!")))
+/// };
+///
+/// // These can also be written with the `make_node!` macro.
+/// let gen_node = make_node!(line 1 -> NodeKind::OUTPUT [block!(TEXT "Hello, World!")]);
+/// assert_eq!(gen_node, node);
+/// ```
+///
+/// ```
+/// // The following node represents the following code in a Rattle file:
+/// // if true:
+/// //    print("Hello, World!")
+/// // else:
+/// //    print("Goodbye, World!")
+/// let node = Node {
+///   line: 1,
+///   children: vec![
+///     Node {
+///       line: 2,
+///       children: vec![
+///         Node {
+///           line: 3,
+///           children: vec![],
+///           kind: NodeKind::OUTPUT,
+///           blocks: vec![Block::TEXT(String::from("Hello, World!"))]
+///         },
+///       ],
+///       kind: NodeKind::CONDTLY,
+///       blocks: vec![]
+///     }
+///     Node {
+///       line: 4,
+///       children: vec![
+///         Node {
+///           line: 5,
+///           children: vec![],
+///           kind: NodeKind::OUTPUT,
+///           blocks: vec![Block::TEXT(String::from("Goodbye, World!"))]
+///         },
+///       ],
+///       kind: NodeKind::CONDTLN,
+///       blocks: vec![]
+///     }
+///   ],
+///   kind: NodeType::CONDTL,
+///   blocks: vec![Block::BOOL(true)]
+/// };
+///
+/// // Or with the `make_node!` macro:
+/// let gen_node = make_node!(line 1 -> CONDTL [block!(True)]; {
+///     make_node!(line 2 -> NodeKind::CONDTLY []; {
+///         make_node!(line 3 -> NodeKind::OUTPUT [block!(TEXT "Hello, World!")])
+///     }),
+///     make_node!(line 4 -> NodeKind::CONDTLN []; {
+///         make_node!(line 5 -> NodeKind::OUTPUT [block!(TEXT "Goodbye, World!")])
+///     })
+/// });
+///
+/// assert_eq!(node, gen_node);
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct Node {
+    // Since each Node is itself a line, this serves as a primary key
+    pub(super) line: usize,
+    // Used in functions, conditionals, loops, classes, etc.
+    pub(super) children: Vec<Node>,
+    pub(super) kind: NodeKind,
+    // The rest of the token, if applicable
+    pub(super) blocks: Vec<Block>,
+    pub(super) addr: Address,
+    pub(super) parent_addr: Option<Address>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum Value {
-    Number(i64),
-    Text(String),
-    Boolean(bool),
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Block {
-    kind: String,
-    name: Option<Value>,
-    line: usize,
-}
-
-pub fn parse() -> Vec<Node> {
-    vec![
-        Node {
-            id: 1,
+impl Default for Node {
+    fn default() -> Self {
+        Self {
+            line: 0,
             children: vec![],
-            blocks: vec![Block {
-                kind: String::from("library"),
-                name: Some(Value::Text(String::from("numpy"))),
+            kind: NodeKind::OUTPUT,
+            blocks: vec![],
+            addr: Address::new(vec![]),
+            parent_addr: None,
+        }
+    }
+}
+
+impl PartialEq for Node {
+    fn eq(&self, other: &Self) -> bool {
+        // We don't need to check the `parent_addr` field because if addresses are equal, the nodes
+        // must be equal (helps make testing macros more concise).
+        self.line == other.line
+            && self.children == other.children
+            && self.kind == other.kind
+            && self.blocks == other.blocks
+            && self.addr == other.addr
+    }
+}
+
+impl Node {
+    pub(super) fn has_subtree(&self) -> bool {
+        // NOTE:XXX: Claims that all sub-function definitions must be in the root of a function
+        // NOTE:XXX: Claims FNDEF & CONDTL are the only kind of sub-tree allowable (classes?)
+        self.children
+            .iter()
+            .find(|&x| HORIZ_CHILDREN.contains(&x.kind))
+            .is_some()
+    }
+}
+
+/// Represents every kind of node we can have in Rattle.
+/// Each node represents a single line of code, and the kind of the node is determined by the first
+/// word in the line (e.g., 'define ...' means that the line is a Node of type `FNDEF`). For
+/// function calls, however, the first word will be an identifier, and will be followed by 'of'.
+#[derive(Debug, Copy, PartialEq, Clone, Serialize, Deserialize)]
+pub(super) enum NodeKind {
+    /// Function definitions
+    FNDEF,
+    /// Variable declarations
+    VARDECL,
+    /// Outputting to the console
+    OUTPUT,
+    /// Conditionals (if-else statements)
+    CONDTL,
+    /// The `true` branch of a conditional
+    CONDTLY,
+    /// The `false` branch of a conditional
+    CONDTLN,
+    /// For loops over iterables
+    FORLOOP,
+    /// While loops
+    WHLLOOP,
+    /// Returns from within functions
+    RETURN,
+    /// Calling a previously defined function
+    FNCALL,
+    /// Imports for foreign code
+    GRABPKG,
+}
+
+/// An enum of every kind of block supported in Rattle. A block is an individual chunk of code,
+/// often no more than a single token; a `Node` is made up of one or more blocks. Examples of
+/// blocks include an individual constant (e.g., a number, string, boolean, etc.), opreator or
+/// identifier.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
+pub(super) enum Block {
+    /// Identifiers (keywords or custom-defined)
+    IDENT(String),
+    /// Numbers (includes `integer`s and `float`s.
+    NUMBER(f64),
+    /// Strings (bounded by 'string...done'
+    TEXT(String),
+    /// Booleans (true or false)
+    BOOL(bool),
+    /// The NoneType
+    NOTHING,
+    /// An operator
+    OP(OpKind),
+    /// A function call
+    FNCALL(Vec<Block>),
+    /// A list
+    LIST(Vec<Block>),
+}
+
+/// An enum of every kind of operator supported in Rattle
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
+pub(super) enum OpKind {
+    /// +
+    ADD,
+    /// -
+    SUB,
+    /// *
+    MUL,
+    /// /
+    DIV,
+    /// %
+    MOD,
+    /// ==
+    EQ,
+    /// !=
+    NE,
+    /// >
+    GT,
+    /// <
+    LT,
+    /// >=
+    GE,
+    /// <=
+    LE,
+    /// = or ->
+    ASSN,
+    /// && (and)
+    AND,
+    /// || (or)
+    OR,
+    /// !
+    NOT,
+    /// in
+    IN,
+    /// dot
+    DOT,
+}
+
+#[derive(Debug, Error)]
+pub enum ParserError {
+    #[error("Didn't expect to have to explicitly handle token {}", .0.rtl_token)]
+    UnexpectedToken(Token),
+    #[error("Two tokens were expected to be on the same line, but were not!")]
+    LineMismatch,
+}
+
+pub(crate) struct Parser {
+    tokens: Vec<Token>,
+    waiting_parents: Stack<Vec<usize>>,
+    curr: usize,
+    end: usize,
+}
+
+impl Parser {
+    pub(crate) fn new(source: String) -> anyhow::Result<Self> {
+        let mut scanner = Scanner::new(&source);
+        // For now, we depend on a file with no syntax errors to render this tree.
+        // TODO: To avoid this, we would need a String-based parser
+        let Ok(tokens) = scanner.scan() else {
+            anyhow::bail!("Syntax error found in your file, could not be scanned");
+        };
+
+        Ok(Self {
+            tokens: tokens.clone(),
+            curr: 0,
+            waiting_parents: Stack::new(),
+            end: tokens.len(),
+        })
+    }
+
+    pub(crate) fn parse(&mut self) -> anyhow::Result<Vec<Node>> {
+        let mut nodes = vec![];
+
+        loop {
+            let curr_token = self.advance_();
+
+            match curr_token.rtl_token {
+                RTLToken::ImportIdentifier => {
+                    // 'grab ...'
+                    let node = Node {
+                        kind: NodeKind::GRABPKG,
+                        line: curr_token.line,
+                        children: vec![],
+                        blocks: self._collect_line()?,
+                        addr: Address::new(vec![]),
+                        ..Default::default()
+                    };
+                    self.push_node(node, &mut nodes)?;
+                }
+
+                RTLToken::PrintToken => {
+                    // 'output ...'
+                    let node = Node {
+                        kind: NodeKind::OUTPUT,
+                        line: curr_token.line,
+                        children: vec![],
+                        blocks: self._collect_line()?,
+                        addr: Address::new(vec![]),
+                        ..Default::default()
+                    };
+                    self.push_node(node, &mut nodes)?;
+                }
+
+                RTLToken::ReturnIdentifier => {
+                    // 'output ...'
+                    let node = Node {
+                        kind: NodeKind::RETURN,
+                        line: curr_token.line,
+                        children: vec![],
+                        blocks: self._collect_line()?,
+                        addr: Address::new(vec![]),
+                        ..Default::default()
+                    };
+                    self.push_node(node, &mut nodes)?;
+                }
+
+                RTLToken::FunctionIdentifier => {
+                    // 'define ... of ...'
+                    let curr_token = self.advance_();
+                    let curr_line = curr_token.line;
+
+                    let Some(ref fn_name) = curr_token.literal else {
+                        anyhow::bail!(
+                            "The 'define' keyword was not followed by the name of the function!"
+                        );
+                    };
+                    let fn_name: String = fn_name.unwrap_identifier();
+                    let args: Vec<Block> = self._collect_line()?;
+                    let blocks: Vec<Block> = [&[Block::IDENT(fn_name)], &args[..]].concat();
+
+                    let node = Node {
+                        kind: NodeKind::FNDEF,
+                        line: curr_line,
+                        children: vec![],
+                        blocks,
+                        addr: Address::new(vec![]),
+                        ..Default::default()
+                    };
+                    self.push_node(node, &mut nodes)?;
+
+                    let insert_loc = self._get_insert_loc(&mut nodes)?;
+                    // self.waiting_parents.push(vec![insert_loc.len() - 1]);
+                    // let insert_loc = self._get_insert_loc(&mut nodes)?;
+
+                    match self.waiting_parents.peek() {
+                        Some(last) => {
+                            let last = last.clone();
+                            self.waiting_parents.push(
+                                last.iter()
+                                    .chain(&[insert_loc.len() - 1])
+                                    .map(|&x| x)
+                                    .collect::<Vec<_>>(),
+                            );
+                        }
+                        None => self.waiting_parents.push(vec![insert_loc.len() - 1]),
+                    }
+                }
+
+                RTLToken::VarIdentifier => {
+                    // 'let ... be ...'
+                    let curr_token = self.advance_();
+                    let curr_line = curr_token.line;
+
+                    let Some(ref var_name) = curr_token.literal else {
+                        anyhow::bail!(
+                            "The 'let' keyword was not followed by the name of the variable!"
+                        );
+                    };
+                    let var_name = var_name.unwrap_identifier();
+                    let blocks = [&[Block::IDENT(var_name)], &self._collect_line()?[..]].concat();
+
+                    let node = Node {
+                        kind: NodeKind::VARDECL,
+                        line: curr_line,
+                        children: vec![],
+                        blocks,
+                        addr: Address::new(vec![]),
+                        ..Default::default()
+                    };
+                    self.push_node(node, &mut nodes)?;
+                }
+
+                RTLToken::IfIdentifier => {
+                    // 'if ...'
+                    let curr_line = curr_token.line;
+                    let protasis = self._collect_line()?;
+
+                    let node = Node {
+                        kind: NodeKind::CONDTL,
+                        line: curr_line,
+                        children: vec![Node {
+                            kind: NodeKind::CONDTLY,
+                            line: curr_line + 1,
+                            children: vec![],
+                            blocks: vec![],
+                            addr: Address::new(vec![]),
+                            ..Default::default()
+                        }],
+                        blocks: protasis,
+                        addr: Address::new(vec![]),
+                        ..Default::default()
+                    };
+                    self.push_node(node, &mut nodes)?;
+
+                    let insert_loc = self._get_insert_loc(&mut nodes)?;
+
+                    let Some(last) = self.waiting_parents.peek() else {
+                        anyhow::bail!(
+                            "Found nothing in the stack when trying to push a conditional."
+                        )
+                    };
+
+                    let last = last.clone();
+
+                    self.waiting_parents.push(
+                        last.iter()
+                            .chain(&[insert_loc.len() - 1])
+                            .map(|&x| x)
+                            .collect::<Vec<_>>(),
+                    );
+
+                    self.waiting_parents.push(
+                        last.iter()
+                            .chain(&[insert_loc.len() - 1, 0])
+                            .map(|&x| x)
+                            .collect::<Vec<_>>(),
+                    );
+                }
+
+                RTLToken::ElseIdentifier => {
+                    // 'otherwise'
+                    let node = Node {
+                        kind: NodeKind::CONDTLN,
+                        line: curr_token.line,
+                        children: vec![],
+                        blocks: vec![],
+                        addr: Address::new(vec![]),
+                        ..Default::default()
+                    };
+                    self.push_node(node, &mut nodes)?;
+
+                    let Some(last) = self.waiting_parents.peek() else {
+                        anyhow::bail!(
+                            "Found nothing in the stack when trying to push `else` branch"
+                        );
+                    };
+
+                    let last = last.clone();
+                    self.waiting_parents
+                        .push(last.iter().chain(&[1]).map(|&x| x).collect::<Vec<_>>());
+                }
+
+                RTLToken::ForIdentifier => {
+                    // 'for ...'
+                    let node = Node {
+                        kind: NodeKind::FORLOOP,
+                        line: curr_token.line,
+                        children: vec![],
+                        blocks: self._collect_line()?,
+                        addr: Address::new(vec![]),
+                        ..Default::default()
+                    };
+                    self.push_node(node, &mut nodes)?;
+                    let insert_loc = self._get_insert_loc(&mut nodes)?;
+
+                    let Some(last) = self.waiting_parents.peek() else {
+                        anyhow::bail!("Found nothing in the stack when trying to push `for` loop");
+                    };
+
+                    let last = last.clone();
+                    self.waiting_parents.push(
+                        last.iter()
+                            .chain(&[insert_loc.len() - 1])
+                            .map(|&x| x)
+                            .collect::<Vec<_>>(),
+                    );
+                }
+
+                RTLToken::BlockEnd => {
+                    // 'done ...'
+                    let ended_str = curr_token.lexeme.clone();
+                    // When we reach 'done otherwise', we need to pop both the else block and the
+                    // overall conditional itself
+                    if &ended_str == "done otherwise" {
+                        let block_ended = self.waiting_parents.pop();
+                        anyhow::ensure!(
+                            block_ended.is_some(),
+                            "We ended a block ({}) we never started!",
+                            ended_str
+                        );
+                    }
+
+                    let block_ended = self.waiting_parents.pop();
+                    anyhow::ensure!(
+                        block_ended.is_some(),
+                        "We ended a block ({}) we never started!",
+                        ended_str
+                    );
+                }
+
+                RTLToken::LineBreak => continue,
+                RTLToken::EOF => break,
+                _ => anyhow::bail!(ParserError::UnexpectedToken(curr_token.clone())),
+            };
+
+            if self.curr >= self.end {
+                break;
+            }
+        }
+
+        Ok(nodes)
+    }
+
+    fn _collect_line(&mut self) -> anyhow::Result<Vec<Block>> {
+        let mut collected: Vec<Block> = vec![];
+        loop {
+            let curr = self.advance_();
+            if curr.rtl_token == RTLToken::LineBreak {
+                break Ok(collected);
+            }
+
+            let curr = curr.clone();
+            collected.push(self._collect_block(&curr)?);
+            if self.line_end_reached() {
+                break Ok(collected);
+            }
+        }
+    }
+
+    fn _collect_block(&mut self, token: &Token) -> anyhow::Result<Block> {
+        match token.rtl_token {
+            // Operators
+            RTLToken::AddOperation => Ok(Block::OP(OpKind::ADD)),
+            RTLToken::SubOperation => Ok(Block::OP(OpKind::SUB)),
+            RTLToken::MulOperation => Ok(Block::OP(OpKind::MUL)),
+            RTLToken::DivOperation => Ok(Block::OP(OpKind::DIV)),
+            RTLToken::ModOperation => Ok(Block::OP(OpKind::MOD)),
+            RTLToken::EqComparator => Ok(Block::OP(OpKind::EQ)),
+            RTLToken::NeComparator => Ok(Block::OP(OpKind::NE)),
+            RTLToken::GtComparator => Ok(Block::OP(OpKind::GT)),
+            RTLToken::LtComparator => Ok(Block::OP(OpKind::LT)),
+            RTLToken::GtEqComparator => Ok(Block::OP(OpKind::GE)),
+            RTLToken::LtEqComparator => Ok(Block::OP(OpKind::LE)),
+            RTLToken::AssnEq => Ok(Block::OP(OpKind::ASSN)),
+            RTLToken::AndLogical => Ok(Block::OP(OpKind::AND)),
+            RTLToken::OrLogical => Ok(Block::OP(OpKind::OR)),
+            RTLToken::NotLogical => Ok(Block::OP(OpKind::NOT)),
+            RTLToken::MembershipOperator => Ok(Block::OP(OpKind::IN)),
+            RTLToken::DotOperator => Ok(Block::OP(OpKind::DOT)),
+            // Values
+            RTLToken::NumericVal => Ok(Block::NUMBER(token.unwrap_numeric())),
+            RTLToken::BooleanVal => Ok(Block::BOOL(token.unwrap_bool())),
+            RTLToken::StringVal => Ok(Block::TEXT(token.unwrap_string())),
+            RTLToken::ObjIdentifier => Ok(Block::IDENT(token.unwrap_identifier())),
+            RTLToken::NoneVal => Ok(Block::NOTHING),
+            // Calls and Collections
+            RTLToken::FnCallIdentifier => {
+                //let mut signature = vec![Block::IDENT(token.unwrap_identifier())];
+                let mut signature = vec![];
+                let mut token;
+                loop {
+                    token = self.advance_().clone();
+                    if token.rtl_token == RTLToken::ExprEnd {
+                        break;
+                    }
+                    signature.push(self._collect_block(&token)?);
+                }
+                return Ok(Block::FNCALL(signature));
+            }
+            RTLToken::ListVal => {
+                let mut signature = vec![Block::IDENT(token.unwrap_identifier())];
+                let mut token;
+                loop {
+                    token = self.advance_().clone();
+                    if token.rtl_token == RTLToken::ExprEnd {
+                        break;
+                    }
+                    signature.push(self._collect_block(&token)?);
+                }
+                return Ok(Block::LIST(signature));
+            }
+            RTLToken::TupleVal => todo!(),
+            RTLToken::DictVal => todo!(),
+            _ => anyhow::bail!(
+                "Found a token that should never be here: {}",
+                token.rtl_token
+            ),
+        }
+    }
+
+    // Returns the array of nodes to which the current node being parsed would be added
+    fn line_end_reached(&self) -> bool {
+        // Rust's `||` short-circuits so this is valid
+        return self.curr >= self.end - 1
+            || self.tokens[self.curr + 1].line != self.tokens[self.curr].line;
+    }
+
+    fn push_node(&mut self, node: Node, to: &mut Vec<Node>) -> anyhow::Result<()> {
+        if self.waiting_parents.is_empty() {
+            to.push(node);
+        } else {
+            anyhow::ensure!(
+                to.len() > 0,
+                "There were no nodes in the parsed list, but the stack had {} elements!",
+                self.waiting_parents.len()
+            );
+            let Some(last_root) = self.waiting_parents.peek() else {
+                anyhow::bail!("There must be elements in waiting_parents if we reach this stage");
+            };
+
+            let mut to = to;
+            for (i, idx) in last_root.iter().enumerate() {
+                anyhow::ensure!(
+                    *idx < to.len(),
+                    "Tried to push to the node at position {}, but there were only {} nodes in {:?}!",
+                    idx,
+                    to.len(),
+                    last_root
+                );
+                if i == last_root.len() - 1 {
+                    let mut node_ = node.clone();
+                    if to[*idx].kind == NodeKind::CONDTLY {
+                        node_.line = node.line + 1;
+                    }
+                    to[*idx].children.push(node_);
+                    break;
+                }
+
+                to = &mut to[*idx].children;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn _get_insert_loc(&mut self, within: &mut Vec<Node>) -> anyhow::Result<Vec<Node>> {
+        match self.waiting_parents.peek() {
+            Some(waiting_parents) => {
+                anyhow::ensure!(
+                    within.len() > 0,
+                    "There were no nodes in the parsed list, but the stack had elements!",
+                );
+
+                let mut within = within;
+                for (i, idx) in waiting_parents.iter().enumerate() {
+                    anyhow::ensure!(
+                        *idx < within.len(),
+                        "Tried to retrieve the node at position {}, but there were only {} nodes!",
+                        idx,
+                        within.len(),
+                    );
+                    if i == waiting_parents.len() - 1 {
+                        return Ok(within[*idx].children.clone());
+                    }
+
+                    within = &mut within[*idx].children;
+                }
+
+                anyhow::bail!("This should be unreachable code.");
+            }
+
+            None => Ok(within.clone()),
+        }
+    }
+
+    // Returns and consumes the current point
+    fn advance_(&mut self) -> &Token {
+        // Ensure we never move past the end of our list
+        let tmp = &self.tokens[self.curr];
+        self.curr += 1;
+        tmp
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[macro_export]
+    macro_rules! block {
+        (IDENT $e:expr) => {
+            Block::IDENT($e.to_string())
+        };
+        (#$e:expr) => {
+            Block::NUMBER($e as f64)
+        };
+        (TEXT $e:expr) => {
+            Block::TEXT($e.to_string())
+        };
+        (True) => {
+            Block::BOOL(true)
+        };
+        (False) => {
+            Block::BOOL(false)
+        };
+        () => {
+            Block::NOTHING
+        };
+    }
+
+    #[macro_export]
+    macro_rules! make_node {
+        (line $line:literal -> $kind:path [$($block:expr),*]) => {
+            {
+                use $crate::parser::address::Address;
+                Node {
+                    line: $line,
+                    children: vec![],
+                    kind: $kind,
+                    blocks: vec![$($block),*],
+                    addr: Address::new(vec![]),
+                    ..Default::default()
+                }
+            }
+        };
+        (line $line:literal -> $kind:path [$($block:expr),*]; {$($child:expr),*}) => {
+            {
+                use $crate::parser::address::Address;
+                Node {
+                    line: $line,
+                    children: vec![$($child),*],
+                    kind: $kind,
+                    blocks: vec![$($block),*],
+                    addr: Address::new(vec![]),
+                    ..Default::default()
+                }
+            }
+        };
+        (L $line:literal @ $($addr:literal),* -> $kind:path [$($block:expr),*]) => {
+            {
+                use $crate::parser::address::Address;
+                Node {
+                    line: $line,
+                    children: vec![],
+                    kind: $kind,
+                    blocks: vec![$($block),*],
+                    addr: Address::new(vec![$($addr),*]),
+                    ..Default::default()
+                }
+            }
+        };
+        (L $line:literal @ $($addr:literal),* -> $kind:path [$($block:expr),*]; {$($child:expr),*}) => {
+            {
+                use $crate::parser::address::Address;
+                Node {
+                    line: $line,
+                    children: vec![$($child),*],
+                    kind: $kind,
+                    blocks: vec![$($block),*],
+                    addr: Address::new(vec![$($addr),*]),
+                    ..Default::default()
+                }
+            }
+        };
+    }
+
+    mod macros {
+        use super::NodeKind::*;
+        use super::OpKind::*;
+        use super::{Address, Block, Node, NodeKind, OpKind};
+
+        #[test]
+        fn blocks_no_children() {
+            let node = make_node!(line 1 -> GRABPKG [block!(IDENT "pandas")]);
+            let true_node = Node {
                 line: 1,
-            }],
-        },
-        Node {
-            id: 2,
-            children: vec![
-                Node {
-                    id: 3,
-                    children: vec![],
-                    blocks: vec![Block {
-                        kind: String::from("output"),
-                        name: Some(Value::Text(String::from("hello"))),
-                        line: 1,
-                    }],
-                },
-                Node {
-                    id: 4,
-                    children: vec![],
-                    blocks: vec![Block {
-                        kind: String::from("output"),
-                        name: Some(Value::Text(String::from("bye"))),
-                        line: 1,
-                    }],
-                },
-            ],
-            blocks: vec![
-                Block {
-                    kind: String::from("function"),
-                    name: Some(Value::Text(String::from("main(int argc, char **argc"))),
-                    line: 1,
-                },
-                Block {
-                    kind: String::from("output"),
-                    name: Some(Value::Text(String::from("hello + 42"))),
-                    line: 2,
-                },
-                Block {
-                    kind: String::from("variable"),
-                    name: Some(Value::Text(String::from("hello"))),
-                    line: 3,
-                },
-                Block {
-                    kind: String::from("arrow"),
-                    name: Some(Value::Text(String::from("->"))),
-                    line: 3,
-                },
-                Block {
-                    kind: String::from("constant"),
-                    name: Some(Value::Number(6)),
-                    line: 3,
-                },
-                Block {
-                    kind: String::from("operator"),
-                    name: Some(Value::Text(String::from("+"))),
-                    line: 3,
-                },
-                Block {
-                    kind: String::from("constant"),
-                    name: Some(Value::Number(43)),
-                    line: 3,
-                },
-            ],
-        },
-    ]
+                children: vec![],
+                kind: GRABPKG,
+                blocks: vec![block!(IDENT "pandas")],
+                addr: Address::new(vec![]),
+                ..Default::default()
+            };
+
+            assert_eq!(node, true_node);
+        }
+
+        #[test]
+        fn no_blocks_children() {
+            let node = make_node!(line 3 -> CONDTLY []);
+            let true_node = Node {
+                line: 3,
+                children: vec![],
+                kind: NodeKind::CONDTLY,
+                blocks: vec![],
+                addr: Address::new(vec![]),
+                ..Default::default()
+            };
+
+            assert_eq!(node, true_node);
+        }
+
+        #[test]
+        fn blocks_children() {
+            let made_node = make_node!(line 5 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
+                make_node!(line 2 -> OUTPUT [block!(IDENT "x")]),
+                make_node!(line 3 -> VARDECL [block!(IDENT "my_age"), Block::OP(ASSN), block!(# 3)])
+            });
+
+            let true_node = Node {
+                line: 5,
+                kind: NodeKind::FNDEF,
+                blocks: vec![Block::IDENT("f".to_string()), Block::IDENT("x".to_string())],
+                addr: Address::new(vec![]),
+                children: vec![
+                    Node {
+                        line: 2,
+                        kind: NodeKind::OUTPUT,
+                        blocks: vec![Block::IDENT("x".to_string())],
+                        children: vec![],
+                        addr: Address::new(vec![]),
+                        ..Default::default()
+                    },
+                    Node {
+                        line: 3,
+                        kind: NodeKind::VARDECL,
+                        blocks: vec![
+                            Block::IDENT("my_age".to_string()),
+                            Block::OP(OpKind::ASSN),
+                            Block::NUMBER(3.),
+                        ],
+                        children: vec![],
+                        addr: Address::new(vec![]),
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            };
+
+            assert_eq!(made_node, true_node);
+        }
+
+        #[test]
+        fn blocks_children_addrs() {
+            let made_node = make_node!(L 5 @ 1,2,3,0 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
+                make_node!(L 2 @ 0,0,2,1 -> OUTPUT [block!(IDENT "x")]),
+                make_node!(L 3 @ 1,2,3 -> VARDECL [block!(IDENT "my_age"), Block::OP(ASSN), block!(# 3)])
+            });
+
+            let true_node = Node {
+                line: 5,
+                kind: NodeKind::FNDEF,
+                blocks: vec![Block::IDENT("f".to_string()), Block::IDENT("x".to_string())],
+                addr: Address::new(vec![1, 2, 3, 0]),
+                children: vec![
+                    Node {
+                        line: 2,
+                        kind: NodeKind::OUTPUT,
+                        blocks: vec![Block::IDENT("x".to_string())],
+                        children: vec![],
+                        addr: Address::new(vec![0, 0, 2, 1]),
+                        ..Default::default()
+                    },
+                    Node {
+                        line: 3,
+                        kind: NodeKind::VARDECL,
+                        blocks: vec![
+                            Block::IDENT("my_age".to_string()),
+                            Block::OP(OpKind::ASSN),
+                            Block::NUMBER(3.),
+                        ],
+                        children: vec![],
+                        addr: Address::new(vec![1, 2, 3]),
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            };
+
+            assert_eq!(made_node, true_node);
+        }
+    }
+
+    mod parser {
+        use super::NodeKind::*;
+        use super::*;
+
+        #[test]
+        fn imports() {
+            let source = "grab pandas";
+
+            let mut parser = Parser::new(String::from(source)).unwrap();
+            assert_eq!(
+                parser.parse().unwrap(),
+                vec![make_node!(line 1 -> GRABPKG [block!(IDENT "pandas")])]
+            );
+        }
+
+        #[test]
+        fn print() {
+            let source = "output string hello world done";
+
+            let mut parser = Parser::new(String::from(source)).unwrap();
+            assert_eq!(
+                parser.parse().unwrap(),
+                vec![make_node!(line 1 -> OUTPUT [block!(TEXT "hello world")])]
+            );
+        }
+
+        #[test]
+        fn function() {
+            let source = "define f of x\noutput string hello world done\ndone define";
+
+            let mut parser = Parser::new(String::from(source)).unwrap();
+            assert_eq!(
+                parser.parse().unwrap(),
+                vec![
+                    make_node!(line 1 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
+                        make_node!(line 2 -> OUTPUT [block!(TEXT "hello world")])
+                    })
+                ]
+            );
+        }
+
+        #[test]
+        fn variables() {
+            let source = "let x be 3\noutput string hello world done";
+
+            let mut parser = Parser::new(String::from(source)).unwrap();
+            assert_eq!(
+                parser.parse().unwrap(),
+                vec![
+                    make_node!(line 1 -> VARDECL [block!(IDENT "x"), Block::OP(OpKind::ASSN), block!(# 3)]),
+                    make_node!(line 2 -> OUTPUT [block!(TEXT "hello world")])
+                ]
+            );
+        }
+
+        #[test]
+        fn conditional() {
+            let source = "define f of x\nif x equals 3\noutput string hello world done\ndone if\n\
+                          otherwise\noutput string bye world done\ndone otherwise\ndone define";
+
+            let mut parser = Parser::new(String::from(source)).unwrap();
+            assert_eq!(
+                parser.parse().unwrap(),
+                vec![
+                    make_node!(line 1 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
+                        make_node!(line 2 -> CONDTL [block!(IDENT "x"), Block::OP(OpKind::EQ), block!(# 3)]; {
+                            make_node!(line 3 -> CONDTLY []; {
+                                make_node!(line 4 -> OUTPUT [block!(TEXT "hello world")])
+                            }),
+                            make_node!(line 5 -> CONDTLN []; {
+                                make_node!(line 6 -> OUTPUT [block!(TEXT "bye world")])
+                            })
+                        })
+                    })
+                ]
+            );
+        }
+
+        #[test]
+        fn r#for() {
+            let source = "define f of x\nfor x in my_list\noutput x\ndone for\ndone define";
+
+            let mut parser = Parser::new(source.to_string()).unwrap();
+            assert_eq!(
+                parser.parse().unwrap(),
+                vec![
+                    make_node!(line 1 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
+                        make_node!(line 2 -> FORLOOP [block!(IDENT "x"), Block::OP(OpKind::IN), block!(IDENT "my_list")]; {
+                            make_node!(line 3 -> OUTPUT [block!(IDENT "x")])
+                        })
+                    })
+                ]
+            );
+        }
+
+        #[test]
+        fn compound() {
+            let source = "define f of x\noutput x\nlet my_age be 3\ndone define\ndefine g of x\n\
+                          output string hi done\ndone define\ndefine h of x\noutput x plus 1\nif \
+                          x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone \
+                          define";
+
+            let mut parser = Parser::new(String::from(source)).unwrap();
+            assert_eq!(
+                parser.parse().unwrap(),
+                vec![
+                    make_node!(line 1 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
+                        make_node!(line 2 -> OUTPUT [block!(IDENT "x")]),
+                        make_node!(line 3 -> VARDECL [block!(IDENT "my_age"), Block::OP(OpKind::ASSN), block!(# 3)])
+                    }),
+                    make_node!(line 5 -> FNDEF [block!(IDENT "g"), block!(IDENT "x")]; {
+                        make_node!(line 6 -> OUTPUT [block!(TEXT "hi")])
+                    }),
+                    make_node!(line 8 -> FNDEF [block!(IDENT "h"), block!(IDENT "x")]; {
+                        make_node!(line 9 -> OUTPUT [block!(IDENT "x"), Block::OP(OpKind::ADD), block!(# 1)]),
+                        make_node!(line 10 -> CONDTL [block!(IDENT "x"), Block::OP(OpKind::EQ), block!(# 3)]; {
+                            make_node!(line 11 -> CONDTLY []; {
+                                make_node!(line 12 -> OUTPUT [block!(IDENT "x")])
+                            }),
+                            make_node!(line 13 -> CONDTLN []; {
+                                make_node!(line 14 -> OUTPUT [block!(IDENT "y")])
+                            })
+                        })
+                    }),
+                ]
+            );
+        }
+    }
 }
