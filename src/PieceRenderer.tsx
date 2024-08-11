@@ -6,25 +6,25 @@ import rattle_icon from "./assets/rattle_icon.png";
 import output from "./assets/output_icon.png";
 import function_arrow from "./assets/function_arrow.png";
 
-export function RenderBlock(block, first) {
-  if ("IDENT" in block) {
-    return <RenderIdentifier id_name={block["IDENT"]} chained={first} />;
-  } else if ("NUMBER" in block) {
-    return <RenderNumber num={block["NUMBER"]} chained={first} />;
-  } else if ("OP" in block) {
-    return <RenderOperator op_name={block["OP"]} chained={first} />;
-  } else if ("TEXT" in block) {
-    return <RenderText text={block["TEXT"]} chained={first} />;
-  } else if ("BOOL" in block) {
-    return <RenderBoolean bool={block["BOOL"]} chained={first} />;
-  } else if ("NOTHING" in block) {
+export function RenderPiece(piece, first) {
+  if ("IDENT" in piece) {
+    return <RenderIdentifier id_name={piece["IDENT"]} chained={first} />;
+  } else if ("NUMBER" in piece) {
+    return <RenderNumber num={piece["NUMBER"]} chained={first} />;
+  } else if ("OP" in piece) {
+    return <RenderOperator op_name={piece["OP"]} chained={first} />;
+  } else if ("TEXT" in piece) {
+    return <RenderText text={piece["TEXT"]} chained={first} />;
+  } else if ("BOOL" in piece) {
+    return <RenderBoolean bool={piece["BOOL"]} chained={first} />;
+  } else if ("NOTHING" in piece) {
     return <RenderNothing chained={first} />;
-  } else if ("LIST" in block) {
-    return <RenderList blocks={block["LIST"]} chained={first} />;
-  } else if ("FNCALL" in block) {
-    return <RenderCall blocks={block["FNCALL"]} chained={first} />;
+  } else if ("LIST" in piece) {
+    return <RenderList pieces={piece["LIST"]} chained={first} />;
+  } else if ("FNCALL" in piece) {
+    return <RenderCall pieces={piece["FNCALL"]} chained={first} />;
   } else {
-    throw new Error("Invalid block found!");
+    throw new Error("Invalid piece found!");
   }
 }
 
@@ -48,7 +48,7 @@ export function RenderIdentifier({ id_name, chained }) {
   return Symbol("ident", chained ? "" : "transparent", id_name);
 }
 
-export function RenderList({ blocks, chained }) {
+export function RenderList({ pieces, chained }) {
   return (
     <div style={{ display: "flex", flexDirection: "row" }}>
       {ChainSymbol("constant", chained, false, "list")}
@@ -59,9 +59,9 @@ export function RenderList({ blocks, chained }) {
           flexDirection: "row",
         }}
       >
-        {blocks.slice(1).map((b) => (
+        {pieces.slice(1).map((b) => (
           <>
-            {RenderBlock(b)}
+            {RenderPiece(b)}
             <div
               style={{
                 height: "36px",
@@ -77,10 +77,10 @@ export function RenderList({ blocks, chained }) {
   );
 }
 
-export function RenderCall({ blocks, chained }) {
+export function RenderCall({ pieces, chained }) {
   return (
     <div style={{ display: "flex", flexDirection: "row" }}>
-      {ChainSymbol("call", chained, false, blocks[0]["IDENT"])}
+      {ChainSymbol("call", chained, false, pieces[0]["IDENT"])}
       <div
         style={{
           border: `1px solid ${SYMBOL_MAP["call"][0]}`,
@@ -88,9 +88,9 @@ export function RenderCall({ blocks, chained }) {
           flexDirection: "row",
         }}
       >
-        {blocks.slice(1).map((b) => (
+        {pieces.slice(1).map((b) => (
           <>
-            {RenderBlock(b)}
+            {RenderPiece(b)}
             <div
               style={{
                 height: "36px",
@@ -181,10 +181,10 @@ const SYMBOL_MAP: symbol_metadata = {
   call: ["#FFFFFF", "#000000", 16, 36],
 };
 
-export function getColor(block) {
-  if ("IDENT" in block) return SYMBOL_MAP["ident"][0];
-  else if ("TEXT" in block) return SYMBOL_MAP["text"][0];
-  else if ("LIST" in block) return SYMBOL_MAP["constant"][0];
+export function getColor(piece) {
+  if ("IDENT" in piece) return SYMBOL_MAP["ident"][0];
+  else if ("TEXT" in piece) return SYMBOL_MAP["text"][0];
+  else if ("LIST" in piece) return SYMBOL_MAP["constant"][0];
 }
 
 const OP_TO_NAME: op_kind = {
