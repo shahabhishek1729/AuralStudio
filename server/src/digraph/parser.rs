@@ -10,8 +10,8 @@ pub(super) const HORIZ_CHILDREN: &[NodeKind; 3] =
 
 /// Represents a single line of code, which is rendered in a digraph as a single node.
 ///
-/// A node consists of several blocks (for instance, an `output` node may consist of a `string`
-/// block, an `addition` operator block and another `string block`), and a node can have several
+/// A node consists of several pieces (for instance, an `output` node may consist of a `string`
+/// piece, an `addition` operator piece and another `string piece`), and a node can have several
 /// children (which are themselves nodes, and are analogous to indented segments of code in other
 /// programming languages).
 ///
@@ -23,11 +23,11 @@ pub(super) const HORIZ_CHILDREN: &[NodeKind; 3] =
 ///   line: 1,
 ///   children: vec![],
 ///   kind: NodeKind::OUTPUT,
-///   blocks: vec!(Piece::TEXT(String::from("Hello, World!")))
+///   pieces: vec!(Piece::TEXT(String::from("Hello, World!")))
 /// };
 ///
 /// // These can also be written with the `make_node!` macro.
-/// let gen_node = make_node!(line 1 -> NodeKind::OUTPUT [block!(TEXT "Hello, World!")]);
+/// let gen_node = make_node!(line 1 -> NodeKind::OUTPUT [piece!(TEXT "Hello, World!")]);
 /// assert_eq!(gen_node, node);
 /// ```
 ///
@@ -47,11 +47,11 @@ pub(super) const HORIZ_CHILDREN: &[NodeKind; 3] =
 ///           line: 3,
 ///           children: vec![],
 ///           kind: NodeKind::OUTPUT,
-///           blocks: vec![Piece::TEXT(String::from("Hello, World!"))]
+///           pieces: vec![Piece::TEXT(String::from("Hello, World!"))]
 ///         },
 ///       ],
 ///       kind: NodeKind::CONDTLY,
-///       blocks: vec![]
+///       pieces: vec![]
 ///     }
 ///     Node {
 ///       line: 4,
@@ -60,24 +60,24 @@ pub(super) const HORIZ_CHILDREN: &[NodeKind; 3] =
 ///           line: 5,
 ///           children: vec![],
 ///           kind: NodeKind::OUTPUT,
-///           blocks: vec![Piece::TEXT(String::from("Goodbye, World!"))]
+///           pieces: vec![Piece::TEXT(String::from("Goodbye, World!"))]
 ///         },
 ///       ],
 ///       kind: NodeKind::CONDTLN,
-///       blocks: vec![]
+///       pieces: vec![]
 ///     }
 ///   ],
 ///   kind: NodeType::CONDTL,
-///   blocks: vec![Piece::BOOL(true)]
+///   pieces: vec![Piece::BOOL(true)]
 /// };
 ///
 /// // Or with the `make_node!` macro:
-/// let gen_node = make_node!(line 1 -> CONDTL [block!(True)]; {
+/// let gen_node = make_node!(line 1 -> CONDTL [piece!(True)]; {
 ///     make_node!(line 2 -> NodeKind::CONDTLY []; {
-///         make_node!(line 3 -> NodeKind::OUTPUT [block!(TEXT "Hello, World!")])
+///         make_node!(line 3 -> NodeKind::OUTPUT [piece!(TEXT "Hello, World!")])
 ///     }),
 ///     make_node!(line 4 -> NodeKind::CONDTLN []; {
-///         make_node!(line 5 -> NodeKind::OUTPUT [block!(TEXT "Goodbye, World!")])
+///         make_node!(line 5 -> NodeKind::OUTPUT [piece!(TEXT "Goodbye, World!")])
 ///     })
 /// });
 ///
@@ -91,7 +91,7 @@ pub(crate) struct Node {
     pub(super) children: Vec<Node>,
     pub(super) kind: NodeKind,
     // The rest of the token, if applicable
-    pub(super) blocks: Vec<Piece>,
+    pub(super) pieces: Vec<Piece>,
     pub(super) addr: Address,
     pub(super) parent_addr: Option<Address>,
 }
@@ -102,7 +102,7 @@ impl Default for Node {
             line: 0,
             children: vec![],
             kind: NodeKind::OUTPUT,
-            blocks: vec![],
+            pieces: vec![],
             addr: Address::new(vec![]),
             parent_addr: None,
         }
@@ -116,7 +116,7 @@ impl PartialEq for Node {
         self.line == other.line
             && self.children == other.children
             && self.kind == other.kind
-            && self.blocks == other.blocks
+            && self.pieces == other.pieces
             && self.addr == other.addr
     }
 }
@@ -162,9 +162,9 @@ pub(super) enum NodeKind {
     GRABPKG,
 }
 
-/// An enum of every kind of block supported in Rattle. A block is an individual chunk of code,
-/// often no more than a single token; a `Node` is made up of one or more blocks. Examples of
-/// blocks include an individual constant (e.g., a number, string, boolean, etc.), opreator or
+/// An enum of every kind of piece supported in Rattle. A piece is an individual chunk of code,
+/// often no more than a single token; a `Node` is made up of one or more pieces. Examples of
+/// pieces include an individual constant (e.g., a number, string, boolean, etc.), opreator or
 /// identifier.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub(super) enum Piece {
@@ -270,7 +270,7 @@ impl Parser {
                         kind: NodeKind::GRABPKG,
                         line: curr_token.line,
                         children: vec![],
-                        blocks: self._collect_line()?,
+                        pieces: self._collect_line()?,
                         addr: Address::new(vec![]),
                         ..Default::default()
                     };
@@ -283,7 +283,7 @@ impl Parser {
                         kind: NodeKind::OUTPUT,
                         line: curr_token.line,
                         children: vec![],
-                        blocks: self._collect_line()?,
+                        pieces: self._collect_line()?,
                         addr: Address::new(vec![]),
                         ..Default::default()
                     };
@@ -296,7 +296,7 @@ impl Parser {
                         kind: NodeKind::RETURN,
                         line: curr_token.line,
                         children: vec![],
-                        blocks: self._collect_line()?,
+                        pieces: self._collect_line()?,
                         addr: Address::new(vec![]),
                         ..Default::default()
                     };
@@ -315,13 +315,13 @@ impl Parser {
                     };
                     let fn_name: String = fn_name.unwrap_identifier();
                     let args: Vec<Piece> = self._collect_line()?;
-                    let blocks: Vec<Piece> = [&[Piece::IDENT(fn_name)], &args[..]].concat();
+                    let pieces: Vec<Piece> = [&[Piece::IDENT(fn_name)], &args[..]].concat();
 
                     let node = Node {
                         kind: NodeKind::FNDEF,
                         line: curr_line,
                         children: vec![],
-                        blocks,
+                        pieces,
                         addr: Address::new(vec![]),
                         ..Default::default()
                     };
@@ -356,13 +356,13 @@ impl Parser {
                         );
                     };
                     let var_name = var_name.unwrap_identifier();
-                    let blocks = [&[Piece::IDENT(var_name)], &self._collect_line()?[..]].concat();
+                    let pieces = [&[Piece::IDENT(var_name)], &self._collect_line()?[..]].concat();
 
                     let node = Node {
                         kind: NodeKind::VARDECL,
                         line: curr_line,
                         children: vec![],
-                        blocks,
+                        pieces,
                         addr: Address::new(vec![]),
                         ..Default::default()
                     };
@@ -381,11 +381,11 @@ impl Parser {
                             kind: NodeKind::CONDTLY,
                             line: curr_line + 1,
                             children: vec![],
-                            blocks: vec![],
+                            pieces: vec![],
                             addr: Address::new(vec![]),
                             ..Default::default()
                         }],
-                        blocks: protasis,
+                        pieces: protasis,
                         addr: Address::new(vec![]),
                         ..Default::default()
                     };
@@ -422,7 +422,7 @@ impl Parser {
                         kind: NodeKind::CONDTLN,
                         line: curr_token.line,
                         children: vec![],
-                        blocks: vec![],
+                        pieces: vec![],
                         addr: Address::new(vec![]),
                         ..Default::default()
                     };
@@ -445,7 +445,7 @@ impl Parser {
                         kind: NodeKind::FORLOOP,
                         line: curr_token.line,
                         children: vec![],
-                        blocks: self._collect_line()?,
+                        pieces: self._collect_line()?,
                         addr: Address::new(vec![]),
                         ..Default::default()
                     };
@@ -468,21 +468,21 @@ impl Parser {
                 RTLToken::BlockEnd => {
                     // 'done ...'
                     let ended_str = curr_token.lexeme.clone();
-                    // When we reach 'done otherwise', we need to pop both the else block and the
+                    // When we reach 'done otherwise', we need to pop both the else piece and the
                     // overall conditional itself
                     if &ended_str == "done otherwise" {
-                        let block_ended = self.waiting_parents.pop();
+                        let piece_ended = self.waiting_parents.pop();
                         anyhow::ensure!(
-                            block_ended.is_some(),
-                            "We ended a block ({}) we never started!",
+                            piece_ended.is_some(),
+                            "We ended a piece ({}) we never started!",
                             ended_str
                         );
                     }
 
-                    let block_ended = self.waiting_parents.pop();
+                    let piece_ended = self.waiting_parents.pop();
                     anyhow::ensure!(
-                        block_ended.is_some(),
-                        "We ended a block ({}) we never started!",
+                        piece_ended.is_some(),
+                        "We ended a piece ({}) we never started!",
                         ended_str
                     );
                 }
@@ -509,14 +509,14 @@ impl Parser {
             }
 
             let curr = curr.clone();
-            collected.push(self._collect_block(&curr)?);
+            collected.push(self._collect_piece(&curr)?);
             if self.line_end_reached() {
                 break Ok(collected);
             }
         }
     }
 
-    fn _collect_block(&mut self, token: &Token) -> anyhow::Result<Piece> {
+    fn _collect_piece(&mut self, token: &Token) -> anyhow::Result<Piece> {
         match token.rtl_token {
             // Operators
             RTLToken::AddOperation => Ok(Piece::OP(OpKind::ADD)),
@@ -552,7 +552,7 @@ impl Parser {
                     if token.rtl_token == RTLToken::ExprEnd {
                         break;
                     }
-                    signature.push(self._collect_block(&token)?);
+                    signature.push(self._collect_piece(&token)?);
                 }
                 return Ok(Piece::FNCALL(signature));
             }
@@ -564,7 +564,7 @@ impl Parser {
                     if token.rtl_token == RTLToken::ExprEnd {
                         break;
                     }
-                    signature.push(self._collect_block(&token)?);
+                    signature.push(self._collect_piece(&token)?);
                 }
                 return Ok(Piece::LIST(signature));
             }
@@ -667,7 +667,7 @@ mod tests {
     use crate::digraph::parser::Piece;
 
     #[macro_export]
-    macro_rules! block {
+    macro_rules! piece {
         (IDENT $e:expr) => {{
             use crate::digraph::parser::Piece;
             Piece::IDENT($e.to_string())
@@ -696,53 +696,53 @@ mod tests {
 
     #[macro_export]
     macro_rules! make_node {
-        (line $line:literal -> $kind:path [$($block:expr),*]) => {
+        (line $line:literal -> $kind:path [$($piece:expr),*]) => {
             {
                 use $crate::digraph::address::Address;
                 Node {
                     line: $line,
                     children: vec![],
                     kind: $kind,
-                    blocks: vec![$($block),*],
+                    pieces: vec![$($piece),*],
                     addr: Address::new(vec![]),
                     ..Default::default()
                 }
             }
         };
-        (line $line:literal -> $kind:path [$($block:expr),*]; {$($child:expr),*}) => {
+        (line $line:literal -> $kind:path [$($piece:expr),*]; {$($child:expr),*}) => {
             {
                 use $crate::digraph::address::Address;
                 Node {
                     line: $line,
                     children: vec![$($child),*],
                     kind: $kind,
-                    blocks: vec![$($block),*],
+                    pieces: vec![$($piece),*],
                     addr: Address::new(vec![]),
                     ..Default::default()
                 }
             }
         };
-        (L $line:literal @ $($addr:literal),* -> $kind:path [$($block:expr),*]) => {
+        (L $line:literal @ $($addr:literal),* -> $kind:path [$($piece:expr),*]) => {
             {
                 use $crate::digraph::address::Address;
                 Node {
                     line: $line,
                     children: vec![],
                     kind: $kind,
-                    blocks: vec![$($block),*],
+                    pieces: vec![$($piece),*],
                     addr: Address::new(vec![$($addr),*]),
                     ..Default::default()
                 }
             }
         };
-        (L $line:literal @ $($addr:literal),* -> $kind:path [$($block:expr),*]; {$($child:expr),*}) => {
+        (L $line:literal @ $($addr:literal),* -> $kind:path [$($piece:expr),*]; {$($child:expr),*}) => {
             {
                 use $crate::digraph::address::Address;
                 Node {
                     line: $line,
                     children: vec![$($child),*],
                     kind: $kind,
-                    blocks: vec![$($block),*],
+                    pieces: vec![$($piece),*],
                     addr: Address::new(vec![$($addr),*]),
                     ..Default::default()
                 }
@@ -756,13 +756,13 @@ mod tests {
         use super::{Address, Node, NodeKind, OpKind, Piece};
 
         #[test]
-        fn blocks_no_children() {
-            let node = make_node!(line 1 -> GRABPKG [block!(IDENT "pandas")]);
+        fn pieces_no_children() {
+            let node = make_node!(line 1 -> GRABPKG [piece!(IDENT "pandas")]);
             let true_node = Node {
                 line: 1,
                 children: vec![],
                 kind: GRABPKG,
-                blocks: vec![block!(IDENT "pandas")],
+                pieces: vec![piece!(IDENT "pandas")],
                 addr: Address::new(vec![]),
                 ..Default::default()
             };
@@ -771,13 +771,13 @@ mod tests {
         }
 
         #[test]
-        fn no_blocks_children() {
+        fn no_pieces_children() {
             let node = make_node!(line 3 -> CONDTLY []);
             let true_node = Node {
                 line: 3,
                 children: vec![],
                 kind: NodeKind::CONDTLY,
-                blocks: vec![],
+                pieces: vec![],
                 addr: Address::new(vec![]),
                 ..Default::default()
             };
@@ -786,22 +786,22 @@ mod tests {
         }
 
         #[test]
-        fn blocks_children() {
-            let made_node = make_node!(line 5 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
-                make_node!(line 2 -> OUTPUT [block!(IDENT "x")]),
-                make_node!(line 3 -> VARDECL [block!(IDENT "my_age"), Piece::OP(ASSN), block!(# 3)])
+        fn pieces_children() {
+            let made_node = make_node!(line 5 -> FNDEF [piece!(IDENT "f"), piece!(IDENT "x")]; {
+                make_node!(line 2 -> OUTPUT [piece!(IDENT "x")]),
+                make_node!(line 3 -> VARDECL [piece!(IDENT "my_age"), Piece::OP(ASSN), piece!(# 3)])
             });
 
             let true_node = Node {
                 line: 5,
                 kind: NodeKind::FNDEF,
-                blocks: vec![Piece::IDENT("f".to_string()), Piece::IDENT("x".to_string())],
+                pieces: vec![Piece::IDENT("f".to_string()), Piece::IDENT("x".to_string())],
                 addr: Address::new(vec![]),
                 children: vec![
                     Node {
                         line: 2,
                         kind: NodeKind::OUTPUT,
-                        blocks: vec![Piece::IDENT("x".to_string())],
+                        pieces: vec![Piece::IDENT("x".to_string())],
                         children: vec![],
                         addr: Address::new(vec![]),
                         ..Default::default()
@@ -809,7 +809,7 @@ mod tests {
                     Node {
                         line: 3,
                         kind: NodeKind::VARDECL,
-                        blocks: vec![
+                        pieces: vec![
                             Piece::IDENT("my_age".to_string()),
                             Piece::OP(OpKind::ASSN),
                             Piece::NUMBER(3.),
@@ -826,22 +826,22 @@ mod tests {
         }
 
         #[test]
-        fn blocks_children_addrs() {
-            let made_node = make_node!(L 5 @ 1,2,3,0 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
-                make_node!(L 2 @ 0,0,2,1 -> OUTPUT [block!(IDENT "x")]),
-                make_node!(L 3 @ 1,2,3 -> VARDECL [block!(IDENT "my_age"), Piece::OP(ASSN), block!(# 3)])
+        fn pieces_children_addrs() {
+            let made_node = make_node!(L 5 @ 1,2,3,0 -> FNDEF [piece!(IDENT "f"), piece!(IDENT "x")]; {
+                make_node!(L 2 @ 0,0,2,1 -> OUTPUT [piece!(IDENT "x")]),
+                make_node!(L 3 @ 1,2,3 -> VARDECL [piece!(IDENT "my_age"), Piece::OP(ASSN), piece!(# 3)])
             });
 
             let true_node = Node {
                 line: 5,
                 kind: NodeKind::FNDEF,
-                blocks: vec![Piece::IDENT("f".to_string()), Piece::IDENT("x".to_string())],
+                pieces: vec![Piece::IDENT("f".to_string()), Piece::IDENT("x".to_string())],
                 addr: Address::new(vec![1, 2, 3, 0]),
                 children: vec![
                     Node {
                         line: 2,
                         kind: NodeKind::OUTPUT,
-                        blocks: vec![Piece::IDENT("x".to_string())],
+                        pieces: vec![Piece::IDENT("x".to_string())],
                         children: vec![],
                         addr: Address::new(vec![0, 0, 2, 1]),
                         ..Default::default()
@@ -849,7 +849,7 @@ mod tests {
                     Node {
                         line: 3,
                         kind: NodeKind::VARDECL,
-                        blocks: vec![
+                        pieces: vec![
                             Piece::IDENT("my_age".to_string()),
                             Piece::OP(OpKind::ASSN),
                             Piece::NUMBER(3.),
@@ -877,7 +877,7 @@ mod tests {
             let mut parser = Parser::new(String::from(source)).unwrap();
             assert_eq!(
                 parser.parse().unwrap(),
-                vec![make_node!(line 1 -> GRABPKG [block!(IDENT "pandas")])]
+                vec![make_node!(line 1 -> GRABPKG [piece!(IDENT "pandas")])]
             );
         }
 
@@ -888,7 +888,7 @@ mod tests {
             let mut parser = Parser::new(String::from(source)).unwrap();
             assert_eq!(
                 parser.parse().unwrap(),
-                vec![make_node!(line 1 -> OUTPUT [block!(TEXT "hello world")])]
+                vec![make_node!(line 1 -> OUTPUT [piece!(TEXT "hello world")])]
             );
         }
 
@@ -900,8 +900,8 @@ mod tests {
             assert_eq!(
                 parser.parse().unwrap(),
                 vec![
-                    make_node!(line 1 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
-                        make_node!(line 2 -> OUTPUT [block!(TEXT "hello world")])
+                    make_node!(line 1 -> FNDEF [piece!(IDENT "f"), piece!(IDENT "x")]; {
+                        make_node!(line 2 -> OUTPUT [piece!(TEXT "hello world")])
                     })
                 ]
             );
@@ -915,8 +915,8 @@ mod tests {
             assert_eq!(
                 parser.parse().unwrap(),
                 vec![
-                    make_node!(line 1 -> VARDECL [block!(IDENT "x"), Piece::OP(OpKind::ASSN), block!(# 3)]),
-                    make_node!(line 2 -> OUTPUT [block!(TEXT "hello world")])
+                    make_node!(line 1 -> VARDECL [piece!(IDENT "x"), Piece::OP(OpKind::ASSN), piece!(# 3)]),
+                    make_node!(line 2 -> OUTPUT [piece!(TEXT "hello world")])
                 ]
             );
         }
@@ -930,13 +930,13 @@ mod tests {
             assert_eq!(
                 parser.parse().unwrap(),
                 vec![
-                    make_node!(line 1 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
-                        make_node!(line 2 -> CONDTL [block!(IDENT "x"), Piece::OP(OpKind::EQ), block!(# 3)]; {
+                    make_node!(line 1 -> FNDEF [piece!(IDENT "f"), piece!(IDENT "x")]; {
+                        make_node!(line 2 -> CONDTL [piece!(IDENT "x"), Piece::OP(OpKind::EQ), piece!(# 3)]; {
                             make_node!(line 3 -> CONDTLY []; {
-                                make_node!(line 4 -> OUTPUT [block!(TEXT "hello world")])
+                                make_node!(line 4 -> OUTPUT [piece!(TEXT "hello world")])
                             }),
                             make_node!(line 5 -> CONDTLN []; {
-                                make_node!(line 6 -> OUTPUT [block!(TEXT "bye world")])
+                                make_node!(line 6 -> OUTPUT [piece!(TEXT "bye world")])
                             })
                         })
                     })
@@ -952,9 +952,9 @@ mod tests {
             assert_eq!(
                 parser.parse().unwrap(),
                 vec![
-                    make_node!(line 1 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
-                        make_node!(line 2 -> FORLOOP [block!(IDENT "x"), Piece::OP(OpKind::IN), block!(IDENT "my_list")]; {
-                            make_node!(line 3 -> OUTPUT [block!(IDENT "x")])
+                    make_node!(line 1 -> FNDEF [piece!(IDENT "f"), piece!(IDENT "x")]; {
+                        make_node!(line 2 -> FORLOOP [piece!(IDENT "x"), Piece::OP(OpKind::IN), piece!(IDENT "my_list")]; {
+                            make_node!(line 3 -> OUTPUT [piece!(IDENT "x")])
                         })
                     })
                 ]
@@ -972,21 +972,21 @@ mod tests {
             assert_eq!(
                 parser.parse().unwrap(),
                 vec![
-                    make_node!(line 1 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
-                        make_node!(line 2 -> OUTPUT [block!(IDENT "x")]),
-                        make_node!(line 3 -> VARDECL [block!(IDENT "my_age"), Piece::OP(OpKind::ASSN), block!(# 3)])
+                    make_node!(line 1 -> FNDEF [piece!(IDENT "f"), piece!(IDENT "x")]; {
+                        make_node!(line 2 -> OUTPUT [piece!(IDENT "x")]),
+                        make_node!(line 3 -> VARDECL [piece!(IDENT "my_age"), Piece::OP(OpKind::ASSN), piece!(# 3)])
                     }),
-                    make_node!(line 5 -> FNDEF [block!(IDENT "g"), block!(IDENT "x")]; {
-                        make_node!(line 6 -> OUTPUT [block!(TEXT "hi")])
+                    make_node!(line 5 -> FNDEF [piece!(IDENT "g"), piece!(IDENT "x")]; {
+                        make_node!(line 6 -> OUTPUT [piece!(TEXT "hi")])
                     }),
-                    make_node!(line 8 -> FNDEF [block!(IDENT "h"), block!(IDENT "x")]; {
-                        make_node!(line 9 -> OUTPUT [block!(IDENT "x"), Piece::OP(OpKind::ADD), block!(# 1)]),
-                        make_node!(line 10 -> CONDTL [block!(IDENT "x"), Piece::OP(OpKind::EQ), block!(# 3)]; {
+                    make_node!(line 8 -> FNDEF [piece!(IDENT "h"), piece!(IDENT "x")]; {
+                        make_node!(line 9 -> OUTPUT [piece!(IDENT "x"), Piece::OP(OpKind::ADD), piece!(# 1)]),
+                        make_node!(line 10 -> CONDTL [piece!(IDENT "x"), Piece::OP(OpKind::EQ), piece!(# 3)]; {
                             make_node!(line 11 -> CONDTLY []; {
-                                make_node!(line 12 -> OUTPUT [block!(IDENT "x")])
+                                make_node!(line 12 -> OUTPUT [piece!(IDENT "x")])
                             }),
                             make_node!(line 13 -> CONDTLN []; {
-                                make_node!(line 14 -> OUTPUT [block!(IDENT "y")])
+                                make_node!(line 14 -> OUTPUT [piece!(IDENT "y")])
                             })
                         })
                     }),

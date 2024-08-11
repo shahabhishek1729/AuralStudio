@@ -190,7 +190,7 @@ mod tests {
     mod addresser {
         use super::*;
         use crate::digraph::parser::{NodeKind::*, OpKind::*, Piece::*};
-        use crate::{block, make_node};
+        use crate::{make_node, piece};
 
         #[test]
         fn condtl_no_subfn() {
@@ -206,21 +206,21 @@ mod tests {
             assert_eq!(
                 nodes,
                 vec![
-                    make_node!(L 1 @ 0,0,0 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
-                        make_node!(L 2 @ 0,0,1 -> OUTPUT [block!(IDENT "x")]),
-                        make_node!(L 3 @ 0,0,2 -> VARDECL [block!(IDENT "my_age"), OP(ASSN), block!(# 3)])
+                    make_node!(L 1 @ 0,0,0 -> FNDEF [piece!(IDENT "f"), piece!(IDENT "x")]; {
+                        make_node!(L 2 @ 0,0,1 -> OUTPUT [piece!(IDENT "x")]),
+                        make_node!(L 3 @ 0,0,2 -> VARDECL [piece!(IDENT "my_age"), OP(ASSN), piece!(# 3)])
                     }),
-                    make_node!(L 5 @ 1,0,0 -> FNDEF [block!(IDENT "g"), block!(IDENT "x")]; {
-                        make_node!(L 6 @ 1,0,1 -> OUTPUT [block!(TEXT "hi")])
+                    make_node!(L 5 @ 1,0,0 -> FNDEF [piece!(IDENT "g"), piece!(IDENT "x")]; {
+                        make_node!(L 6 @ 1,0,1 -> OUTPUT [piece!(TEXT "hi")])
                     }),
-                    make_node!(L 8 @ 2,0,0 -> FNDEF [block!(IDENT "h"), block!(IDENT "x")]; {
-                        make_node!(L 9 @ 2,0,1 -> OUTPUT [block!(IDENT "x"), OP(ADD), block!(# 1)]),
-                        make_node!(L 10 @ 2,0,2,0,0 -> CONDTL [block!(IDENT "x"), OP(EQ), block!(# 3)]; {
+                    make_node!(L 8 @ 2,0,0 -> FNDEF [piece!(IDENT "h"), piece!(IDENT "x")]; {
+                        make_node!(L 9 @ 2,0,1 -> OUTPUT [piece!(IDENT "x"), OP(ADD), piece!(# 1)]),
+                        make_node!(L 10 @ 2,0,2,0,0 -> CONDTL [piece!(IDENT "x"), OP(EQ), piece!(# 3)]; {
                             make_node!(L 11 @ 2,0,2,1,0,0 -> CONDTLY []; {
-                                make_node!(L 12 @ 2,0,2,1,0,1 -> OUTPUT [block!(IDENT "x")])
+                                make_node!(L 12 @ 2,0,2,1,0,1 -> OUTPUT [piece!(IDENT "x")])
                             }),
                             make_node!(L 13 @ 2,0,2,1,1,0 -> CONDTLN []; {
-                                make_node!(L 14 @ 2,0,2,1,1,1 -> OUTPUT [block!(IDENT "y")])
+                                make_node!(L 14 @ 2,0,2,1,1,1 -> OUTPUT [piece!(IDENT "y")])
                             })
                         })
                     }),
@@ -243,29 +243,29 @@ mod tests {
             assert_eq!(
                 nodes,
                 vec![
-                    make_node!(L 1 @ 0,0,0 -> FNDEF [block!(IDENT "f"), block!(IDENT "x")]; {
-                        make_node!(L 2 @ 0,0,1 -> OUTPUT [block!(IDENT "x")]),
-                        make_node!(L 3 @ 0,1,0,0 -> FNDEF [block!(IDENT "f1"), block!(IDENT "x")]; {
-                            make_node!(L 4 @ 0,1,0,1 -> OUTPUT [block!(IDENT "x")])
+                    make_node!(L 1 @ 0,0,0 -> FNDEF [piece!(IDENT "f"), piece!(IDENT "x")]; {
+                        make_node!(L 2 @ 0,0,1 -> OUTPUT [piece!(IDENT "x")]),
+                        make_node!(L 3 @ 0,1,0,0 -> FNDEF [piece!(IDENT "f1"), piece!(IDENT "x")]; {
+                            make_node!(L 4 @ 0,1,0,1 -> OUTPUT [piece!(IDENT "x")])
                         }),
-                        make_node!(L 6 @ 0,1,1,0,0 -> FNDEF [block!(IDENT "f2"), block!(IDENT "x")]; {
-                            make_node!(L 7 @ 0,1,1,0,1 -> OUTPUT [block!(IDENT "x")]),
-                            make_node!(L 8 @ 0,1,1,1,0,0 -> FNDEF [block!(IDENT "f21"), block!(IDENT "x")]; {
-                                make_node!(L 9 @ 0,1,1,1,0,1 -> OUTPUT [block!(IDENT "x")])
+                        make_node!(L 6 @ 0,1,1,0,0 -> FNDEF [piece!(IDENT "f2"), piece!(IDENT "x")]; {
+                            make_node!(L 7 @ 0,1,1,0,1 -> OUTPUT [piece!(IDENT "x")]),
+                            make_node!(L 8 @ 0,1,1,1,0,0 -> FNDEF [piece!(IDENT "f21"), piece!(IDENT "x")]; {
+                                make_node!(L 9 @ 0,1,1,1,0,1 -> OUTPUT [piece!(IDENT "x")])
                             }),
-                            make_node!(L 11 @ 0,1,1,1,1,0 -> FNDEF [block!(IDENT "f22"), block!(IDENT "x")]; {
-                                make_node!(L 12 @ 0,1,1,1,1,1 -> OUTPUT [block!(IDENT "x")])
+                            make_node!(L 11 @ 0,1,1,1,1,0 -> FNDEF [piece!(IDENT "f22"), piece!(IDENT "x")]; {
+                                make_node!(L 12 @ 0,1,1,1,1,1 -> OUTPUT [piece!(IDENT "x")])
                             })
                         })
                     }),
-                    make_node!(L 16 @ 1,0,0 -> FNDEF [block!(IDENT "h"), block!(IDENT "x")]; {
-                        make_node!(L 17 @ 1,0,1 -> OUTPUT [block!(IDENT "x"), OP(ADD), block!(# 1)]),
-                        make_node!(L 18 @ 1,0,2,0,0 -> CONDTL [block!(IDENT "x"), OP(EQ), block!(# 3)]; {
+                    make_node!(L 16 @ 1,0,0 -> FNDEF [piece!(IDENT "h"), piece!(IDENT "x")]; {
+                        make_node!(L 17 @ 1,0,1 -> OUTPUT [piece!(IDENT "x"), OP(ADD), piece!(# 1)]),
+                        make_node!(L 18 @ 1,0,2,0,0 -> CONDTL [piece!(IDENT "x"), OP(EQ), piece!(# 3)]; {
                             make_node!(L 19 @ 1,0,2,1,0,0 -> CONDTLY []; {
-                                make_node!(L 20 @ 1,0,2,1,0,1 -> OUTPUT [block!(IDENT "x")])
+                                make_node!(L 20 @ 1,0,2,1,0,1 -> OUTPUT [piece!(IDENT "x")])
                             }),
                             make_node!(L 21 @ 1,0,2,1,1,0 -> CONDTLN []; {
-                                make_node!(L 22 @ 1,0,2,1,1,1 -> OUTPUT [block!(IDENT "y")])
+                                make_node!(L 22 @ 1,0,2,1,1,1 -> OUTPUT [piece!(IDENT "y")])
                             })
                         })
                     }),
