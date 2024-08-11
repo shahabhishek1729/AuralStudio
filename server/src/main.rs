@@ -13,12 +13,12 @@ pub mod transpiler;
 
 #[macro_use]
 extern crate lazy_static;
-use crate::runner::compile;
-// use dualsense_rs::DualSense;
 use serde_derive::{Deserialize, Serialize};
 use std::fs;
 
+use crate::digraph::address::Addressable;
 use crate::digraph::parser::{Node, Parser};
+use crate::runner::compile;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -82,7 +82,9 @@ fn run_code(code: &str, path: &str) -> String {
 #[tauri::command]
 fn parse_file(source: String) -> Vec<Node> {
     let mut parser = Parser::new(source).unwrap();
-    parser.parse().unwrap()
+    let mut nodes = parser.parse().unwrap();
+    (&mut nodes[..]).fill_addr();
+    nodes
 }
 
 //static GLOBAL_WINDOW: Mutex<Option<tauri::AppHandle>> = Mutex::new(None);
