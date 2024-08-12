@@ -95,7 +95,7 @@ export function RenderCall({ pieces, chained }) {
               style={{
                 height: "36px",
                 width: "1px",
-                backgroundColor: SYMBOL_MAP["call"][0],
+                backgroundColor: SYMBOL_MAP["call" as keyof symbol_metadata][0],
               }}
             />
           </>
