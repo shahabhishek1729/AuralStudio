@@ -26,3 +26,13 @@ export function extractPieceType(piece: RTLPiece): string {
 	}
 	throw new Error(`Invalid piece found: ${piece}`);
 }
+
+export interface symbol_metadata {
+  constant: [string, string, number, number];
+  arrow: [string, string, number, number];
+  operator: [string, string, number, number];
+  text: [string, string, number, number];
+  ident: [string, string, number, number];
+  call: [string, string, number, number];
+}
+

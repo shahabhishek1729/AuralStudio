@@ -5,7 +5,7 @@ import book from "./assets/vuesax/bold/book.png";
 import rattle_icon from "./assets/rattle_icon.png";
 import output from "./assets/output_icon.png";
 import function_arrow from "./assets/function_arrow.png";
-import { RTLPiece, extractPieceType } from "./types";
+import { RTLPiece, extractPieceType, symbol_metadata } from "./types";
 
 export function RenderPiece(piece: RTLPiece, first: boolean) {
   const kind = extractPieceType(piece);
@@ -153,14 +153,6 @@ interface token_metadata {
   list: [string, string];
 }
 
-interface symbol_metadata {
-  constant: [string, string, number, number];
-  arrow: [string, string, number, number];
-  operator: [string, string, number, number];
-  text: [string, string, number, number];
-  ident: [string, string, number, number];
-}
-
 interface op_kind {
   ADD: string;
   SUB: string;
@@ -194,7 +186,7 @@ const TOKEN_MAP: token_metadata = {
   list: ["#06975A", question],
 };
 
-const SYMBOL_MAP: symbol_metadata = {
+export const SYMBOL_MAP: symbol_metadata = {
   constant: ["#FF8A00", "#FFFFFF", 16, 36],
   arrow: ["transparent", "#FFCD4E", 20, 36],
   operator: ["#701490", "#FFFFFF", 20, 25],

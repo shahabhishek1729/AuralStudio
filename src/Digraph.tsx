@@ -8,7 +8,8 @@ import rattle_icon from "./assets/rattle_icon.png";
 import { ReactNode } from "react";
 import { RTLNode } from "./types";
 import { ROW_STYLE, FLEX_COL, FLEX_ROW } from "./styles";
-import { getColor, Token, RenderPiece } from "./PieceRenderer";
+import { Token, RenderPiece } from "./PieceRenderer";
+import { getColor } from "./utils";
 
 const token_type = {
   FNDEF: "function",
