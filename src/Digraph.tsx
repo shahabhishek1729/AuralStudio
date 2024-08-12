@@ -7,7 +7,7 @@ import { ArcherContainer, ArcherElement } from "react-archer";
 import rattle_icon from "./assets/rattle_icon.png";
 import { ReactNode } from "react";
 import { RTLNode } from "./types";
-import { ROW_STYLE, FLEX_COL, FLEX_ROW } from "./styles";
+import { ROW_STYLE, FLEX_COL, FLEX_ROW, BORDER_STYLE } from "./styles";
 import { Token, RenderPiece } from "./PieceRenderer";
 import { getColor } from "./utils";
 
@@ -49,7 +49,7 @@ function addrStep(addr: string, n: number = 1): string {
   return prefix.join(".");
 }
 
-export function Digraph(source: RTLNode[]) {
+export function Digraph(source: RTLNode[], selectedAddr: string) {
   return (
     <div style={{ overflowX: "auto" }}>
       <ArcherContainer
@@ -80,26 +80,36 @@ export function Digraph(source: RTLNode[]) {
         </div>
 
         <div style={ROW_STYLE}>
-          {source.map((subtree, i) => RenderSubtree(i.toString(), subtree))}
+          {source.map((subtree, i) =>
+            RenderSubtree(i.toString(), subtree, selectedAddr),
+          )}
         </div>
       </ArcherContainer>
     </div>
   );
 }
 
-function RenderSubtree(addr: string, subtree_root: RTLNode): ReactNode {
+function RenderSubtree(
+  addr: string,
+  subtreeRoot: RTLNode,
+  selectedAddr: string,
+): ReactNode {
   return (
-    <div
-      id={`${addr}`}
-      style={{ border: "1px dashed white", borderRadius: "10px" }}
-    >
-      <div id={`${addr}.0`} style={FLEX_COL}>
-        {RenderBlock(`${addr}.0`, subtree_root, undefined)}
+    <div id={`${addr}`} style={BORDER_STYLE(addr === selectedAddr)}>
+      <div style={FLEX_COL}>
+        {RenderBlock(addr, subtreeRoot, selectedAddr, undefined)}
       </div>
-      {hasBlocks(subtree_root) ? (
-        <div id={`${addr}.1`} style={{ gap: "30px", ...FLEX_ROW }}>
-          {getBlocks(subtree_root).map((sub, i) =>
-            RenderSubtree(`${addr}.1.${i}`, sub),
+      {hasBlocks(subtreeRoot) ? (
+        <div
+          id={`${addr}.1`}
+          style={{
+            gap: "30px",
+            ...FLEX_ROW,
+            ...BORDER_STYLE(selectedAddr === `${addr}.1`),
+          }}
+        >
+          {getBlocks(subtreeRoot).map((sub, i) =>
+            RenderSubtree(`${addr}.1.${i}`, sub, selectedAddr),
           )}
         </div>
       ) : null}
@@ -109,15 +119,18 @@ function RenderSubtree(addr: string, subtree_root: RTLNode): ReactNode {
 
 function RenderBlock(
   address: string,
-  subtree_root: RTLNode,
-  subtree_parent?: RTLNode,
+  subtreeRoot: RTLNode,
+  selectedAddr: string,
+  subtreeParent?: RTLNode,
 ): ReactNode {
+  const blockAddr =
+    hasBlocks(subtreeRoot) || !subtreeParent ? `${address}.0` : address;
   return (
     <>
-      <div style={{ height: "50px" }} />
+      <div style={{ height: "25px" }} />
       <ArcherElement
-        id={`${address}.0`}
-        relations={getBlocks(subtree_root).map((c) => {
+        id={blockAddr}
+        relations={getBlocks(subtreeRoot).map((c) => {
           return {
             targetId: c.address,
             sourceAnchor: "bottom",
@@ -126,16 +139,24 @@ function RenderBlock(
         })}
       >
         <div
-          id={`${address}.0`}
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            paddingLeft: "10px",
+            paddingRight: "10px",
           }}
         >
-          {RenderNode(subtree_root, `${address}.0.0`, subtree_parent, false)}
+          {RenderNode(
+            subtreeRoot,
+            blockAddr,
+            selectedAddr,
+            subtreeParent,
+            false,
+          )}
         </div>
       </ArcherElement>
+      <div style={{ height: "25px" }} />
     </>
   );
 }
@@ -143,21 +164,38 @@ function RenderBlock(
 function RenderNode(
   node: RTLNode,
   address: string,
+  selectedAddr: string,
   parent?: RTLNode,
   check_blocks: boolean = true,
   recursive: boolean = true,
 ) {
   if (LOCAL_BLOCK_NODES.includes(node.kind) && check_blocks) {
     return (
-      <div id={address} style={FLEX_COL}>
-        <div id={`${address}.0`}>
-          {RenderNode(node, `${address}.0.0`, parent, false, false)}
+      <div
+        id={address}
+        style={{ ...FLEX_COL, ...BORDER_STYLE(selectedAddr === address) }}
+      >
+        <div
+          id={`${address}.0`}
+          style={BORDER_STYLE(selectedAddr === `${address}.0`)}
+        >
+          {RenderNode(node, `${address}.0`, selectedAddr, parent, false, false)}
         </div>
         <div style={{ height: "50px" }} />
-        <div id={`${address}.1`} style={{ gap: "20px", ...FLEX_ROW }}>
+        <div
+          id={`${address}.1`}
+          style={{
+            gap: "20px",
+            ...FLEX_ROW,
+            ...BORDER_STYLE(selectedAddr === `${address}.1`),
+          }}
+        >
           {node.children.map((n, i) => (
-            <div id={`${address}.1.${i}`}>
-              {RenderNode(n, `${address}.1.${i}.0`, node)}
+            <div
+              id={`${address}.1.${i}`}
+              style={BORDER_STYLE(selectedAddr === `${address}.1.${i}`)}
+            >
+              {RenderNode(n, `${address}.1.${i}`, selectedAddr, node)}
             </div>
           ))}
         </div>
@@ -182,6 +220,7 @@ function RenderNode(
         )
           ? "start" // TODO: Center or keep alignment as-is?
           : "start",
+        ...BORDER_STYLE(selectedAddr === address),
       }}
     >
       <ArcherElement
@@ -199,12 +238,14 @@ function RenderNode(
           })}
       >
         <div
+          id={node.children.length > 0 ? `${address}.0` : ""}
           style={{
             display: "flex",
             flexDirection: "row",
             width: "fit-content",
             justifyContent: "center",
             alignItems: "center",
+            ...BORDER_STYLE(selectedAddr === `${address}.0`),
           }}
         >
           <Token
@@ -219,17 +260,9 @@ function RenderNode(
         </div>
       </ArcherElement>
 
-      {/* Add support for local blocks and subtrees
-      {LOCAL_BLOCK_NODES.includes(node.kind) ? (
-      ) : (
-        node.children.map((n, i) =>
-          RenderNode(n, node, addrStep(address, i + 1)),
-        )
-      )}
-	  */}
       {recursive
         ? node.children.map((n, i) =>
-            RenderNode(n, addrStep(address, i + 1), node),
+            RenderNode(n, addrStep(`${address}.0`, i + 1), selectedAddr, node),
           )
         : null}
     </div>

@@ -81,7 +81,7 @@ function App() {
 
           <div style={{ height: "20px" }} />
 
-          {Digraph(treeSource)}
+          {Digraph(treeSource, "0.0.1")}
 
           <div
             style={{
