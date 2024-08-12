@@ -89,12 +89,15 @@ export function Digraph(source: RTLNode[]) {
 
 function RenderSubtree(addr: string, subtree_root: RTLNode): ReactNode {
   return (
-    <div id={`${addr}`} style={{ border: "1px dashed white" }}>
+    <div
+      id={`${addr}`}
+      style={{ border: "1px dashed white", borderRadius: "10px" }}
+    >
       <div id={`${addr}.0`} style={FLEX_COL}>
         {RenderBlock(`${addr}.0`, subtree_root, undefined)}
       </div>
       {hasBlocks(subtree_root) ? (
-        <div id={`${addr}.1`} style={FLEX_ROW}>
+        <div id={`${addr}.1`} style={{ gap: "30px", ...FLEX_ROW }}>
           {getBlocks(subtree_root).map((sub, i) =>
             RenderSubtree(`${addr}.1.${i}`, sub),
           )}
@@ -109,11 +112,31 @@ function RenderBlock(
   subtree_root: RTLNode,
   subtree_parent?: RTLNode,
 ): ReactNode {
-  // TODO: Implement
   return (
-    <div id={`${address}.0`}>
-      {RenderNode(subtree_root, `${address}.0.0`, subtree_parent, false)}
-    </div>
+    <>
+      <div style={{ height: "50px" }} />
+      <ArcherElement
+        id={`${address}.0`}
+        relations={getBlocks(subtree_root).map((c) => {
+          return {
+            targetId: c.address,
+            sourceAnchor: "bottom",
+            targetAnchor: "top",
+          };
+        })}
+      >
+        <div
+          id={`${address}.0`}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {RenderNode(subtree_root, `${address}.0.0`, subtree_parent, false)}
+        </div>
+      </ArcherElement>
+    </>
   );
 }
 
@@ -131,7 +154,7 @@ function RenderNode(
           {RenderNode(node, `${address}.0.0`, parent, false, false)}
         </div>
         <div style={{ height: "50px" }} />
-        <div id={`${address}.1`} style={FLEX_ROW}>
+        <div id={`${address}.1`} style={{ gap: "20px", ...FLEX_ROW }}>
           {node.children.map((n, i) => (
             <div id={`${address}.1.${i}`}>
               {RenderNode(n, `${address}.1.${i}.0`, node)}
