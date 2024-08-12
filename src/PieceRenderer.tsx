@@ -5,26 +5,47 @@ import book from "./assets/vuesax/bold/book.png";
 import rattle_icon from "./assets/rattle_icon.png";
 import output from "./assets/output_icon.png";
 import function_arrow from "./assets/function_arrow.png";
+import { RTLPiece, extractPieceType } from "./types";
 
-export function RenderPiece(piece, first) {
-  if ("IDENT" in piece) {
-    return <RenderIdentifier id_name={piece["IDENT"]} chained={first} />;
-  } else if ("NUMBER" in piece) {
-    return <RenderNumber num={piece["NUMBER"]} chained={first} />;
-  } else if ("OP" in piece) {
-    return <RenderOperator op_name={piece["OP"]} chained={first} />;
-  } else if ("TEXT" in piece) {
-    return <RenderText text={piece["TEXT"]} chained={first} />;
-  } else if ("BOOL" in piece) {
-    return <RenderBoolean bool={piece["BOOL"]} chained={first} />;
-  } else if ("NOTHING" in piece) {
-    return <RenderNothing chained={first} />;
-  } else if ("LIST" in piece) {
-    return <RenderList pieces={piece["LIST"]} chained={first} />;
-  } else if ("FNCALL" in piece) {
-    return <RenderCall pieces={piece["FNCALL"]} chained={first} />;
-  } else {
-    throw new Error("Invalid piece found!");
+export function RenderPiece(piece: RTLPiece, first: boolean) {
+  const kind = extractPieceType(piece);
+  switch (kind) {
+    case "IDENT":
+      return (
+        <RenderIdentifier
+          id_name={piece["IDENT" as keyof RTLPiece]}
+          chained={first}
+        />
+      );
+    case "NUMBER":
+      return (
+        <RenderNumber num={piece["NUMBER" as keyof RTLPiece]} chained={first} />
+      );
+    case "OP":
+      return <RenderOperator op_name={piece["OP" as keyof RTLPiece]} />;
+    case "TEXT":
+      return (
+        <RenderText text={piece["TEXT" as keyof RTLPiece]} chained={first} />
+      );
+    case "BOOL":
+      return (
+        <RenderBoolean bool={piece["BOOL" as keyof RTLPiece]} chained={first} />
+      );
+    case "NOTHING":
+      return <RenderNothing chained={first} />;
+    case "LIST":
+      return (
+        <RenderList pieces={piece["LIST" as keyof RTLPiece]} chained={first} />
+      );
+    case "FNCALL":
+      return (
+        <RenderCall
+          pieces={piece["FNCALL" as keyof RTLPiece]}
+          chained={first}
+        />
+      );
+    default:
+      throw new Error("Invalid piece found!");
   }
 }
 
@@ -37,7 +58,7 @@ export function RenderBoolean({ bool, chained }) {
 }
 
 export function RenderText({ text, chained }) {
-  return Symbol("text", "", text);
+  return Symbol("text", chained ? "" : "transparent", text);
 }
 
 export function RenderNothing({ chained }) {
@@ -59,9 +80,9 @@ export function RenderList({ pieces, chained }) {
           flexDirection: "row",
         }}
       >
-        {pieces.slice(1).map((b) => (
+        {pieces.slice(1).map((b: RTLPiece) => (
           <>
-            {RenderPiece(b)}
+            {RenderPiece(b, false)}
             <div
               style={{
                 height: "36px",
@@ -88,9 +109,9 @@ export function RenderCall({ pieces, chained }) {
           flexDirection: "row",
         }}
       >
-        {pieces.slice(1).map((b) => (
+        {pieces.slice(1).map((b: RTLPiece) => (
           <>
-            {RenderPiece(b)}
+            {RenderPiece(b, false)}
             <div
               style={{
                 height: "36px",
@@ -137,6 +158,7 @@ interface symbol_metadata {
   arrow: [string, string, number, number];
   operator: [string, string, number, number];
   text: [string, string, number, number];
+  ident: [string, string, number, number];
 }
 
 interface op_kind {
@@ -180,12 +202,6 @@ const SYMBOL_MAP: symbol_metadata = {
   ident: ["#000000", "#FFFFFF", 16, 36],
   call: ["#FFFFFF", "#000000", 16, 36],
 };
-
-export function getColor(piece) {
-  if ("IDENT" in piece) return SYMBOL_MAP["ident"][0];
-  else if ("TEXT" in piece) return SYMBOL_MAP["text"][0];
-  else if ("LIST" in piece) return SYMBOL_MAP["constant"][0];
-}
 
 const OP_TO_NAME: op_kind = {
   ADD: "+",
