@@ -32,18 +32,14 @@ const isBlock = (c: RTLNode) => GLOBAL_BLOCK_NODES.includes(c.kind);
 const hasBlocks = (c: RTLNode) => !!c.children.find(isBlock);
 const getBlocks = (c: RTLNode) => c.children.filter(isBlock);
 
-// Move an address one space forward (e.g., 1.0.2.1.0 => 1.0.2.1.1)
+/**
+ * Move an address one space forward (e.g., 1.0.2.1.0 => 1.0.2.1.1)
+ * @param addr The address to be moved forward from (typically the parent addr)
+ * @param n The number of steps to move forward (typically the child's position)
+ * @returns {string} The new address, equivalent to moving forward `n` spaces
+ *					 from `addr`.
+ */
 function addrStep(addr: string, n: number = 1): string {
-  let splits = addr.split(".");
-  let prefix = splits.slice(0, -1);
-  let suffix = parseInt(splits[splits.length - 1]);
-  suffix += n;
-  prefix.push(suffix.toString());
-  return prefix.join(".");
-}
-
-// Step forward in the address
-function condtlAddrStep(addr: string, n: number = 1): string {
   let splits = addr.split(".");
   let prefix = splits.slice(0, -1);
   let suffix = parseInt(splits[splits.length - 1]);
