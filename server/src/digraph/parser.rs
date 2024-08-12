@@ -92,7 +92,9 @@ pub(crate) struct Node {
     pub(super) kind: NodeKind,
     // The rest of the token, if applicable
     pub(super) pieces: Vec<Piece>,
+    #[serde(rename = "address")]
     pub(super) addr: Address,
+    #[serde(rename = "parent")]
     pub(super) parent_addr: Option<Address>,
 }
 

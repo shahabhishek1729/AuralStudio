@@ -96,6 +96,7 @@ impl std::ops::Deref for Address {
     }
 }
 
+// Serializes addresses to be easier to work with in JSON (turns <1, 2, 3, 4> into 1.2.3.4)
 impl Serialize for Address {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
