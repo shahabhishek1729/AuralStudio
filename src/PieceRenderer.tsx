@@ -5,7 +5,13 @@ import book from "./assets/vuesax/bold/book.png";
 import rattle_icon from "./assets/rattle_icon.png";
 import output from "./assets/output_icon.png";
 import function_arrow from "./assets/function_arrow.png";
-import { RTLPiece, extractPieceType, symbol_metadata } from "./types";
+import {
+  RTLPiece,
+  extractPieceType,
+  symbol_metadata,
+  op_kind,
+  token_metadata,
+} from "./types";
 
 export function RenderPiece(piece: RTLPiece, first: boolean) {
   const kind = extractPieceType(piece);
@@ -138,39 +144,6 @@ export function RenderOperator({ op_name }) {
       <div style={{ width: "6px" }} />
     </>
   );
-}
-
-interface token_metadata {
-  file: [string, string];
-  function: [string, string];
-  variable: [string, string];
-  conditional: [string, string];
-  yes: [string, string];
-  no: [string, string];
-  library: [string, string];
-  output: [string, string];
-  return: [string, string];
-  list: [string, string];
-}
-
-interface op_kind {
-  ADD: string;
-  SUB: string;
-  MUL: string;
-  DIV: string;
-  MOD: string;
-  EQ: string;
-  NE: string;
-  GT: string;
-  LT: string;
-  GE: string;
-  LE: string;
-  AND: string;
-  OR: string;
-  NOT: string;
-  IN: string;
-  DOT: string;
-  ASSN: string;
 }
 
 const TOKEN_MAP: token_metadata = {
