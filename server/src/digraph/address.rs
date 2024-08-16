@@ -1,6 +1,6 @@
 use crate::digraph::parser::{Node, NodeKind, HORIZ_CHILDREN};
 use crate::digraph::state::CursorError;
-use serde::ser::Serialize;
+use serde;
 use serde_derive::Deserialize;
 use std::collections::HashMap;
 
@@ -39,7 +39,7 @@ macro_rules! addr {
 /// assert_eq!(address.up(), false);
 /// assert_eq!(address.down(), false);
 /// ```
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) struct Address {
     pub addr: Vec<usize>,
 }
@@ -97,13 +97,27 @@ impl std::ops::Deref for Address {
 }
 
 // Serializes addresses to be easier to work with in JSON (turns <1, 2, 3, 4> into 1.2.3.4)
-impl Serialize for Address {
+impl serde::ser::Serialize for Address {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
         let addrs = self.addr.iter().map(|x| x.to_string()).collect::<Vec<_>>();
         serializer.serialize_str(&addrs.join("."))
+    }
+}
+
+impl<'de> serde::de::Deserialize<'de> for Address {
+    fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let addr = s
+            .split('.')
+            .map(|s| s.parse::<usize>().expect("Address should be numbers"))
+            .collect::<Vec<_>>();
+        Ok(Self::new(addr))
     }
 }
 
