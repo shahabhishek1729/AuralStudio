@@ -18,6 +18,10 @@ interface _PieceInterface {
 	LIST?: RTLPiece[],
 }
 
+export interface PayloadState {
+	graph: Array<RTLNode>
+}
+
 /**
  * Turns a `RTLPiece` into a `string` concisely describing the kind of piece we 
  * dealing with.
@@ -33,10 +37,6 @@ export function extractPieceType(piece: RTLPiece): string {
 	throw new Error(`Invalid piece found: ${piece}`);
 }
 
-/**
- * The type for the 
-
- */
 export interface symbol_metadata {
   constant: [string, string, number, number];
   arrow: [string, string, number, number];
