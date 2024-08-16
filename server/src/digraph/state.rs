@@ -224,12 +224,12 @@ pub(crate) struct CursorState<'dag> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct PayloadState {
+pub(crate) struct PayloadState {
     graph: Vec<Node>,
 }
 
 impl PayloadState {
-    fn to_cursor_state(&self) -> Result<CursorState<'_>, CursorError> {
+    pub fn to_cursor_state(&self) -> Result<CursorState<'_>, CursorError> {
         CursorState::new(&self.graph[..])
     }
 }
