@@ -17,6 +17,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::fs;
 
 use crate::digraph::address::Addressable;
+use crate::digraph::event::KeyboardEvent;
 use crate::digraph::parser::{Node, Parser};
 use crate::runner::compile;
 
@@ -85,6 +86,15 @@ fn parse_file(source: String) -> Vec<Node> {
     let mut nodes = parser.parse().unwrap();
     (&mut nodes[..]).fill_addr();
     nodes
+}
+
+#[tauri::command]
+fn handle_event(event: String) {
+    let Ok(e): Result<KeyboardEvent, _> = serde_json::from_str(&event) else {
+        panic!("Failed to parse keyboardEvent");
+    };
+
+    e.parse_command();
 }
 
 //static GLOBAL_WINDOW: Mutex<Option<tauri::AppHandle>> = Mutex::new(None);
@@ -189,6 +199,7 @@ fn main() {
             parse_file,
             //grab_window,
             //send_true
+            handle_event,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

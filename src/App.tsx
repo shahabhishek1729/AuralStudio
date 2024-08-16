@@ -19,6 +19,16 @@ function App() {
   let source = `define f of x\noutput x\ndefine f1 of x\noutput x\ndone define\ndefine f2 of x\noutput x\ndefine f21 of x\noutput x\ndone define\ndefine f22 of x\noutput x\ndone define\ndone define\ndone define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define`;
 
   useEffect(() => {
+    document.addEventListener(
+      "keypress",
+      // (e) => void invoke("handle_event", { event: JSON.stringify(e) }),
+      (e) =>
+        void invoke("handle_event", { event: JSON.stringify({ key: e.key }) }),
+      // (e) => void console.log(JSON.stringify({ key: e.key })),
+    );
+  }, []);
+
+  useEffect(() => {
     invoke("parse_file", { source: source }).then((o: any) => {
       console.log("The parsed JSON was:");
       console.log(o);
