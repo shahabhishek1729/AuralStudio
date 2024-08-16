@@ -2,9 +2,11 @@ use crate::check;
 use crate::digraph::address::{Address, Addressable};
 use crate::digraph::parser::NodeKind;
 use crate::Node;
+
 use anyhow;
 use phf::phf_map;
-use std::collections::HashMap;
+use serde::de;
+use serde_derive::{Deserialize, Serialize};
 use thiserror::Error;
 
 static N_ROOT_CHILDREN: phf::Map<&'static str, u8> = phf_map! {
@@ -15,6 +17,8 @@ static N_ROOT_CHILDREN: phf::Map<&'static str, u8> = phf_map! {
     "FORLOOP" => 1,
     "FNDEF" => 1,
 };
+
+const GLOBAL_BLOCKS: &[NodeKind] = &[NodeKind::FNDEF];
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub(crate) enum CursorDir {
@@ -79,8 +83,8 @@ impl CursorDir {
         state: &'a CursorState,
         src: &'a Address,
     ) -> Result<(&'a Node, usize), CursorError> {
-        let src = src.coerce(&state.graph_hash)?;
-        let Some(&node) = state.graph_hash.get(&src) else {
+        let src = src.coerce(&state.graph.get_hash())?;
+        let Some(&node) = state.graph.get_hash().get(&src) else {
             return Err(CursorError::InvalidAddress(src.clone()));
         };
         let Some(ref parent_addr) = node.parent_addr else {
@@ -88,8 +92,9 @@ impl CursorDir {
             return Err(CursorError::InvalidMotion(*self));
         };
         let Some(&parent) = state
-            .graph_hash
-            .get(&parent_addr.coerce(&state.graph_hash)?)
+            .graph
+            .get_hash()
+            .get(&parent_addr.coerce(&state.graph.get_hash())?)
         else {
             return Err(CursorError::InvalidAddress(parent_addr.clone()));
         };
@@ -121,7 +126,7 @@ impl CursorDir {
                     let dst = Address::new(dst[0..(i + 1)].to_vec());
 
                     // Ensure the motion worked (i.e., not going right from the rightmost block).
-                    let Ok(mut dst) = dst.coerce(&state.graph_hash) else {
+                    let Ok(mut dst) = dst.coerce(&state.graph.get_hash()) else {
                         return Err(CursorError::InvalidMotion(*self));
                     };
                     let _ = dst.addr.pop();
@@ -131,7 +136,7 @@ impl CursorDir {
                 return Err(CursorError::InvalidMotion(*self));
             }
             CursorDir::IN => {
-                let dst = src.coerce(&state.graph_hash)?;
+                let dst = src.coerce(&state.graph.get_hash())?;
                 Ok(dst)
             }
             _ => return Err(CursorError::InvalidMotion(*self)),
@@ -153,14 +158,15 @@ impl CursorDir {
                 // If this is the parent's root child, go out and coerce to the nearest node
                 if i < N_ROOT_CHILDREN[&format!("{:?}", parent.kind)] as usize {
                     let dst = CursorDir::OUT.move_local(state)?;
-                    let dst = dst.coerce(&state.graph_hash)?;
+                    let dst = dst.coerce(&state.graph.get_hash())?;
                     return Ok(dst);
                 }
                 // Return the parent's previous child -> this should be the one right above
                 Ok(parent.children[i - 1].addr.clone())
             }
             CursorDir::DOWN => {
-                let Some(&node) = state.graph_hash.get(&src.coerce(&state.graph_hash)?) else {
+                let graph_hash = state.graph.get_hash();
+                let Some(&node) = graph_hash.get(&src.coerce(&graph_hash)?) else {
                     return Err(CursorError::InvalidAddress(src.clone()));
                 };
                 if N_ROOT_CHILDREN.contains_key(&format!("{:?}", node.kind)[..]) {
@@ -195,14 +201,14 @@ impl CursorDir {
             CursorDir::IN => {
                 // let mut src = &mut src.clone();
                 // src.addr.push(0);
-                // let Ok(_) = src.coerce(&state.graph_hash) else {
+                // let Ok(_) = src.coerce(&state.graph.get_hash()) else {
                 //     return Err(CursorError::InvalidMotion(*self));
                 // };
                 // Ok(src.clone())
                 self.move_global(state)
             }
             CursorDir::OUT => {
-                let mut src = &mut src.clone();
+                let src = &mut src.clone();
                 let _ = src.addr.pop();
                 Ok(src.clone())
             }
@@ -215,14 +221,21 @@ pub(crate) struct CursorState<'dag> {
     pub(crate) block_loc: Address,
     pub(crate) node_loc: Address,
     graph: &'dag [Node],
-    graph_hash: HashMap<Address, &'dag Node>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct PayloadState {
+    graph: Vec<Node>,
+}
+
+impl PayloadState {
+    fn to_cursor_state(&self) -> Result<CursorState<'_>, CursorError> {
+        CursorState::new(&self.graph[..])
+    }
 }
 
 impl<'dag> CursorState<'dag> {
-    pub(crate) fn new(
-        graph: &'dag [Node],
-        graph_hash: HashMap<Address, &'dag Node>,
-    ) -> Result<Self, CursorError> {
+    pub(crate) fn new(graph: &'dag [Node]) -> Result<Self, CursorError> {
         let block_loc = Address::new(vec![0, 0]);
         let node_loc = block_loc.coerce(&graph.get_hash())?;
 
@@ -230,46 +243,36 @@ impl<'dag> CursorState<'dag> {
             block_loc,
             node_loc,
             graph,
-            graph_hash,
         })
     }
 
-    fn _move_cursor_node(&mut self, dir: CursorDir) -> Result<(), ()> {
-        let Some(node) = self.graph_hash.get(&self.block_loc) else {
-            return Err(());
+    pub fn navigate(&self, dir: CursorDir) -> Result<Address, CursorError> {
+        let graph_hash = self.graph.get_hash();
+        let on_node = self.node_loc == self.block_loc;
+
+        let Some(coerced_node) = graph_hash.get(&self.node_loc) else {
+            return Err(CursorError::AddrNotFound(self.node_loc.clone()));
         };
 
-        match node.kind {
-            NodeKind::CONDTLY | NodeKind::CONDTLN => {}
-            _ => {
-                if dir == CursorDir::LEFT || dir == CursorDir::RIGHT {
-                    return Err(());
-                }
-            }
-        }
-        if node.kind == NodeKind::CONDTLY || node.kind == NodeKind::CONDTLN {
-            // All motions are allowed
+        let dst = if !on_node && GLOBAL_BLOCKS.contains(&coerced_node.kind) {
+            dir.move_global(&self)?
         } else {
-            // Only vertial motions are allowed
-            if dir == CursorDir::LEFT || dir == CursorDir::RIGHT {
-                return Err(());
-            }
-        }
-
-        Ok(())
+            dir.move_local(&self)?
+        };
+        Ok(dst.clone())
     }
 
-    fn coerce(&mut self) -> Result<(), CursorError> {
-        self.node_loc = self.block_loc.coerce(&self.graph_hash)?;
+    pub fn coerce(&mut self) -> Result<(), CursorError> {
+        self.node_loc = self.block_loc.coerce(&self.graph.get_hash())?;
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::addr;
     use crate::digraph::address::{Address, Addressable};
-    use crate::digraph::parser::NodeKind;
     use crate::digraph::parser::Parser;
     use crate::digraph::state::{CursorError::InvalidMotion, CursorState};
 
@@ -279,12 +282,12 @@ mod tests {
             let mut parser = Parser::new(String::from($src)).unwrap();
             let mut nodes = parser.parse().unwrap();
             (&mut nodes[..]).fill_addr();
-            let graph = &nodes[..];
-            let mut state = CursorState::new(graph, graph.get_hash()).unwrap();
+            let graph = &&nodes[..];
+            let mut state = CursorState::new(graph).unwrap();
             let mut failed = false;
             $(
-                let coerced = state.block_loc.coerce(&state.graph_hash).expect("Coercion should work");
-                let dst = if coerced != state.block_loc && state.graph_hash.get(&coerced).expect("Retrieval should work").kind == NodeKind::FNDEF {
+                let coerced = state.block_loc.coerce(&state.graph.get_hash()).expect("Coercion should work");
+                let dst = if coerced != state.block_loc && GLOBAL_BLOCKS.contains(&state.graph.get_hash().get(&coerced).expect("Retrieval should work").kind) {
                     move_cursor!($dir).move_global(&state)
                 } else {
                     move_cursor!($dir).move_local(&state)
@@ -300,11 +303,11 @@ mod tests {
             let mut parser = Parser::new(String::from($src)).unwrap();
             let mut nodes = parser.parse().unwrap();
             (&mut nodes[..]).fill_addr();
-            let graph = &nodes[..];
-            let mut state = CursorState::new(graph, graph.get_hash()).unwrap();
+            let graph = &&nodes[..];
+            let mut state = CursorState::new(graph).unwrap();
             $(
-                let coerced = state.block_loc.coerce(&state.graph_hash).expect("Coercion should work");
-                let dst = if coerced != state.block_loc && state.graph_hash.get(&coerced).expect("Retrieval should work").kind == NodeKind::FNDEF {
+                let coerced = state.block_loc.coerce(&state.graph.get_hash()).expect("Coercion should work");
+                let dst = if coerced != state.block_loc && GLOBAL_BLOCKS.contains(&state.graph.get_hash().get(&coerced).expect("Retrieval should work").kind) {
                     move_cursor!($dir).move_global(&state).expect("Motion should succeed")
                 } else {
                     move_cursor!($dir).move_local(&state).expect("Motion should succeed")
