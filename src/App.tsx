@@ -15,26 +15,38 @@ import { Digraph } from "./Digraph.tsx";
 function App() {
   let [codeOutput, _] = useState("Code output will appear here...");
   let [treeSource, setTreeSource] = useState([]);
+  let [payload, setPayload] = useState({
+    graph: [],
+    block_loc: "",
+  });
 
   let source = `define f of x\noutput x\ndefine f1 of x\noutput x\ndone define\ndefine f2 of x\noutput x\ndefine f21 of x\noutput x\ndone define\ndefine f22 of x\noutput x\ndone define\ndone define\ndone define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define`;
 
   useEffect(() => {
-    document.addEventListener(
-      "keypress",
-      // (e) => void invoke("handle_event", { event: JSON.stringify(e) }),
-      (e) =>
-        void invoke("handle_event", { event: JSON.stringify({ key: e.key }) }),
-      // (e) => void console.log(JSON.stringify({ key: e.key })),
-    );
-  }, []);
-
-  useEffect(() => {
     invoke("parse_file", { source: source }).then((o: any) => {
-      console.log("The parsed JSON was:");
-      console.log(o);
       setTreeSource(o);
+      setPayload({ graph: o, block_loc: "0.0" });
     });
   }, []);
+
+  let onKeyUp = (e) => {
+    console.log(e);
+    console.log("INVOKING");
+    console.log(payload);
+    invoke("handle_event", {
+      event: JSON.stringify({ key: e.key }),
+      payload: payload,
+    }).then((new_payload) => {
+      console.log(new_payload);
+      if (payload !== new_payload) setPayload(new_payload);
+    });
+  };
+
+  useEffect(() => {
+    if (payload.graph.length > 0) {
+      document.addEventListener("keyup", onKeyUp);
+    }
+  }, [payload]);
 
   return (
     <div className="container" style={{ overflow: "hidden" }}>
@@ -91,7 +103,7 @@ function App() {
 
           <div style={{ height: "20px" }} />
 
-          {Digraph(treeSource, "1.0.2.0.0")}
+          {Digraph(treeSource, payload.block_loc)}
 
           <div
             style={{

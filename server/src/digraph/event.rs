@@ -1,3 +1,4 @@
+use crate::digraph::state::{CursorDir, CursorState};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -58,9 +59,61 @@ pub(crate) struct KeyboardEvent {
 }
 
 impl KeyboardEvent {
-    pub(crate) fn parse_command(&self) {
+    pub(crate) fn parse_command(&self, state: &mut CursorState) {
         if self.key == "j" {
-            println!("Yay I got a J");
+            let Ok(new_addr) = state.navigate(CursorDir::DOWN) else {
+                return;
+            };
+            dbg!(&new_addr);
+            state.block_loc = new_addr;
+            let Ok(_) = state.coerce() else {
+                return;
+            };
+            dbg!(&state.block_loc);
+            dbg!(&state.node_loc);
+        } else if self.key == "k" {
+            let Ok(new_addr) = state.navigate(CursorDir::UP) else {
+                return;
+            };
+            state.block_loc = new_addr;
+            let Ok(_) = state.coerce() else {
+                return;
+            };
+        } else if self.key == "l" {
+            let Ok(new_addr) = state.navigate(CursorDir::RIGHT) else {
+                return;
+            };
+            dbg!(&new_addr);
+            state.block_loc = new_addr;
+            let Ok(_) = state.coerce() else {
+                return;
+            };
+            dbg!(&state.block_loc);
+            dbg!(&state.node_loc);
+        } else if self.key == "h" {
+            let Ok(new_addr) = state.navigate(CursorDir::LEFT) else {
+                return;
+            };
+            state.block_loc = new_addr;
+            let Ok(_) = state.coerce() else {
+                return;
+            };
+        } else if self.key == "Enter" {
+            let Ok(new_addr) = state.navigate(CursorDir::IN) else {
+                return;
+            };
+            state.block_loc = new_addr;
+            let Ok(_) = state.coerce() else {
+                return;
+            };
+        } else if self.key == "Backspace" {
+            let Ok(new_addr) = state.navigate(CursorDir::OUT) else {
+                return;
+            };
+            state.block_loc = new_addr;
+            let Ok(_) = state.coerce() else {
+                return;
+            };
         }
     }
 }

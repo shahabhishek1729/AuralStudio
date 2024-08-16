@@ -19,7 +19,8 @@ interface _PieceInterface {
 }
 
 export interface PayloadState {
-	graph: Array<RTLNode>
+	graph: Array<RTLNode>,
+	block_loc: string, // Addresses are stored as IPv4-style strings in JSON 
 }
 
 /**

@@ -19,6 +19,7 @@ use std::fs;
 use crate::digraph::address::Addressable;
 use crate::digraph::event::KeyboardEvent;
 use crate::digraph::parser::{Node, Parser};
+use crate::digraph::state::{CursorState, PayloadState};
 use crate::runner::compile;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -89,109 +90,17 @@ fn parse_file(source: String) -> Vec<Node> {
 }
 
 #[tauri::command]
-fn handle_event(event: String) {
+fn handle_event(event: String, payload: PayloadState) -> PayloadState {
     let Ok(e): Result<KeyboardEvent, _> = serde_json::from_str(&event) else {
         panic!("Failed to parse keyboardEvent");
     };
+    let mut state: CursorState = (&payload).into();
+    e.parse_command(&mut state);
 
-    e.parse_command();
+    PayloadState::from(state)
 }
 
-//static GLOBAL_WINDOW: Mutex<Option<tauri::AppHandle>> = Mutex::new(None);
-//
-//#[tauri::command]
-//fn grab_window(window: tauri::AppHandle) {
-//    *GLOBAL_WINDOW.lock().unwrap() = Some(window);
-//    println!("I got the window!");
-//}
-//
-//fn send_message(window: &tauri::Window, message: &bool) {
-//    window.emit("rustysocket-message", message).unwrap();
-//}
-//
-//static mut CONTROLLER: Mutex<Option<DualSense>> = Mutex::new(None);
-//
-//static mut EXECUTED: RwLock<bool> = RwLock::new(false);
-//
-//static mut SELECTED_IDX: Mutex<u64> = Mutex::new(1u64);
-//
-//#[derive(Debug, Clone, Serialize, Deserialize)]
-//struct Payload {
-//    event_type: u64,
-//}
-//
-//#[tauri::command]
-//async fn send_true() {
-//    unsafe {
-//        CONTROLLER
-//            .lock()
-//            .unwrap()
-//            .as_mut()
-//            .unwrap()
-//            .on_right_pad_x_changed(&|lpx| {
-//                if lpx > 200 {
-//                    if !*EXECUTED.read().unwrap() {
-//                        println!("Rust received right signal, moving to JS");
-//                        //let _ = GLOBAL_WINDOW
-//                        //    .lock()
-//                        //    .unwrap()
-//                        //    .clone()
-//                        //    .unwrap()
-//                        //    .emit("rustysocket-message", 1)
-//                        //    .unwrap();
-//                        //
-//                        *SELECTED_IDX.lock().unwrap() += 1;
-//
-//                        GLOBAL_WINDOW
-//                            .lock()
-//                            .unwrap()
-//                            .clone()
-//                            .unwrap()
-//                            .emit_all(
-//                                "nav_event",
-//                                Payload {
-//                                    event_type: *SELECTED_IDX.lock().unwrap(),
-//                                },
-//                            )
-//                            .unwrap();
-//                        *EXECUTED.write().unwrap() = true;
-//                    }
-//                } else if lpx < 20 {
-//                    if !*EXECUTED.read().unwrap() {
-//                        println!("Rust received left signal, moving to JS");
-//                        *SELECTED_IDX.lock().unwrap() -= 1;
-//
-//                        GLOBAL_WINDOW
-//                            .lock()
-//                            .unwrap()
-//                            .clone()
-//                            .unwrap()
-//                            .emit_all(
-//                                "nav_event",
-//                                Payload {
-//                                    event_type: *SELECTED_IDX.lock().unwrap(),
-//                                },
-//                            )
-//                            .unwrap();
-//                        *EXECUTED.write().unwrap() = true;
-//                    }
-//                } else {
-//                    if *EXECUTED.read().unwrap() {
-//                        println!("Rust received a no signal, moving to JS");
-//                        *EXECUTED.write().unwrap() = false;
-//                    }
-//                }
-//            });
-//
-//        let _handle = CONTROLLER.lock().unwrap().as_mut().unwrap().run();
-//    }
-//}
-
 fn main() {
-    //unsafe {
-    //    (*CONTROLLER.lock().unwrap()) = Some(DualSense::new());
-    //}
-
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             get_file_hierarchy,

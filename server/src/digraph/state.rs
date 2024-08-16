@@ -3,9 +3,9 @@ use crate::digraph::address::{Address, Addressable};
 use crate::digraph::parser::NodeKind;
 use crate::Node;
 
+use crate::addr;
 use anyhow;
 use phf::phf_map;
-use serde::de;
 use serde_derive::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -208,9 +208,9 @@ impl CursorDir {
                 self.move_global(state)
             }
             CursorDir::OUT => {
-                let src = &mut src.clone();
+                let mut src = src.clone();
                 let _ = src.addr.pop();
-                Ok(src.clone())
+                Ok(src)
             }
         }
     }
@@ -223,14 +223,42 @@ pub(crate) struct CursorState<'dag> {
     graph: &'dag [Node],
 }
 
+/// Equivalent to a decompressed `CursorState`, except with `graph` being `Vec<Node>` instead of
+/// `&[Node]`. This allows for the struct to be de/serialized to/from JSON, while being easily
+/// convertible into `CursorState`.
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct PayloadState {
     graph: Vec<Node>,
+    block_loc: Address,
 }
 
-impl PayloadState {
-    pub fn to_cursor_state(&self) -> Result<CursorState<'_>, CursorError> {
-        CursorState::new(&self.graph[..])
+impl From<CursorState<'_>> for PayloadState {
+    fn from(value: CursorState) -> Self {
+        return PayloadState {
+            graph: value.graph.to_vec(),
+            block_loc: value.block_loc,
+        };
+    }
+}
+
+impl<'a> Into<CursorState<'a>> for &'a PayloadState {
+    fn into(self) -> CursorState<'a> {
+        let graph_slice = &self.graph[..];
+        let Ok(node_loc) = self.block_loc.coerce(&graph_slice.get_hash()) else {
+            return CursorState {
+                block_loc: addr!(0, 0),
+                node_loc: self
+                    .block_loc
+                    .coerce(&graph_slice.get_hash())
+                    .expect("Coercion from 0.0 should work"),
+                graph: graph_slice,
+            };
+        };
+        CursorState {
+            block_loc: self.block_loc.clone(),
+            node_loc,
+            graph: graph_slice,
+        }
     }
 }
 
@@ -249,6 +277,8 @@ impl<'dag> CursorState<'dag> {
     pub fn navigate(&self, dir: CursorDir) -> Result<Address, CursorError> {
         let graph_hash = self.graph.get_hash();
         let on_node = self.node_loc == self.block_loc;
+        dbg!(&self.block_loc);
+        dbg!(&self.node_loc);
 
         let Some(coerced_node) = graph_hash.get(&self.node_loc) else {
             return Err(CursorError::AddrNotFound(self.node_loc.clone()));
@@ -259,6 +289,8 @@ impl<'dag> CursorState<'dag> {
         } else {
             dir.move_local(&self)?
         };
+
+        dbg!(&dst);
         Ok(dst.clone())
     }
 

@@ -1,13 +1,12 @@
 use crate::digraph::parser::{Node, NodeKind, HORIZ_CHILDREN};
 use crate::digraph::state::CursorError;
 use serde;
-use serde_derive::Deserialize;
 use std::collections::HashMap;
 
 #[macro_export]
 macro_rules! addr {
-    ($($id:expr),+) => {
-        Address::new(vec![$($id),+])
+    ($($id:expr),*) => {
+        Address::new(vec![$($id),*])
     };
 }
 
@@ -115,7 +114,10 @@ impl<'de> serde::de::Deserialize<'de> for Address {
         let s = String::deserialize(deserializer)?;
         let addr = s
             .split('.')
-            .map(|s| s.parse::<usize>().expect("Address should be numbers"))
+            .map(|s| {
+                s.parse::<usize>()
+                    .expect(&format!("Address should be numbers, but got {s}"))
+            })
             .collect::<Vec<_>>();
         Ok(Self::new(addr))
     }
