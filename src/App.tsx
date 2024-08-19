@@ -11,14 +11,16 @@ import { FileTree } from "./FileTree.tsx";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Digraph } from "./Digraph.tsx";
+import { PayloadState, RTLNode } from "./types.ts";
 
 function App() {
-  let [codeOutput, _] = useState("Code output will appear here...");
-  let [treeSource, setTreeSource] = useState([]);
-  let [payload, setPayload] = useState({
+  let [codeOutput, _] = useState<string>("Code output will appear here...");
+  let [treeSource, setTreeSource] = useState<Array<RTLNode>>([]);
+  let [payload, setPayload] = useState<PayloadState>({
     graph: [],
     block_loc: "",
   });
+  const [listenersSet, setListenersSet] = useState(false);
 
   let source = `define f of x\noutput x\ndefine f1 of x\noutput x\ndone define\ndefine f2 of x\noutput x\ndefine f21 of x\noutput x\ndone define\ndefine f22 of x\noutput x\ndone define\ndone define\ndone define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define`;
 
@@ -29,22 +31,22 @@ function App() {
     });
   }, []);
 
-  let onKeyUp = (e) => {
-    console.log(e);
-    console.log("INVOKING");
-    console.log(payload);
+  let onKeyUp = (e: React.KeyboardEvent<Document>) => {
     invoke("handle_event", {
       event: JSON.stringify({ key: e.key }),
       payload: payload,
     }).then((new_payload) => {
-      console.log(new_payload);
       if (payload !== new_payload) setPayload(new_payload);
     });
   };
 
   useEffect(() => {
     if (payload.graph.length > 0) {
-      document.addEventListener("keyup", onKeyUp);
+      window.addEventListener("keyup", onKeyUp);
+      setListenersSet(true);
+      return () => {
+        window.removeEventListener("keyup", onKeyUp);
+      };
     }
   }, [payload]);
 
