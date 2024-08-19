@@ -95,9 +95,14 @@ function RenderSubtree(
   selectedAddr: string,
 ): ReactNode {
   return (
-    <div id={`${addr}`} style={BORDER_STYLE(addr === selectedAddr)}>
+    <div>
       <div style={FLEX_COL}>
-        {RenderBlock(addr, subtreeRoot, selectedAddr, undefined)}
+        {RenderBlock(
+          addr,
+          subtreeRoot,
+          selectedAddr,
+          addr.includes(".") ? subtreeRoot : undefined,
+        )}
       </div>
       {hasBlocks(subtreeRoot) ? (
         <div
