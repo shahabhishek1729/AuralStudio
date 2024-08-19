@@ -186,7 +186,6 @@ impl CursorDir {
 
                 let (parent, i) = self._find_parent_child(state, src)?;
                 let children: Vec<&Node> = _filter_children(parent).collect();
-                dbg!(&children);
                 if i == children.len() - 1 {
                     return Err(CursorError::InvalidMotion(*self));
                 }
@@ -301,10 +300,8 @@ impl<'dag> CursorState<'dag> {
         };
 
         let dst = if !self._at_node() && GLOBAL_BLOCKS.contains(&coerced_node.kind) {
-            dbg!("G");
             dir.move_global(&self)?
         } else {
-            dbg!("L");
             dir.move_local(&self)?
         };
 
