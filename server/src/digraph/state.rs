@@ -19,6 +19,11 @@ static N_ROOT_CHILDREN: phf::Map<&'static str, u8> = phf_map! {
 };
 
 const GLOBAL_BLOCKS: &[NodeKind] = &[NodeKind::FNDEF];
+fn _filter_children(node: &Node) -> impl Iterator<Item = &Node> {
+    node.children
+        .iter()
+        .filter(|c| !GLOBAL_BLOCKS.contains(&c.kind))
+}
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub(crate) enum CursorDir {
@@ -83,29 +88,31 @@ impl CursorDir {
         state: &'a CursorState,
         src: &'a Address,
     ) -> Result<(&'a Node, usize), CursorError> {
-        let src = src.coerce(&state.graph.get_hash())?;
-        let Some(&node) = state.graph.get_hash().get(&src) else {
+        let graph_hash = state.graph.get_hash();
+        let src = src.coerce(&graph_hash)?;
+        let Some(&node) = graph_hash.get(&src) else {
             return Err(CursorError::InvalidAddress(src.clone()));
         };
         let Some(ref parent_addr) = node.parent_addr else {
             // This node is a FNDEF/CLSDECL; cannot go up without going out first.
             return Err(CursorError::InvalidMotion(*self));
         };
+
+        if parent_addr.coerce(&graph_hash)? == node.addr {
+            return Err(CursorError::InvalidMotion(*self));
+        }
         let Some(&parent) = state
             .graph
             .get_hash()
-            .get(&parent_addr.coerce(&state.graph.get_hash())?)
+            .get(&parent_addr.coerce(&graph_hash)?)
         else {
             return Err(CursorError::InvalidAddress(parent_addr.clone()));
         };
 
-        let (i, curr_node): (usize, &Node) = parent
-            .children
-            .iter()
+        let (i, curr_node): (usize, &Node) = _filter_children(parent)
             .enumerate()
-            .filter(|(_, n)| n.addr == src)
-            .next()
-            .unwrap();
+            .find(|(_, n)| n.addr == src)
+            .unwrap(); // FIXME: Replace with more intuitive behavior (e.g., InvalidMotion?)
         assert_eq!(curr_node, node);
 
         Ok((parent, i))
@@ -155,6 +162,8 @@ impl CursorDir {
         match self {
             CursorDir::UP => {
                 let (parent, i) = self._find_parent_child(state, src)?;
+                let children: Vec<&Node> = _filter_children(parent).collect();
+
                 // If this is the parent's root child, go out and coerce to the nearest node
                 if i < N_ROOT_CHILDREN[&format!("{:?}", parent.kind)] as usize {
                     let dst = CursorDir::OUT.move_local(state)?;
@@ -162,39 +171,43 @@ impl CursorDir {
                     return Ok(dst);
                 }
                 // Return the parent's previous child -> this should be the one right above
-                Ok(parent.children[i - 1].addr.clone())
+                Ok(children[i - 1].addr.clone())
             }
             CursorDir::DOWN => {
                 let graph_hash = state.graph.get_hash();
                 let Some(&node) = graph_hash.get(&src.coerce(&graph_hash)?) else {
                     return Err(CursorError::InvalidAddress(src.clone()));
                 };
-                if N_ROOT_CHILDREN.contains_key(&format!("{:?}", node.kind)[..]) {
+
+                if N_ROOT_CHILDREN.contains_key(&format!("{:?}", node.kind)[..]) && state._at_node()
+                {
                     return Ok(node.children[0].addr.clone());
                 }
 
                 let (parent, i) = self._find_parent_child(state, src)?;
-                if i == parent.children.len() - 1 {
+                let children: Vec<&Node> = _filter_children(parent).collect();
+                dbg!(&children);
+                if i == children.len() - 1 {
                     return Err(CursorError::InvalidMotion(*self));
                 }
 
                 // Return the parent's next child -> this should be the one right below
                 // NOTE: XXX: Need the returned address always have the same length as `src`?
                 Ok(Address::new(
-                    parent.children[i + 1].addr.addr[..src.len()].to_vec(),
+                    children[i + 1].addr.addr[..src.len()].to_vec(),
                 ))
             }
-            CursorDir::LEFT => {
+            CursorDir::LEFT | CursorDir::RIGHT => {
                 let (parent, i) = self._find_parent_child(state, src)?;
                 match parent.children[i].kind {
-                    NodeKind::CONDTLN => Ok(parent.children[i - 1].addr.clone()),
-                    _ => Err(CursorError::InvalidMotion(*self)),
-                }
-            }
-            CursorDir::RIGHT => {
-                let (parent, i) = self._find_parent_child(state, src)?;
-                match parent.children[i].kind {
-                    NodeKind::CONDTLY => Ok(parent.children[i + 1].addr.clone()),
+                    NodeKind::CONDTLN if *self == CursorDir::LEFT => Ok(_filter_children(parent)
+                        .collect::<Vec<_>>()[i - 1]
+                        .addr
+                        .clone()),
+                    NodeKind::CONDTLY if *self == CursorDir::RIGHT => Ok(_filter_children(parent)
+                        .collect::<Vec<_>>()[i + 1]
+                        .addr
+                        .clone()),
                     _ => Err(CursorError::InvalidMotion(*self)),
                 }
             }
@@ -221,6 +234,12 @@ pub(crate) struct CursorState<'dag> {
     pub(crate) block_loc: Address,
     pub(crate) node_loc: Address,
     graph: &'dag [Node],
+}
+
+impl<'dag> CursorState<'dag> {
+    pub fn _at_node(&self) -> bool {
+        self.block_loc == self.node_loc
+    }
 }
 
 /// Equivalent to a decompressed `CursorState`, except with `graph` being `Vec<Node>` instead of
@@ -276,21 +295,19 @@ impl<'dag> CursorState<'dag> {
 
     pub fn navigate(&self, dir: CursorDir) -> Result<Address, CursorError> {
         let graph_hash = self.graph.get_hash();
-        let on_node = self.node_loc == self.block_loc;
-        dbg!(&self.block_loc);
-        dbg!(&self.node_loc);
 
         let Some(coerced_node) = graph_hash.get(&self.node_loc) else {
             return Err(CursorError::AddrNotFound(self.node_loc.clone()));
         };
 
-        let dst = if !on_node && GLOBAL_BLOCKS.contains(&coerced_node.kind) {
+        let dst = if !self._at_node() && GLOBAL_BLOCKS.contains(&coerced_node.kind) {
+            dbg!("G");
             dir.move_global(&self)?
         } else {
+            dbg!("L");
             dir.move_local(&self)?
         };
 
-        dbg!(&dst);
         Ok(dst.clone())
     }
 
