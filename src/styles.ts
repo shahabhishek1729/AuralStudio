@@ -13,15 +13,9 @@ export const ROW_STYLE: CSSProperties = {
 export const BORDER_ANIMATION: CSSProperties = {
 	position: "absolute",
 	border: "2px solid #f7dc28",
+	borderRadius: "10px",
 	pointerEvents: "none",
 	transition: "transform 0.4s ease, width 0.4s ease, height 0.4s ease",
-	zIndex: "-1",
-}
-
-export function BORDER_STYLE(selected: boolean): CSSProperties {
-	return {
-		border: selected ? "2px solid #f7dc28" : "",
-		borderRadius: "10px"
-	}
+	zIndex: "2",
 }
 

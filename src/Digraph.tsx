@@ -3,11 +3,12 @@
  * individual pieces, nodes, blocks and subtrees.
  */
 
+import { useEffect, useRef, useState } from "react";
 import { ArcherContainer, ArcherElement } from "react-archer";
 import rattle_icon from "./assets/rattle_icon.png";
 import { ReactNode } from "react";
 import { RTLNode } from "./types";
-import { ROW_STYLE, FLEX_COL, FLEX_ROW, BORDER_STYLE } from "./styles";
+import { ROW_STYLE, FLEX_COL, FLEX_ROW, BORDER_ANIMATION } from "./styles";
 import { Token, RenderPiece } from "./PieceRenderer";
 import { getColor } from "./utils";
 
@@ -50,6 +51,32 @@ function addrStep(addr: string, n: number = 1): string {
 }
 
 export function Digraph(source: RTLNode[], selectedAddr: string) {
+  // const [selectedAddr, setSelectedAddr] = useState<string>("0.0");
+  const borderRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (selectedAddr !== null && borderRef.current && containerRef.current) {
+      const activeElement = document.getElementById(selectedAddr);
+      const containerElement = containerRef.current;
+
+      if (activeElement) {
+        const activeRect = activeElement.getBoundingClientRect();
+        const containerRect = containerElement.getBoundingClientRect();
+
+        const top = activeRect.top - containerRect.top - 5;
+        const left = activeRect.left - containerRect.left - 5;
+
+        const width = activeRect.width + 10;
+        const height = activeRect.height + 10;
+
+        borderRef.current.style.transform = `translate(${left}px, ${top}px)`;
+        borderRef.current.style.width = `${width}px`;
+        borderRef.current.style.height = `${height}px`;
+      }
+    }
+  }, [source, selectedAddr]);
+
   return (
     <div style={{ overflowX: "auto" }}>
       <ArcherContainer
@@ -57,6 +84,7 @@ export function Digraph(source: RTLNode[], selectedAddr: string) {
         lineStyle="curve"
         endShape={{ arrow: { arrowLength: 6, arrowThickness: 5 } }}
         endMarker={true}
+        offset={5}
       >
         <div
           style={{
@@ -79,10 +107,17 @@ export function Digraph(source: RTLNode[], selectedAddr: string) {
           </ArcherElement>
         </div>
 
-        <div style={ROW_STYLE}>
-          {source.map((subtree, i) =>
-            RenderSubtree(i.toString(), subtree, selectedAddr),
-          )}
+        <div ref={containerRef} style={{ position: "relative" }}>
+          <div
+            id={`selected_${selectedAddr}`}
+            ref={borderRef}
+            style={BORDER_ANIMATION}
+          />
+          <div style={ROW_STYLE}>
+            {source.map((subtree, i) =>
+              RenderSubtree(i.toString(), subtree, selectedAddr),
+            )}
+          </div>
         </div>
       </ArcherContainer>
     </div>
@@ -110,7 +145,6 @@ function RenderSubtree(
           style={{
             gap: "30px",
             ...FLEX_ROW,
-            ...BORDER_STYLE(selectedAddr === `${addr}.1`),
           }}
         >
           {getBlocks(subtreeRoot).map((sub, i) =>
@@ -132,7 +166,7 @@ function RenderBlock(
     hasBlocks(subtreeRoot) || !subtreeParent ? `${address}.0` : address;
   return (
     <>
-      <div style={{ height: "25px" }} />
+      <div style={{ height: "30px" }} />
       <ArcherElement
         id={blockAddr}
         relations={getBlocks(subtreeRoot).map((c) => {
@@ -150,6 +184,7 @@ function RenderBlock(
             justifyContent: "center",
             paddingLeft: "10px",
             paddingRight: "10px",
+            paddingBottom: "5px",
           }}
         >
           {RenderNode(
@@ -176,14 +211,8 @@ function RenderNode(
 ) {
   if (LOCAL_BLOCK_NODES.includes(node.kind) && check_blocks) {
     return (
-      <div
-        id={address}
-        style={{ ...FLEX_COL, ...BORDER_STYLE(selectedAddr === address) }}
-      >
-        <div
-          id={`${address}.0`}
-          style={BORDER_STYLE(selectedAddr === `${address}.0`)}
-        >
+      <div id={address} style={FLEX_COL}>
+        <div id={`${address}.0`}>
           {RenderNode(node, `${address}.0`, selectedAddr, parent, false, false)}
         </div>
         <div style={{ height: "50px" }} />
@@ -192,14 +221,10 @@ function RenderNode(
           style={{
             gap: "20px",
             ...FLEX_ROW,
-            ...BORDER_STYLE(selectedAddr === `${address}.1`),
           }}
         >
           {node.children.map((n, i) => (
-            <div
-              id={`${address}.1.${i}`}
-              style={BORDER_STYLE(selectedAddr === `${address}.1.${i}`)}
-            >
+            <div id={`${address}.1.${i}`}>
               {RenderNode(n, `${address}.1.${i}`, selectedAddr, node)}
             </div>
           ))}
@@ -225,7 +250,6 @@ function RenderNode(
         )
           ? "start" // TODO: Center or keep alignment as-is?
           : "start",
-        ...BORDER_STYLE(selectedAddr === address),
       }}
     >
       <ArcherElement
@@ -250,7 +274,6 @@ function RenderNode(
             width: "fit-content",
             justifyContent: "center",
             alignItems: "center",
-            ...BORDER_STYLE(selectedAddr === `${address}.0`),
           }}
         >
           <Token
