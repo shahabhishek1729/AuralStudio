@@ -51,10 +51,11 @@ function addrStep(addr: string, n: number = 1): string {
 }
 
 export function Digraph(source: RTLNode[], selectedAddr: string) {
-  // const [selectedAddr, setSelectedAddr] = useState<string>("0.0");
   const borderRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
+  // TODO: Doesn't scale when resizing windows
+  // Moving border when selecting blocks/nodes
   useEffect(() => {
     if (selectedAddr !== null && borderRef.current && containerRef.current) {
       const activeElement = document.getElementById(selectedAddr);
