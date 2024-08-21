@@ -21,7 +21,9 @@ interface _PieceInterface {
 export interface PayloadState {
 	graph: Array<RTLNode>,
 	block_loc: string, // Addresses are stored as IPv4-style strings in JSON 
+	mode: ADMode,
 }
+type ADMode = "VIEW" | "EDIT";
 
 /**
  * Turns a `RTLPiece` into a `string` concisely describing the kind of piece we 

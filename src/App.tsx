@@ -19,6 +19,7 @@ function App() {
   let [payload, setPayload] = useState<PayloadState>({
     graph: [],
     block_loc: "",
+    mode: "VIEW",
   });
   const [listenersSet, setListenersSet] = useState(false);
 
@@ -27,7 +28,7 @@ function App() {
   useEffect(() => {
     invoke("parse_file", { source: source }).then((o: any) => {
       setTreeSource(o);
-      setPayload({ graph: o, block_loc: "0.0" });
+      setPayload({ graph: o, block_loc: "0.0", mode: "VIEW" });
     });
   }, []);
 
