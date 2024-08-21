@@ -1,6 +1,9 @@
+use crate::digraph::address::Address;
+use crate::digraph::state::CursorDir;
 pub use crate::error::SyntaxError;
 use crate::scanner::rtl_token::RTLToken;
 use crate::scanner::scanner::Token;
+use thiserror::Error;
 
 /// A custom result type with two variants:
 /// 1. Ok(()) -> Indicates proper Rattle syntax
@@ -149,4 +152,14 @@ where
     pub(crate) fn len(&self) -> usize {
         self.elements.len()
     }
+}
+
+#[derive(Debug, Error)]
+pub(crate) enum CursorError {
+    #[error("the address {0} does not exist in this tree")]
+    InvalidAddress(Address),
+    #[error("the motion {0} is not available at this position")]
+    InvalidMotion(CursorDir),
+    #[error("Couldn't find address: {} in the file", .0)]
+    AddrNotFound(Address),
 }

@@ -1,13 +1,13 @@
 use crate::check;
 use crate::digraph::address::{Address, Addressable};
 use crate::digraph::parser::NodeKind;
+pub(crate) use crate::prelude::CursorError;
 use crate::Node;
 
 use crate::addr;
 use anyhow;
 use phf::phf_map;
 use serde_derive::{Deserialize, Serialize};
-use thiserror::Error;
 
 static N_ROOT_CHILDREN: phf::Map<&'static str, u8> = phf_map! {
     "CONDTL" => 2,
@@ -25,14 +25,29 @@ fn _filter_children(node: &Node) -> impl Iterator<Item = &Node> {
         .filter(|c| !GLOBAL_BLOCKS.contains(&c.kind))
 }
 
+/// All possible directions of motion within a digraph
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub(crate) enum CursorDir {
+    /// Globally, moving to the parent block.
+    /// Locally, moving to the group directly above.
     UP,
+    /// Globally, moving to the leftmost child block.
+    /// Locally, moving to the group directly below.
     DOWN,
+    /// Globally, moving left to a sibling block.
+    /// Locally, moving from the "no" to the "yes" branch.
     LEFT,
+    /// Globally, moving right to a sibling block.
+    /// Locally, moving from the "yes" to the "no" branch.
     RIGHT,
+    /// Globally, moving in from block to root node (i.e., to local scope).
+    /// Locally, moving in from a loop/conditional to its body.
     IN,
+    /// Globally, this motion is invalid.
+    /// Locally, moving out to parent groups.
     OUT,
+    /// Placeholder for actions that don't correspond to motions (when parsing commands).
+    NONE,
 }
 
 impl std::fmt::Display for CursorDir {
@@ -41,22 +56,12 @@ impl std::fmt::Display for CursorDir {
     }
 }
 
-#[derive(Debug, Error)]
-pub(crate) enum CursorError {
-    #[error("the address {0} does not exist in this tree")]
-    InvalidAddress(Address),
-    #[error("the motion {0} is not available at this position")]
-    InvalidMotion(CursorDir),
-    #[error("Couldn't find address: {} in the file", .0)]
-    AddrNotFound(Address),
-}
-
 impl CursorDir {
     fn _modifying_val(&self) -> bool {
         match self {
             CursorDir::UP | CursorDir::LEFT => false,
             CursorDir::DOWN | CursorDir::RIGHT => true,
-            _ => unreachable!("Cannot retrieve modifying value for a IN or OUT operation"),
+            _ => unreachable!("Cannot retrieve modifying value for a IN, OUT or NONE operation"),
         }
     }
 
@@ -64,7 +69,7 @@ impl CursorDir {
         match self {
             CursorDir::UP | CursorDir::DOWN => 1,
             CursorDir::LEFT | CursorDir::RIGHT => 0,
-            _ => unreachable!("Cannot retrieve modifying value for a IN or OUT operation"),
+            _ => unreachable!("Cannot retrieve modifying value for a IN, OUT or NONE operation"),
         }
     }
 
@@ -341,6 +346,7 @@ mod tests {
                 failed = failed || matches!(dst, Err($err(_)));
                 if let Ok(dst) = dst {
                     state.block_loc = dst;
+                    let _ = state.coerce().expect("Post-motion coercion should succeed");
                 }
             )+
             assert!(failed);
@@ -359,7 +365,7 @@ mod tests {
                     move_cursor!($dir).move_local(&state).expect("Motion should succeed")
                 };
                 state.block_loc = dst.clone();
-                state.coerce();
+                let _ = state.coerce().expect("Post-motion coercion should succeed");
             )+
             assert_eq!(dst, addr!($($id),+));
         }};
