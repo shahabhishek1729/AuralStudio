@@ -359,6 +359,7 @@ mod tests {
                     move_cursor!($dir).move_local(&state).expect("Motion should succeed")
                 };
                 state.block_loc = dst.clone();
+                state.coerce();
             )+
             assert_eq!(dst, addr!($($id),+));
         }};
