@@ -137,7 +137,6 @@ impl CursorDir {
                 let mut dst = src.clone().addr;
                 let l = dst.len();
                 for i in (0..l).filter(|x| x % 2 == self._parity_val()).rev() {
-                    // If we're going up, make sure we can and move. Otherwise, go down.
                     check!(self._modifying_val() => dst[i] += 1 ; check!(dst[i] > 0 => dst[i] -= 1 ; continue));
                     let dst = Address::new(dst[0..(i + 1)].to_vec());
 
