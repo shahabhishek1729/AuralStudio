@@ -215,28 +215,31 @@ impl CursorDir {
                     _ => Err(CursorError::InvalidMotion(*self)),
                 }
             }
-            CursorDir::IN => {
-                // let mut src = &mut src.clone();
-                // src.addr.push(0);
-                // let Ok(_) = src.coerce(&state.graph.get_hash()) else {
-                //     return Err(CursorError::InvalidMotion(*self));
-                // };
-                // Ok(src.clone())
-                self.move_global(state)
-            }
+            CursorDir::IN => self.move_global(state),
             CursorDir::OUT => {
                 let mut src = src.clone();
                 let _ = src.addr.pop();
                 Ok(src)
             }
+            CursorDir::NONE => Err(CursorError::InvalidMotion(*self)),
         }
     }
+}
+
+/// The modes a user can be in when navigating through the digraph
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub(crate) enum ADMode {
+    /// Used to insert code or replace existing code (i.e., modifying the digraph)
+    EDIT,
+    /// Used for moving around in the digraph, running code or any other non-modifying actions.
+    VIEW,
 }
 
 #[derive(Debug)]
 pub(crate) struct CursorState<'dag> {
     pub(crate) block_loc: Address,
     pub(crate) node_loc: Address,
+    pub(crate) mode: ADMode,
     graph: &'dag [Node],
 }
 
@@ -253,6 +256,7 @@ impl<'dag> CursorState<'dag> {
 pub(crate) struct PayloadState {
     graph: Vec<Node>,
     block_loc: Address,
+    mode: ADMode,
 }
 
 impl From<CursorState<'_>> for PayloadState {
@@ -260,6 +264,7 @@ impl From<CursorState<'_>> for PayloadState {
         return PayloadState {
             graph: value.graph.to_vec(),
             block_loc: value.block_loc,
+            mode: value.mode,
         };
     }
 }
@@ -275,12 +280,14 @@ impl<'a> Into<CursorState<'a>> for &'a PayloadState {
                     .coerce(&graph_slice.get_hash())
                     .expect("Coercion from 0.0 should work"),
                 graph: graph_slice,
+                mode: self.mode,
             };
         };
         CursorState {
             block_loc: self.block_loc.clone(),
             node_loc,
             graph: graph_slice,
+            mode: self.mode,
         }
     }
 }
@@ -294,6 +301,7 @@ impl<'dag> CursorState<'dag> {
             block_loc,
             node_loc,
             graph,
+            mode: ADMode::VIEW,
         })
     }
 

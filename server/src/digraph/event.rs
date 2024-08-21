@@ -62,6 +62,13 @@ pub(crate) struct KeyboardEvent {
 
 impl KeyboardEvent {
     pub(crate) fn parse_command(&self, state: &mut CursorState) {
+        match state.mode {
+            super::state::ADMode::VIEW => self._v_parse_command(state),
+            super::state::ADMode::EDIT => self._e_parse_command(state),
+        }
+    }
+
+    fn _v_parse_command(&self, state: &mut CursorState) {
         let dir = match &self.key[..] {
             "h" => CursorDir::LEFT,
             "j" => CursorDir::DOWN,
@@ -78,5 +85,9 @@ impl KeyboardEvent {
         let Ok(_) = state.coerce() else {
             return;
         };
+    }
+
+    fn _e_parse_command(&self, _state: &mut CursorState) {
+        todo!()
     }
 }
