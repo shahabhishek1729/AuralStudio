@@ -69,22 +69,26 @@ impl KeyboardEvent {
     }
 
     fn _v_parse_command(&self, state: &mut CursorState) {
-        let dir = match &self.key[..] {
-            "h" => CursorDir::LEFT,
-            "j" => CursorDir::DOWN,
-            "k" => CursorDir::UP,
-            "l" => CursorDir::RIGHT,
-            "Enter" => CursorDir::IN,
-            "Backspace" => CursorDir::OUT,
-            &_ => CursorDir::NONE,
-        };
-        let Ok(new_addr) = state.navigate(dir) else {
-            return;
-        };
-        state.block_loc = new_addr;
-        let Ok(_) = state.coerce() else {
-            return;
-        };
+        match &self.key[..] {
+            "h" | "j" | "k" | "l" | " " | "Backspace" => {
+                // This is a navigation command, move in the correct direction
+                let dir = match &self.key[..] {
+                    "h" => CursorDir::LEFT,
+                    "j" => CursorDir::DOWN,
+                    "k" => CursorDir::UP,
+                    "l" => CursorDir::RIGHT,
+                    " " => CursorDir::IN,
+                    "Backspace" => CursorDir::OUT,
+                };
+                let Ok(new_addr) = state.navigate(dir) else {
+                    return;
+                };
+                state.block_loc = new_addr;
+                let Ok(_) = state.coerce() else {
+                    return;
+                };
+            }
+        }
     }
 
     fn _e_parse_command(&self, _state: &mut CursorState) {

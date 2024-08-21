@@ -46,8 +46,6 @@ pub(crate) enum CursorDir {
     /// Globally, this motion is invalid.
     /// Locally, moving out to parent groups.
     OUT,
-    /// Placeholder for actions that don't correspond to motions (when parsing commands).
-    NONE,
 }
 
 impl std::fmt::Display for CursorDir {
@@ -61,7 +59,7 @@ impl CursorDir {
         match self {
             CursorDir::UP | CursorDir::LEFT => false,
             CursorDir::DOWN | CursorDir::RIGHT => true,
-            _ => unreachable!("Cannot retrieve modifying value for a IN, OUT or NONE operation"),
+            _ => unreachable!("Cannot retrieve modifying value for a IN, OUT operation"),
         }
     }
 
@@ -69,7 +67,7 @@ impl CursorDir {
         match self {
             CursorDir::UP | CursorDir::DOWN => 1,
             CursorDir::LEFT | CursorDir::RIGHT => 0,
-            _ => unreachable!("Cannot retrieve modifying value for a IN, OUT or NONE operation"),
+            _ => unreachable!("Cannot retrieve modifying value for a IN, OUT operation"),
         }
     }
 
@@ -225,7 +223,6 @@ impl CursorDir {
                 let _ = src.addr.pop();
                 Ok(src)
             }
-            CursorDir::NONE => Err(CursorError::InvalidMotion(*self)),
         }
     }
 }
