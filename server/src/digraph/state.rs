@@ -114,10 +114,12 @@ impl CursorDir {
             return Err(CursorError::InvalidAddress(parent_addr.clone()));
         };
 
-        let (i, curr_node): (usize, &Node) = _filter_children(parent)
+        let Some((i, curr_node)): Option<(usize, &Node)> = _filter_children(parent)
             .enumerate()
             .find(|(_, n)| n.addr == src)
-            .unwrap(); // FIXME: Replace with more intuitive behavior (e.g., InvalidMotion?)
+        else {
+            return Err(CursorError::InvalidMotion(*self));
+        };
         assert_eq!(curr_node, node);
 
         Ok((parent, i))
