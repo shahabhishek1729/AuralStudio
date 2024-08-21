@@ -104,6 +104,7 @@ impl CursorDir {
         };
 
         if parent_addr.coerce(&graph_hash)? == node.addr {
+            // This only allows for DOWN, and is handled separately in that branch.
             return Err(CursorError::InvalidMotion(*self));
         }
         let Some(&parent) = state
@@ -118,6 +119,7 @@ impl CursorDir {
             .enumerate()
             .find(|(_, n)| n.addr == src)
         else {
+            // This is an unacceptable local motion
             return Err(CursorError::InvalidMotion(*self));
         };
         assert_eq!(curr_node, node);
