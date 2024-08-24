@@ -79,6 +79,7 @@ impl KeyboardEvent {
                     "l" => CursorDir::RIGHT,
                     " " => CursorDir::IN,
                     "Backspace" => CursorDir::OUT,
+                    &_ => unreachable!("Can only be one of 'h', 'j', 'k', 'l', ' ', 'Backspace'"),
                 };
                 let Ok(new_addr) = state.navigate(dir) else {
                     return;
@@ -88,10 +89,14 @@ impl KeyboardEvent {
                     return;
                 };
             }
+            "Enter" => state.mode = super::state::ADMode::EDIT,
+            &_ => {
+                // TODO: Implement
+            }
         }
     }
 
     fn _e_parse_command(&self, _state: &mut CursorState) {
-        todo!()
+        // TODO: Implement
     }
 }
