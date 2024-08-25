@@ -89,7 +89,10 @@ impl KeyboardEvent {
                     return;
                 };
             }
-            "Enter" => state.mode = super::state::ADMode::EDIT,
+            "Enter" => {
+                state.mode.toggle();
+                // TODO: Make a new node below
+            }
             &_ => {
                 // TODO: Implement
             }

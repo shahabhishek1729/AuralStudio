@@ -20,7 +20,7 @@ use std::fs;
 use crate::digraph::address::Addressable;
 use crate::digraph::event::KeyboardEvent;
 use crate::digraph::parser::{Node, Parser};
-use crate::digraph::state::{CursorState, PayloadState};
+use crate::digraph::state::CursorState;
 use crate::runner::compile;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -91,14 +91,14 @@ fn parse_file(source: String) -> Vec<Node> {
 }
 
 #[tauri::command]
-fn handle_event(event: String, payload: PayloadState) -> PayloadState {
+fn handle_event(event: String, payload: CursorState) -> CursorState {
     let Ok(e): Result<KeyboardEvent, _> = serde_json::from_str(&event) else {
         panic!("Failed to parse keyboardEvent");
     };
-    let mut state: CursorState = (&payload).into();
+    let mut state: CursorState = payload.into();
     e.parse_command(&mut state);
 
-    PayloadState::from(state)
+    state
 }
 
 fn main() {

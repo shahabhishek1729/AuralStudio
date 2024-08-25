@@ -1,5 +1,5 @@
 use crate::digraph::parser::{Node, NodeKind, HORIZ_CHILDREN};
-use crate::digraph::state::CursorError;
+use crate::prelude::CursorError;
 use serde;
 use std::collections::HashMap;
 
@@ -138,7 +138,7 @@ pub(crate) trait Addressable {
     }
 }
 
-impl Addressable for &[Node] {
+impl Addressable for Vec<Node> {
     fn get_hash(&self) -> HashMap<Address, &Node> {
         let mut hm: HashMap<Address, &Node> = HashMap::new();
         // Recursively traverse the graph, adding each node to the map and handling its subtree.
@@ -146,7 +146,7 @@ impl Addressable for &[Node] {
             _hm.insert(node.addr.clone(), node);
             node.children.iter().for_each(|n| _inner(n, _hm));
         }
-        self.iter().for_each(|n| _inner(n, &mut hm));
+        self.iter().for_each(|ref n| _inner(n, &mut hm));
         hm
     }
 }
@@ -192,7 +192,7 @@ impl Addressable for &mut [Node] {
             });
         }
 
-        for (i, node) in self.iter_mut().enumerate() {
+        for (i, ref mut node) in self.into_iter().enumerate() {
             // i is set to -1 here because we do not want to change the addresses of the roots.
             _inner(node, -1, &addr![i, 0], false);
         }
