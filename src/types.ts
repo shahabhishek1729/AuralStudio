@@ -18,12 +18,15 @@ interface _PieceInterface {
 	LIST?: RTLPiece[],
 }
 
-export interface PayloadState {
+export interface CursorState {
 	graph: Array<RTLNode>,
-	block_loc: string, // Addresses are stored as IPv4-style strings in JSON 
+	block_loc: Address, 
 	mode: ADMode,
+	insert_at: Address | null,
 }
+
 type ADMode = "VIEW" | "EDIT";
+type Address = string; // Addresses are stored as IPv4-style strings in JSON 
 
 /**
  * Turns a `RTLPiece` into a `string` concisely describing the kind of piece we 

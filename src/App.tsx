@@ -11,40 +11,39 @@ import { FileTree } from "./FileTree.tsx";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Digraph } from "./Digraph.tsx";
-import { PayloadState, RTLNode } from "./types.ts";
+import { CursorState, RTLNode } from "./types.ts";
 
 function App() {
   let [codeOutput, _] = useState<string>("Code output will appear here...");
   let [treeSource, setTreeSource] = useState<Array<RTLNode>>([]);
-  let [payload, setPayload] = useState<PayloadState>({
+  let [payload, setPayload] = useState<CursorState>({
     graph: [],
     block_loc: "",
     mode: "VIEW",
+    insert_at: null,
   });
-  const [listenersSet, setListenersSet] = useState(false);
 
   let source = `define f of x\noutput x\ndefine f1 of x\noutput x\ndone define\ndefine f2 of x\noutput x\ndefine f21 of x\noutput x\ndone define\ndefine f22 of x\noutput x\ndone define\ndone define\ndone define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define`;
 
   useEffect(() => {
     invoke("parse_file", { source: source }).then((o: any) => {
       setTreeSource(o);
-      setPayload({ graph: o, block_loc: "0.0", mode: "VIEW" });
+      setPayload({ graph: o, block_loc: "0.0", mode: "VIEW", insert_at: null });
     });
   }, []);
 
-  let onKeyUp = (e: React.KeyboardEvent<Document>) => {
+  const onKeyUp = (e: KeyboardEvent) => {
     invoke("handle_event", {
       event: JSON.stringify({ key: e.key }),
       payload: payload,
     }).then((new_payload) => {
-      if (payload !== new_payload) setPayload(new_payload);
+      if (payload !== new_payload) setPayload(new_payload as CursorState);
     });
   };
 
   useEffect(() => {
     if (payload.graph.length > 0) {
       window.addEventListener("keyup", onKeyUp);
-      setListenersSet(true);
       return () => {
         window.removeEventListener("keyup", onKeyUp);
       };
@@ -106,7 +105,7 @@ function App() {
 
           <div style={{ height: "20px" }} />
 
-          {Digraph(treeSource, payload.block_loc)}
+          {Digraph(treeSource, payload)}
 
           <div
             style={{

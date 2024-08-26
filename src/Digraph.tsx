@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArcherContainer, ArcherElement } from "react-archer";
 import rattle_icon from "./assets/rattle_icon.png";
 import { ReactNode } from "react";
-import { RTLNode } from "./types";
+import { CursorState, RTLNode } from "./types";
 import { ROW_STYLE, FLEX_COL, FLEX_ROW, BORDER_ANIMATION } from "./styles";
 import { Token, RenderPiece } from "./PieceRenderer";
 import { getColor } from "./utils";
@@ -50,7 +50,8 @@ function addrStep(addr: string, n: number = 1): string {
   return prefix.join(".");
 }
 
-export function Digraph(source: RTLNode[], selectedAddr: string) {
+export function Digraph(source: RTLNode[], state: CursorState) {
+  const selectedAddr = state.block_loc;
   const borderRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 

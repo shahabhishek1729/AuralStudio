@@ -264,19 +264,6 @@ impl Default for CursorState {
 }
 
 impl CursorState {
-    pub(crate) fn new(graph: &[Node]) -> Result<Self, CursorError> {
-        let graph = graph.to_vec();
-        let block_loc = Address::new(vec![0, 0]);
-        let node_loc = block_loc.coerce(&graph.get_hash())?;
-
-        Ok(Self {
-            block_loc,
-            node_loc,
-            graph,
-            ..Default::default()
-        })
-    }
-
     pub fn navigate(&self, dir: CursorDir) -> Result<Address, CursorError> {
         let graph_hash = self.graph.get_hash();
 

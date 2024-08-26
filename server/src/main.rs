@@ -95,9 +95,9 @@ fn handle_event(event: String, payload: CursorState) -> CursorState {
     let Ok(e): Result<KeyboardEvent, _> = serde_json::from_str(&event) else {
         panic!("Failed to parse keyboardEvent");
     };
+
     let mut state: CursorState = payload.into();
     e.parse_command(&mut state);
-
     state
 }
 

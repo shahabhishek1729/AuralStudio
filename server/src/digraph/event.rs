@@ -68,6 +68,7 @@ impl KeyboardEvent {
         }
     }
 
+    // Parses commands in `view` mode (these commands aren't part of actively editing a codebase)
     fn _v_parse_command(&self, state: &mut CursorState) {
         match &self.key[..] {
             "h" | "j" | "k" | "l" | " " | "Backspace" => {
@@ -90,9 +91,11 @@ impl KeyboardEvent {
                 };
             }
             "Enter" => {
+                // Create a new node "below" the current location ("below" = at_insert_loc)
                 state.mode.toggle();
-                // TODO: Make a new node below
+                state.insert_at = Some(state.block_loc.clone());
             }
+            "r" => todo!("This should run the program"),
             &_ => {
                 // TODO: Implement
             }
