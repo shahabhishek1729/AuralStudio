@@ -304,8 +304,13 @@ mod tests {
             let mut parser = Parser::new(String::from($src)).unwrap();
             let mut nodes = parser.parse().unwrap();
             (&mut nodes[..]).fill_addr();
-            let graph = &&nodes[..];
-            let mut state = CursorState::new(graph).unwrap();
+            let mut state = CursorState {
+                block_loc: addr!(0, 0),
+                node_loc: addr!(0, 0).coerce(&nodes.get_hash()).expect("Coercion should work"),
+                mode: ADMode::VIEW,
+                insert_at: None,
+                graph: nodes.to_vec(),
+            };
             let mut failed = false;
             $(
                 let coerced = state.block_loc.coerce(&(state.graph).get_hash()).expect("Coercion should work");
@@ -326,8 +331,13 @@ mod tests {
             let mut parser = Parser::new(String::from($src)).unwrap();
             let mut nodes = parser.parse().unwrap();
             (&mut nodes[..]).fill_addr();
-            let graph = &&nodes[..];
-            let mut state = CursorState::new(graph).unwrap();
+            let mut state = CursorState {
+                block_loc: addr!(0, 0),
+                node_loc: addr!(0, 0).coerce(&nodes.get_hash()).expect("Coercion should work"),
+                mode: ADMode::VIEW,
+                insert_at: None,
+                graph: nodes.to_vec(),
+            };
             $(
                 let coerced = state.block_loc.coerce(&(state.graph).get_hash()).expect("Coercion should work");
                 let dst = if coerced != state.block_loc && GLOBAL_BLOCKS.contains(&(state.graph).get_hash().get(&coerced).expect("Retrieval should work").kind) {
