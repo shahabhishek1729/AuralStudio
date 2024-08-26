@@ -55,8 +55,7 @@ export function Digraph(source: RTLNode[], state: CursorState) {
   const borderRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // TODO: Doesn't scale when resizing windows
-  // Moving border when selecting blocks/nodes
+  // TODO: Scale when resizing windows (moving border when selecting groups)
   useEffect(() => {
     if (selectedAddr !== null && borderRef.current && containerRef.current) {
       const activeElement = document.getElementById(selectedAddr);
