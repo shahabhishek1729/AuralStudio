@@ -164,4 +164,6 @@ pub(crate) enum CursorError {
     AddrNotFound(Address),
     #[error("cannot increment an empty address")]
     EmptyAddr,
+    #[error("cannot add to a conditional that already has a 'yes' and 'no' branch")]
+    InsertConditional,
 }

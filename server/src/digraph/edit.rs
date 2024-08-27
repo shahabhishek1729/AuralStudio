@@ -39,6 +39,9 @@ impl Editor {
                     next_addr.join(&[num_blocks])
                 }
             }),
+            super::parser::NodeKind::CONDTL => {
+                return Err(CursorError::InsertConditional);
+            }
             _ => None,
         };
 
