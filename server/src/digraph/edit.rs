@@ -28,21 +28,21 @@ impl<'a> Editor<'a> {
                     .len();
 
                 if num_blocks == 0 {
-                    // No global children, append <1(new level), 0(first child in that level)>
-                    state.block_loc.join(&[1, 0])
+                    // No global children, append:
+                    // <1 (new level), 0 (first child in that level), 0 (root of the block)>
+                    state.block_loc.join(&[1, 0, 0])
                 } else {
-                    // There are global children, so it must be that the current address has an
-                    // even length. We need to change the last index to a 1, and append the
-                    // child number to the end
+                    // There are global children -> precondition = curr_addr.len() % 2 == 0
                     let Some(next_addr) = state.block_loc.next() else {
                         return Err(CursorError::EmptyAddr);
                     };
-                    next_addr.join(&[num_blocks])
+                    // Append <num_blocks (the index of the new node), 0 (root of the block)>
+                    next_addr.join(&[num_blocks, 0])
                 }
             }
             _ => {
                 // If we're on a node, just make a new node below and as the new `insert_loc`
-                let Some(next_addr) = curr_node.addr.next() else {
+                let Some(next_addr) = state.block_loc.next() else {
                     return Err(CursorError::EmptyAddr);
                 };
                 next_addr
@@ -93,6 +93,6 @@ mod tests {
 
     #[test]
     fn fn_insert_loc() {
-        insert!(@ <0, 0> _in_ SOURCE -> <0, 1, 2>)
+        insert!(@ <0, 0> _in_ SOURCE -> <0, 1, 2, 0>)
     }
 }
