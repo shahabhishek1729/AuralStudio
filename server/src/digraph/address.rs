@@ -190,8 +190,6 @@ impl Addressable for &mut [Node] {
             if !node.children.is_empty() {
                 addr.push(0);
                 if node.has_subtree() && horiz_ {
-                    addr.extend_from_slice(&[0; 2]);
-                } else {
                     addr.push(0);
                 }
             }
