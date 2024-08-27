@@ -160,6 +160,8 @@ pub(crate) enum CursorError {
     InvalidAddress(Address),
     #[error("the motion {0} is not available at this position")]
     InvalidMotion(CursorDir),
-    #[error("Couldn't find address: {} in the file", .0)]
+    #[error("couldn't find address: {} in the file", .0)]
     AddrNotFound(Address),
+    #[error("cannot increment an empty address")]
+    EmptyAddr,
 }
