@@ -26,7 +26,6 @@ impl<'a> Editor<'a> {
                     .filter(|c| GLOBAL_BLOCKS.contains(&c.kind))
                     .collect::<Vec<_>>()
                     .len();
-                dbg!(&num_blocks);
 
                 if num_blocks == 0 {
                     // No global children, append <1(new level), 0(first child in that level)>
