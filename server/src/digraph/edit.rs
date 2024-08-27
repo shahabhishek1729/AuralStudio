@@ -93,6 +93,10 @@ mod tests {
 
     #[test]
     fn fn_insert_loc() {
-        insert!(@ <0, 0> _in_ SOURCE -> <0, 1, 2, 0>)
+        insert!(@ <0, 0> _in_ SOURCE -> <0, 1, 2, 0>);
+        insert!(@ <0, 1, 0> _in_ SOURCE -> <0, 1, 0, 1, 0, 0>);
+        insert!(@ <0, 1, 1, 0> _in_ SOURCE -> <0, 1, 1, 1, 2, 0>);
+        insert!(@ <0, 1, 1, 1, 0> _in_ SOURCE -> <0, 1, 1, 1, 0, 1, 0, 0>);
+        insert!(@ <0, 1, 1, 1, 1> _in_ SOURCE -> <0, 1, 1, 1, 1, 1, 0, 0>);
     }
 }
