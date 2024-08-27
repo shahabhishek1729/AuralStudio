@@ -1,4 +1,5 @@
-use crate::digraph::parser::{Node, NodeKind, HORIZ_CHILDREN};
+use crate::digraph::parser::{Node, NodeKind};
+use crate::digraph::util::HORIZ_CHILDREN;
 use crate::prelude::CursorError;
 use serde;
 use std::collections::HashMap;
@@ -70,9 +71,24 @@ impl Address {
         }
         Ok(Address::new(addr))
     }
+
+    /// Increment a given address (e.g., <0, 0, 0> -> <0, 0, 1>). Does not check validity.
+    pub(super) fn next(&self) -> Option<Address> {
+        let mut new_addr = self.addr.clone();
+        let last = new_addr.last_mut()?;
+        *last += 1;
+        Some(Address::new(new_addr))
+    }
+
+    /// Append to a given address (e.g., <0, 0> -> <0, 0, 1>). Does not check validity.
+    pub(super) fn join(&self, to_join: &[usize]) -> Address {
+        let mut new_addr = self.addr.clone();
+        new_addr.extend_from_slice(to_join);
+        Address::new(new_addr)
+    }
 }
 
-// Formats an address in IPv4-style (e.g. vec![1, 2, 3, 4] -> "1.2.3.4")
+/// Formats an address in IPv4-style (e.g. vec![1, 2, 3, 4] -> "1.2.3.4")
 impl std::fmt::Display for Address {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -87,7 +103,7 @@ impl std::fmt::Display for Address {
     }
 }
 
-// Allows us to get the internal address vector from an `Address` object.
+/// Allows us to get the internal address vector from an `Address` object.
 impl std::ops::Deref for Address {
     type Target = Vec<usize>;
     fn deref(&self) -> &Self::Target {
@@ -95,7 +111,7 @@ impl std::ops::Deref for Address {
     }
 }
 
-// Serializes addresses to be easier to work with in JSON (turns <1, 2, 3, 4> into 1.2.3.4)
+/// Serializes addresses to be easier to work with in JSON (turns <1, 2, 3, 4> into 1.2.3.4)
 impl serde::ser::Serialize for Address {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -106,6 +122,7 @@ impl serde::ser::Serialize for Address {
     }
 }
 
+/// Reverses serialization (turns 1.2.3.4 into <1, 2, 3, 4>)
 impl<'de> serde::de::Deserialize<'de> for Address {
     fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -171,6 +188,7 @@ impl Addressable for &mut [Node] {
             // references the vertical "level", and the 2nd 0 references the node's horizontal
             // position within that level.
             if !node.children.is_empty() {
+                addr.push(0);
                 if node.has_subtree() && horiz_ {
                     addr.extend_from_slice(&[0; 2]);
                 } else {
@@ -291,8 +309,48 @@ mod tests {
         }
     }
 
-    mod coercion {
+    mod addr_ops {
+        use super::*;
+        use crate::digraph::address::{Address, Addressable};
+
+        const SOURCE: &'static str =
+            "define f of x\noutput x\nlet my_age be 3\ndone define\ndefine g of x\n\
+                          output string hi done\ndone define\ndefine h of x\noutput x plus 1\nif \
+                          x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone \
+                          define";
+
+        fn _test_setup() -> Vec<Node> {
+            let mut parser = Parser::new(String::from(SOURCE)).unwrap();
+            let mut nodes = parser.parse().unwrap();
+            (&mut nodes[..]).fill_addr();
+            nodes
+        }
+
         #[test]
-        fn basic_coercion() {}
+        fn basic_coercion() {
+            let nodes = _test_setup();
+            let addr = addr!(0, 0);
+            assert_eq!(
+                addr.coerce(&nodes.get_hash())
+                    .expect("Coercion should work"),
+                addr!(0, 0, 0)
+            );
+        }
+
+        #[test]
+        #[should_panic]
+        fn invalid_coercion() {
+            let nodes = _test_setup();
+            let addr = addr!(3, 0);
+            addr.coerce(&nodes.get_hash())
+                .expect("Coercion should work");
+        }
+
+        #[test]
+        fn next_addr() {
+            let nodes = _test_setup();
+            let addr = addr!(0, 0, 0);
+            assert_eq!(addr.next(), Some(addr!(0, 0, 1)));
+        }
     }
 }

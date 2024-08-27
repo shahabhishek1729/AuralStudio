@@ -1,12 +1,10 @@
 use crate::digraph::address::Address;
+use crate::digraph::util::HORIZ_CHILDREN;
 use crate::prelude::Stack;
 use crate::scanner::rtl_token::RTLToken;
 use crate::scanner::scanner::{Scanner, Token};
 use serde_derive::{Deserialize, Serialize};
 use thiserror::Error;
-
-pub(super) const HORIZ_CHILDREN: &[NodeKind; 3] =
-    &[NodeKind::FNDEF, NodeKind::CONDTLY, NodeKind::CONDTLN];
 
 /// Represents a single line of code, which is rendered in a digraph as a single node.
 ///
@@ -125,7 +123,7 @@ impl PartialEq for Node {
 
 impl Node {
     pub(super) fn has_subtree(&self) -> bool {
-        // NOTE:XXX: Claims that all sub-function definitions must be in the root of a function
+        // NOTE:XXX: Claims that all sub-function definitions must be in the root children of a function
         // NOTE:XXX: Claims FNDEF & CONDTL are the only kind of sub-tree allowable (classes?)
         self.children
             .iter()
