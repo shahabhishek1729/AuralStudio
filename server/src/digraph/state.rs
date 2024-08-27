@@ -2,27 +2,11 @@ use crate::addr;
 use crate::check;
 use crate::digraph::address::{Address, Addressable};
 use crate::digraph::parser::NodeKind;
+use crate::digraph::util::*;
 pub(crate) use crate::prelude::CursorError;
 use crate::Node;
 use anyhow;
-use phf::phf_map;
 use serde_derive::{Deserialize, Serialize};
-
-static N_ROOT_CHILDREN: phf::Map<&'static str, u8> = phf_map! {
-    "CONDTL" => 2,
-    "CONDTLY" => 1,
-    "CONDTLN" => 1,
-    "WHLLOOP" => 1,
-    "FORLOOP" => 1,
-    "FNDEF" => 1,
-};
-
-const GLOBAL_BLOCKS: &[NodeKind] = &[NodeKind::FNDEF];
-fn _filter_children(node: &Node) -> impl Iterator<Item = &Node> {
-    node.children
-        .iter()
-        .filter(|c| !GLOBAL_BLOCKS.contains(&c.kind))
-}
 
 /// All possible directions of motion within a digraph
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -248,7 +232,7 @@ pub(crate) struct CursorState {
     pub(crate) node_loc: Address,
     pub(crate) mode: ADMode,
     pub(crate) insert_at: Option<Address>,
-    graph: Vec<Node>,
+    pub(super) graph: Vec<Node>,
 }
 
 impl Default for CursorState {
