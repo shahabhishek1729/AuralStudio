@@ -349,7 +349,7 @@ mod tests {
         (O) => {$crate::digraph::state::CursorDir::OUT};
     }
 
-    const SOURCE: &str = "define f of x\noutput x\ndefine f1 of x\noutput x\ndone define\ndefine \
+    const SOURCE: &'static str = "define f of x\noutput x\ndefine f1 of x\noutput x\ndone define\ndefine \
                           f2 of x\noutput x\ndefine f21 of x\noutput x\ndone define\ndefine f22 of \
                           x\noutput x\ndone define\ndone define\ndone define\ndefine g of x\noutput x plus 1\nif \
                           x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone \

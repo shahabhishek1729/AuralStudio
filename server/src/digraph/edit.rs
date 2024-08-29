@@ -1,20 +1,27 @@
+use super::parser::NodeKind;
 use super::state::CursorState;
 use crate::digraph::address::{Address, Addressable};
 use crate::digraph::util::*;
 use crate::prelude::CursorError;
 
+enum Insertable {
+    Any,
+    Just(NodeKind),
+}
+
 pub(crate) struct Editor<'a> {
-    state: &'a CursorState,
+    state: &'a mut CursorState,
     insert_loc: Option<Address>,
+    expecting: Insertable,
 }
 
 impl<'a> Editor<'a> {
-    pub(crate) fn new(state: &'a CursorState) -> Result<Self, CursorError> {
+    pub(crate) fn new(state: &'a mut CursorState) -> Result<Self, CursorError> {
         let Some(&curr_node) = state.graph.get_hash().get(&state.node_loc) else {
             return Err(CursorError::AddrNotFound(state.node_loc.clone()));
         };
 
-        let insert_loc = match curr_node.kind {
+        let (insert_loc, expecting) = match curr_node.kind {
             super::parser::NodeKind::CONDTL if state._at_node() => {
                 return Err(CursorError::InsertConditional);
             }
@@ -27,32 +34,41 @@ impl<'a> Editor<'a> {
                     .collect::<Vec<_>>()
                     .len();
 
-                if num_blocks == 0 {
-                    // No global children, append:
-                    // <1 (new level), 0 (first child in that level), 0 (root of the block)>
-                    state.block_loc.join(&[1, 0, 0])
-                } else {
-                    // There are global children -> precondition = curr_addr.len() % 2 == 0
-                    let Some(next_addr) = state.block_loc.next() else {
-                        return Err(CursorError::EmptyAddr);
-                    };
-                    // Append <num_blocks (the index of the new node), 0 (root of the block)>
-                    next_addr.join(&[num_blocks, 0])
-                }
+                (
+                    if num_blocks == 0 {
+                        // No global children, append:
+                        // <1 (new level), 0 (first child in that level), 0 (root of the block)>
+                        state.block_loc.join(&[1, 0, 0])
+                    } else {
+                        // There are global children -> precondition = curr_addr.len() % 2 == 0
+                        let Some(next_addr) = state.block_loc.next() else {
+                            return Err(CursorError::EmptyAddr);
+                        };
+                        // Append <num_blocks (the index of the new node), 0 (root of the block)>
+                        next_addr.join(&[num_blocks, 0])
+                    },
+                    Insertable::Just(NodeKind::FNDEF),
+                )
             }
             _ => {
                 // If we're on a node, just make a new node below and as the new `insert_loc`
                 let Some(next_addr) = state.block_loc.next() else {
                     return Err(CursorError::EmptyAddr);
                 };
-                next_addr
+                (next_addr, Insertable::Any)
             }
         };
 
         Ok(Self {
             state,
             insert_loc: Some(insert_loc),
+            expecting,
         })
+    }
+
+    /// Convenience function to
+    pub(crate) fn sync_addr(&mut self) {
+        self.state.graph.fill_addr();
     }
 }
 
@@ -86,17 +102,22 @@ mod tests {
                 insert_at: None,
                 graph: nodes.to_vec(),
             };
-            let editor = Editor::new(&state);
+            let editor = Editor::new(&mut state);
             assert_eq!(editor.expect("Coercion should work").insert_loc, Some(addr!($($new_id),+)));
         }};
     }
 
     #[test]
-    fn fn_insert_loc() {
+    fn insert_block() {
         insert!(@ <0, 0> _in_ SOURCE -> <0, 1, 2, 0>);
         insert!(@ <0, 1, 0> _in_ SOURCE -> <0, 1, 0, 1, 0, 0>);
         insert!(@ <0, 1, 1, 0> _in_ SOURCE -> <0, 1, 1, 1, 2, 0>);
         insert!(@ <0, 1, 1, 1, 0> _in_ SOURCE -> <0, 1, 1, 1, 0, 1, 0, 0>);
         insert!(@ <0, 1, 1, 1, 1> _in_ SOURCE -> <0, 1, 1, 1, 1, 1, 0, 0>);
+    }
+
+    #[test]
+    fn insert_node() {
+        insert!(@ <1, 0, 1> _in_ SOURCE -> <1, 0, 2>)
     }
 }
