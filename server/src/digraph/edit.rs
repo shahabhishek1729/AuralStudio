@@ -4,15 +4,10 @@ use crate::digraph::address::{Address, Addressable};
 use crate::digraph::util::*;
 use crate::prelude::CursorError;
 
-enum Insertable {
-    Any,
-    Just(NodeKind),
-}
-
 pub(crate) struct Editor<'a> {
     state: &'a mut CursorState,
     insert_loc: Option<Address>,
-    expecting: Insertable,
+    expecting: Option<NodeKind>,
 }
 
 impl<'a> Editor<'a> {
@@ -47,7 +42,7 @@ impl<'a> Editor<'a> {
                         // Append <num_blocks (the index of the new node), 0 (root of the block)>
                         next_addr.join(&[num_blocks, 0])
                     },
-                    Insertable::Just(NodeKind::FNDEF),
+                    Some(NodeKind::FNDEF), // The next node must be a function definition
                 )
             }
             _ => {
@@ -55,7 +50,7 @@ impl<'a> Editor<'a> {
                 let Some(next_addr) = state.block_loc.next() else {
                     return Err(CursorError::EmptyAddr);
                 };
-                (next_addr, Insertable::Any)
+                (next_addr, None) // There are a number of possible nodes that could follow
             }
         };
 
