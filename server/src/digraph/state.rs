@@ -226,12 +226,11 @@ impl ADMode {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct CursorState {
     pub(crate) block_loc: Address,
     pub(crate) node_loc: Address,
     pub(crate) mode: ADMode,
-    pub(crate) insert_at: Option<Address>,
     pub(super) graph: Vec<Node>,
 }
 
@@ -242,7 +241,6 @@ impl Default for CursorState {
             node_loc: addr!(0, 0, 0),
             graph: vec![],
             mode: ADMode::VIEW,
-            insert_at: None,
         }
     }
 }
@@ -292,7 +290,6 @@ mod tests {
                 block_loc: addr!(0, 0),
                 node_loc: addr!(0, 0).coerce(&nodes.get_hash()).expect("Coercion should work"),
                 mode: ADMode::VIEW,
-                insert_at: None,
                 graph: nodes.to_vec(),
             };
             let mut failed = false;
@@ -319,7 +316,6 @@ mod tests {
                 block_loc: addr!(0, 0),
                 node_loc: addr!(0, 0).coerce(&nodes.get_hash()).expect("Coercion should work"),
                 mode: ADMode::VIEW,
-                insert_at: None,
                 graph: nodes.to_vec(),
             };
             $(

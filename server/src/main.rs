@@ -22,6 +22,7 @@ use crate::digraph::event::KeyboardEvent;
 use crate::digraph::parser::{Node, Parser};
 use crate::digraph::state::CursorState;
 use crate::runner::compile;
+use digraph::edit::Editor;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -91,14 +92,14 @@ fn parse_file(source: String) -> Vec<Node> {
 }
 
 #[tauri::command]
-fn handle_event(event: String, payload: CursorState) -> CursorState {
+fn handle_event(event: String, payload: CursorState) -> (CursorState, Option<Editor>) {
     let Ok(e): Result<KeyboardEvent, _> = serde_json::from_str(&event) else {
         panic!("Failed to parse keyboardEvent");
     };
 
     let mut state: CursorState = payload.into();
-    e.parse_command(&mut state);
-    state
+    let editor = e.parse_command(&mut state, None);
+    (state, editor)
 }
 
 fn main() {

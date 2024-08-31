@@ -3,18 +3,20 @@ use super::state::CursorState;
 use crate::digraph::address::{Address, Addressable};
 use crate::digraph::util::*;
 use crate::prelude::CursorError;
+use serde_derive::{Deserialize, Serialize};
 
-pub(crate) struct Editor<'a> {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct Editor {
     /// Current state of digraph and cursor
-    state: &'a mut CursorState,
-    /// Where the 'Return' key was pressed in the digraph (the source from which to insert)
+    state: CursorState,
+    /// The address at which the new node is to be inserted
     insert_loc: Address,
     /// Node expected next, if any (e.g., certain insert locations require functions next)
     expecting: Option<NodeKind>,
 }
 
-impl<'a> Editor<'a> {
-    pub(crate) fn new(state: &'a mut CursorState) -> Result<Self, CursorError> {
+impl Editor {
+    pub(crate) fn new(state: CursorState) -> Result<Self, CursorError> {
         let Some(&curr_node) = state.graph.get_hash().get(&state.node_loc) else {
             return Err(CursorError::AddrNotFound(state.node_loc.clone()));
         };
@@ -93,14 +95,13 @@ mod tests {
 
             let block_loc = addr!($($id),+);
             let node_loc = block_loc.coerce(&nodes.get_hash()).expect("Node coercion should work");
-            let mut state = CursorState {
+            let state = CursorState {
                 block_loc,
                 node_loc,
                 mode: ADMode::VIEW,
-                insert_at: None,
                 graph: nodes.to_vec(),
             };
-            let editor = Editor::new(&mut state);
+            let editor = Editor::new(state);
             assert_eq!(editor.expect("Coercion should work").insert_loc, addr!($($new_id),+));
         }};
     }

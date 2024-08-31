@@ -1,3 +1,4 @@
+use super::edit::Editor;
 use crate::digraph::state::{CursorDir, CursorState};
 use serde_derive::{Deserialize, Serialize};
 
@@ -61,15 +62,27 @@ pub(crate) struct KeyboardEvent {
 }
 
 impl KeyboardEvent {
-    pub(crate) fn parse_command(&self, state: &mut CursorState) {
+    pub(crate) fn parse_command(
+        &self,
+        state: &mut CursorState,
+        editor: Option<Editor>,
+    ) -> Option<Editor> {
         match state.mode {
-            super::state::ADMode::VIEW => self._v_parse_command(state),
-            super::state::ADMode::EDIT => self._e_parse_command(state),
+            super::state::ADMode::VIEW => {
+                return self._v_parse_command(state);
+            }
+            super::state::ADMode::EDIT => {
+                let Some(editor) = editor else {
+                    panic!("Didn't get an editor, but need to edit")
+                };
+                let editor = self._e_parse_command(editor);
+                return Some(editor);
+            }
         }
     }
 
     // Parses commands in `view` mode (these commands aren't part of actively editing a codebase)
-    fn _v_parse_command(&self, state: &mut CursorState) {
+    fn _v_parse_command(&self, state: &mut CursorState) -> Option<Editor> {
         match &self.key[..] {
             "h" | "j" | "k" | "l" | " " | "Backspace" => {
                 // This is a navigation command, move in the correct direction
@@ -83,26 +96,32 @@ impl KeyboardEvent {
                     &_ => unreachable!("Can only be one of 'h', 'j', 'k', 'l', ' ', 'Backspace'"),
                 };
                 let Ok(new_addr) = state.navigate(dir) else {
-                    return;
+                    return None;
                 };
                 state.block_loc = new_addr;
                 let Ok(_) = state.coerce() else {
-                    return;
+                    return None;
                 };
             }
             "Enter" => {
                 // Create a new node "below" the current location ("below" = at_insert_loc)
                 state.mode.toggle();
-                state.insert_at = Some(state.block_loc.clone());
+                // NOTE: XXX: This might be possible without a clone if we state is owned
+                let Ok(editor) = Editor::new(state.clone()) else {
+                    return None;
+                };
+                return Some(editor);
             }
             "r" => todo!("This should run the program"),
             &_ => {
                 // TODO: Implement
             }
         }
+        return None;
     }
 
-    fn _e_parse_command(&self, _state: &mut CursorState) {
+    fn _e_parse_command(&self, mut _editor: Editor) -> Editor {
         // TODO: Implement
+        _editor
     }
 }
