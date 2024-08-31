@@ -5,8 +5,11 @@ use crate::digraph::util::*;
 use crate::prelude::CursorError;
 
 pub(crate) struct Editor<'a> {
+    /// Current state of digraph and cursor
     state: &'a mut CursorState,
-    insert_loc: Option<Address>,
+    /// Where the 'Return' key was pressed in the digraph (the source from which to insert)
+    insert_loc: Address,
+    /// Node expected next, if any (e.g., certain insert locations require functions next)
     expecting: Option<NodeKind>,
 }
 
@@ -56,7 +59,7 @@ impl<'a> Editor<'a> {
 
         Ok(Self {
             state,
-            insert_loc: Some(insert_loc),
+            insert_loc,
             expecting,
         })
     }
@@ -98,7 +101,7 @@ mod tests {
                 graph: nodes.to_vec(),
             };
             let editor = Editor::new(&mut state);
-            assert_eq!(editor.expect("Coercion should work").insert_loc, Some(addr!($($new_id),+)));
+            assert_eq!(editor.expect("Coercion should work").insert_loc, addr!($($new_id),+));
         }};
     }
 
