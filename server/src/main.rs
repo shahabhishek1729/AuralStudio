@@ -93,6 +93,7 @@ fn parse_file(source: String) -> Vec<Node> {
 
 #[tauri::command]
 fn handle_event(event: String, payload: CursorState) -> (CursorState, Option<Editor>) {
+    dbg!("hi");
     let Ok(e): Result<KeyboardEvent, _> = serde_json::from_str(&event) else {
         panic!("Failed to parse keyboardEvent");
     };

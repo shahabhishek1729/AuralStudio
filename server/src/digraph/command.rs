@@ -1,32 +1,37 @@
 use super::state::ADMode;
+use phf::phf_map;
 
-enum Command {
+#[derive(Debug)]
+pub(super) enum Command {
     NavUp,
     NavDown,
     NavLeft,
     NavRight,
     NavIn,
     NavOut,
-    Insert
+    Insert,
+    Run,
+    NULL,
 }
 
+const VIEW_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
+    "h" => Command::NavLeft,
+    "j" => Command::NavDown,
+    "k" => Command::NavUp,
+    "l" => Command::NavRight,
+    " " => Command::NavIn,
+    "Backspace" => Command::NavOut,
+    "Enter" => Command::Insert
+};
+
+const EDIT_KEYMAP: phf::Map<&'static str, Command> = phf_map! {};
+
 impl Command {
-    fn from(key: &str, mode: ADMode) -> Self {
-        if mode == ADMode::VIEW {
-            match key {
-                "h" => Self::NavLeft,
-                "j" => Self::NavUp,
-                "k" => Self::NavDown,
-                "l" => Self::NavRight,
-                " " => Self::NavIn,
-                "Backspace" => Self::NavOut,
-                "Enter" => Self::Insert
-                _ => todo!(),
-            }
+    pub(super) fn from<'a>(key: &'a str, mode: &ADMode) -> &'a Self {
+        if *mode == ADMode::VIEW {
+            VIEW_KEYMAP.get(key).unwrap_or(&Command::NULL)
         } else {
-            match key {
-                _ => todo!(),
-            }
+            EDIT_KEYMAP.get(key).unwrap_or(&Command::NULL)
         }
     }
 }

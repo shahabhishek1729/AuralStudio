@@ -209,7 +209,7 @@ impl CursorDir {
 }
 
 /// The modes a user can be in when navigating through the digraph
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub(crate) enum ADMode {
     /// Used to insert code or replace existing code (i.e., modifying the digraph)
     EDIT,

@@ -1,4 +1,5 @@
 use super::edit::Editor;
+use crate::digraph::command::Command;
 use crate::digraph::state::{CursorDir, CursorState};
 use serde_derive::{Deserialize, Serialize};
 
@@ -67,43 +68,34 @@ impl KeyboardEvent {
         state: &mut CursorState,
         editor: Option<Editor>,
     ) -> Option<Editor> {
-        match state.mode {
-            super::state::ADMode::VIEW => {
-                return self._v_parse_command(state);
-            }
-            super::state::ADMode::EDIT => {
-                let Some(editor) = editor else {
-                    panic!("Didn't get an editor, but need to edit")
-                };
-                let editor = self._e_parse_command(editor);
-                return Some(editor);
-            }
-        }
-    }
+        dbg!("Called");
+        let command = Command::from(&self.key, &state.mode);
+        dbg!(&command);
 
-    // Parses commands in `view` mode (these commands aren't part of actively editing a codebase)
-    fn _v_parse_command(&self, state: &mut CursorState) -> Option<Editor> {
-        match &self.key[..] {
-            "h" | "j" | "k" | "l" | " " | "Backspace" => {
+        match command {
+            Command::NavUp
+            | Command::NavDown
+            | Command::NavLeft
+            | Command::NavRight
+            | Command::NavIn
+            | Command::NavOut => {
                 // This is a navigation command, move in the correct direction
-                let dir = match &self.key[..] {
-                    "h" => CursorDir::LEFT,
-                    "j" => CursorDir::DOWN,
-                    "k" => CursorDir::UP,
-                    "l" => CursorDir::RIGHT,
-                    " " => CursorDir::IN,
-                    "Backspace" => CursorDir::OUT,
-                    &_ => unreachable!("Can only be one of 'h', 'j', 'k', 'l', ' ', 'Backspace'"),
+                let dir = match command {
+                    Command::NavLeft => CursorDir::LEFT,
+                    Command::NavDown => CursorDir::DOWN,
+                    Command::NavUp => CursorDir::UP,
+                    Command::NavRight => CursorDir::RIGHT,
+                    Command::NavIn => CursorDir::IN,
+                    Command::NavOut => CursorDir::OUT,
+                    _ => unreachable!("from navigation command match"),
                 };
-                let Ok(new_addr) = state.navigate(dir) else {
-                    return None;
-                };
-                state.block_loc = new_addr;
-                let Ok(_) = state.coerce() else {
-                    return None;
-                };
+                if let Ok(new_addr) = state.navigate(dir) {
+                    state.block_loc = new_addr;
+                    let _ = state.coerce();
+                }
+                return None;
             }
-            "Enter" => {
+            Command::Insert => {
                 // Create a new node "below" the current location ("below" = at_insert_loc)
                 state.mode.toggle();
                 // NOTE: XXX: This might be possible without a clone if we state is owned
@@ -112,16 +104,8 @@ impl KeyboardEvent {
                 };
                 return Some(editor);
             }
-            "r" => todo!("This should run the program"),
-            &_ => {
-                // TODO: Implement
-            }
+            Command::Run => todo!(),
+            _ => todo!(),
         }
-        return None;
-    }
-
-    fn _e_parse_command(&self, mut _editor: Editor) -> Editor {
-        // TODO: Implement
-        _editor
     }
 }

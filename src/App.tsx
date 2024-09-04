@@ -11,7 +11,7 @@ import { FileTree } from "./FileTree.tsx";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Digraph } from "./Digraph.tsx";
-import { CursorState, RTLNode } from "./types.ts";
+import { CursorState, RTLNode, Editor } from "./types.ts";
 
 function App() {
   let [codeOutput, _] = useState<string>("Code output will appear here...");
@@ -19,6 +19,7 @@ function App() {
   let [payload, setPayload] = useState<CursorState>({
     graph: [],
     block_loc: "",
+    node_loc: "",
     mode: "VIEW",
     insert_at: null,
   });
@@ -28,15 +29,23 @@ function App() {
   useEffect(() => {
     invoke("parse_file", { source: source }).then((o: any) => {
       setTreeSource(o);
-      setPayload({ graph: o, block_loc: "0.0", mode: "VIEW", insert_at: null });
+      setPayload({
+        graph: o,
+        block_loc: "0.0",
+        node_loc: "0.0.0",
+        mode: "VIEW",
+        insert_at: null,
+      });
     });
   }, []);
 
   const onKeyUp = (e: KeyboardEvent) => {
+    console.log("hey ");
     invoke("handle_event", {
       event: JSON.stringify({ key: e.key }),
       payload: payload,
-    }).then((new_payload) => {
+    }).then((state_editor) => {
+      const new_payload = state_editor[0];
       if (payload !== new_payload) setPayload(new_payload as CursorState);
     });
   };

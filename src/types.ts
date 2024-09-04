@@ -21,6 +21,7 @@ interface _PieceInterface {
 export interface CursorState {
 	graph: Array<RTLNode>,
 	block_loc: Address, 
+	node_loc: Address,
 	mode: ADMode,
 	insert_at: Address | null,
 }

@@ -1,4 +1,5 @@
 pub mod address;
+pub mod command;
 pub mod edit;
 pub mod event;
 pub mod parser;
