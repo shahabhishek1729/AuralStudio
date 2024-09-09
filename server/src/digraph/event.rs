@@ -1,4 +1,4 @@
-use super::edit::Editor;
+use super::state::CursorError;
 use crate::digraph::command::Command;
 use crate::digraph::state::{CursorDir, CursorState};
 use serde_derive::{Deserialize, Serialize};
@@ -63,11 +63,7 @@ pub(crate) struct KeyboardEvent {
 }
 
 impl KeyboardEvent {
-    pub(crate) fn parse_command(
-        &self,
-        state: &mut CursorState,
-        editor: Option<Editor>,
-    ) -> Option<Editor> {
+    pub(crate) fn parse_command(&self, state: &mut CursorState) -> Result<(), CursorError> {
         dbg!("Called");
         let command = Command::from(&self.key, &state.mode);
         dbg!(&command);
@@ -93,19 +89,11 @@ impl KeyboardEvent {
                     state.block_loc = new_addr;
                     let _ = state.coerce();
                 }
-                return None;
             }
-            Command::Insert => {
-                // Create a new node "below" the current location ("below" = at_insert_loc)
-                state.mode.toggle();
-                // NOTE: XXX: This might be possible without a clone if we state is owned
-                let Ok(editor) = Editor::new(state.clone()) else {
-                    return None;
-                };
-                return Some(editor);
-            }
+            Command::Insert => state.to_insert()?,
             Command::Run => todo!(),
             _ => todo!(),
         }
+        return Ok(());
     }
 }

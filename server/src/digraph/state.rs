@@ -212,18 +212,9 @@ impl CursorDir {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub(crate) enum ADMode {
     /// Used to insert code or replace existing code (i.e., modifying the digraph)
-    EDIT,
+    EDIT(Option<NodeKind>),
     /// Used for moving around in the digraph, running code or any other non-modifying actions.
     VIEW,
-}
-
-impl ADMode {
-    pub fn toggle(&mut self) {
-        match self {
-            ADMode::EDIT => *self = ADMode::VIEW,
-            ADMode::VIEW => *self = ADMode::EDIT,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -160,6 +160,8 @@ pub(super) enum NodeKind {
     FNCALL,
     /// Imports for foreign code
     GRABPKG,
+    /// Nodes being actively edited
+    PENDING,
 }
 
 /// An enum of every kind of piece supported in Rattle. A piece is an individual chunk of code,
@@ -184,6 +186,8 @@ pub(super) enum Piece {
     FNCALL(Vec<Piece>),
     /// A list
     LIST(Vec<Piece>),
+    /// Being edited
+    PENDING,
 }
 
 /// An enum of every kind of operator supported in Rattle

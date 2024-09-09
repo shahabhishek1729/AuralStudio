@@ -1,31 +1,27 @@
-use super::parser::NodeKind;
-use super::state::CursorState;
-use crate::digraph::address::{Address, Addressable};
+use super::parser::{Node, NodeKind, Piece};
+use super::state::{ADMode, CursorState};
+use crate::digraph::address::Addressable;
 use crate::digraph::util::*;
 use crate::prelude::CursorError;
-use serde_derive::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct Editor {
-    /// Current state of digraph and cursor
-    state: CursorState,
-    /// The address at which the new node is to be inserted
-    insert_loc: Address,
-    /// Node expected next, if any (e.g., certain insert locations require functions next)
-    expecting: Option<NodeKind>,
-}
+impl CursorState {
+    pub(super) fn to_insert(&mut self) -> Result<(), CursorError> {
+        let mut hash = self.graph.get_hash();
 
-impl Editor {
-    pub(crate) fn new(state: CursorState) -> Result<Self, CursorError> {
-        let Some(&curr_node) = state.graph.get_hash().get(&state.node_loc) else {
-            return Err(CursorError::AddrNotFound(state.node_loc.clone()));
+        let Some(curr_node) = hash.get_mut(&self.node_loc) else {
+            return Err(CursorError::AddrNotFound(self.node_loc.clone()));
         };
 
+        let ref mut curr_node_ = &curr_node.clone();
+        let mut hash_ = self.graph.get_hash();
+
+        let parent_node = hash_.get_mut(&curr_node.parent_addr).unwrap_or(curr_node_);
+
         let (insert_loc, expecting) = match curr_node.kind {
-            super::parser::NodeKind::CONDTL if state._at_node() => {
+            super::parser::NodeKind::CONDTL if self._at_node() => {
                 return Err(CursorError::InsertConditional);
             }
-            super::parser::NodeKind::FNDEF if !state._at_node() => {
+            super::parser::NodeKind::FNDEF if !self._at_node() => {
                 // On a function block, so we need to know how many global children this block has.
                 let num_blocks = curr_node
                     .children
@@ -38,10 +34,10 @@ impl Editor {
                     if num_blocks == 0 {
                         // No global children, append:
                         // <1 (new level), 0 (first child in that level), 0 (root of the block)>
-                        state.block_loc.join(&[1, 0, 0])
+                        self.block_loc.join(&[1, 0, 0])
                     } else {
                         // There are global children -> precondition = curr_addr.len() % 2 == 0
-                        let Some(next_addr) = state.block_loc.next() else {
+                        let Some(next_addr) = self.block_loc.next() else {
                             return Err(CursorError::EmptyAddr);
                         };
                         // Append <num_blocks (the index of the new node), 0 (root of the block)>
@@ -52,23 +48,32 @@ impl Editor {
             }
             _ => {
                 // If we're on a node, just make a new node below and as the new `insert_loc`
-                let Some(next_addr) = state.block_loc.next() else {
+                let Some(next_addr) = self.block_loc.next() else {
                     return Err(CursorError::EmptyAddr);
                 };
+
+                // NOTE: Subtraction is safe because this address must be >= 1 (parent is 0)
+                let child_ix = next_addr.last().expect("child address cannot be empty") - 1;
+                let new_node = Node {
+                    line: 0, // TODO: How to increment all subsequent line numbers efficiently?
+                    children: vec![],
+                    kind: NodeKind::PENDING,
+                    pieces: vec![Piece::PENDING],
+                    addr: next_addr.clone(),
+                    parent_addr: parent_node.addr.clone(),
+                };
+
+                let mut parent_clone = parent_node.clone();
+                parent_clone.children.insert(child_ix, new_node);
+                *parent_node = &parent_clone;
+
                 (next_addr, None) // There are a number of possible nodes that could follow
             }
         };
 
-        Ok(Self {
-            state,
-            insert_loc,
-            expecting,
-        })
-    }
-
-    /// Convenience function to
-    pub(crate) fn sync_addr(&mut self) {
-        self.state.graph.fill_addr();
+        self.mode = ADMode::EDIT(expecting);
+        self.block_loc = insert_loc;
+        Ok(())
     }
 }
 
@@ -86,7 +91,10 @@ mod tests {
                           x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone \
                           define";
 
-    macro_rules! insert {
+    mod insert_loc {
+        use super::*;
+
+        macro_rules! insert {
         // Move sequences that result in an attempted move "off the graph" should return errors
         (@ <$($id:literal),+> _in_ $src:ident -> <$($new_id:literal),+>) => {{
             let mut parser = Parser::new(String::from($src)).unwrap();
@@ -95,28 +103,56 @@ mod tests {
 
             let block_loc = addr!($($id),+);
             let node_loc = block_loc.coerce(&nodes.get_hash()).expect("Node coercion should work");
-            let state = CursorState {
+            let mut state = CursorState {
                 block_loc,
                 node_loc,
                 mode: ADMode::VIEW,
                 graph: nodes.to_vec(),
             };
-            let editor = Editor::new(state);
-            assert_eq!(editor.expect("Coercion should work").insert_loc, addr!($($new_id),+));
+            state.to_insert();
+            assert_eq!(state.block_loc, addr!($($new_id),+));
         }};
     }
 
-    #[test]
-    fn insert_block() {
-        insert!(@ <0, 0> _in_ SOURCE -> <0, 1, 2, 0>);
-        insert!(@ <0, 1, 0> _in_ SOURCE -> <0, 1, 0, 1, 0, 0>);
-        insert!(@ <0, 1, 1, 0> _in_ SOURCE -> <0, 1, 1, 1, 2, 0>);
-        insert!(@ <0, 1, 1, 1, 0> _in_ SOURCE -> <0, 1, 1, 1, 0, 1, 0, 0>);
-        insert!(@ <0, 1, 1, 1, 1> _in_ SOURCE -> <0, 1, 1, 1, 1, 1, 0, 0>);
+        #[test]
+        fn insert_block() {
+            insert!(@ <0, 0> _in_ SOURCE -> <0, 1, 2, 0>);
+            insert!(@ <0, 1, 0> _in_ SOURCE -> <0, 1, 0, 1, 0, 0>);
+            insert!(@ <0, 1, 1, 0> _in_ SOURCE -> <0, 1, 1, 1, 2, 0>);
+            insert!(@ <0, 1, 1, 1, 0> _in_ SOURCE -> <0, 1, 1, 1, 0, 1, 0, 0>);
+            insert!(@ <0, 1, 1, 1, 1> _in_ SOURCE -> <0, 1, 1, 1, 1, 1, 0, 0>);
+        }
+
+        #[test]
+        fn insert_node() {
+            insert!(@ <1, 0, 1> _in_ SOURCE -> <1, 0, 2>)
+        }
     }
 
-    #[test]
-    fn insert_node() {
-        insert!(@ <1, 0, 1> _in_ SOURCE -> <1, 0, 2>)
+    mod insertion {
+        use super::*;
+
+        #[test]
+        fn child_insertion() {
+            let mut parser = Parser::new(String::from(SOURCE)).unwrap();
+            let mut nodes = parser.parse().unwrap();
+            (&mut nodes[..]).fill_addr();
+
+            let block_loc = addr!(1, 0, 1);
+            let node_loc = block_loc
+                .coerce(&nodes.get_hash())
+                .expect("Node coercion should work");
+            let mut state = CursorState {
+                block_loc,
+                node_loc,
+                mode: ADMode::VIEW,
+                graph: nodes.to_vec(),
+            };
+            state.to_insert();
+            assert_eq!(state.block_loc, addr!(1, 0, 2));
+
+            dbg!(&state);
+            assert!(false);
+        }
     }
 }
