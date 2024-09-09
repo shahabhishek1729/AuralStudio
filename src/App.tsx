@@ -44,8 +44,10 @@ function App() {
     invoke("handle_event", {
       event: JSON.stringify({ key: e.key }),
       payload: payload,
-    }).then((state_editor) => {
-      const new_payload = state_editor[0];
+    }).then((state_editor: unknown) => {
+      const new_payload = (
+        state_editor as Array<CursorState | Editor | undefined>
+      )[0];
       if (payload !== new_payload) setPayload(new_payload as CursorState);
     });
   };
