@@ -79,21 +79,22 @@ impl CursorDir {
         let Some(&node) = graph_hash.get(&src) else {
             return Err(CursorError::InvalidAddress(src.clone()));
         };
-        let Some(ref parent_addr) = node.parent_addr else {
+
+        let Some(_) = graph_hash.get(&node.parent_addr) else {
             // This node is a FNDEF/CLSDECL; cannot go up without going out first.
             return Err(CursorError::InvalidMotion(*self));
         };
 
-        if parent_addr.coerce(&graph_hash)? == node.addr {
+        if node.parent_addr.coerce(&graph_hash)? == node.addr {
             // This only allows for DOWN, and is handled separately in that branch.
             return Err(CursorError::InvalidMotion(*self));
         }
         let Some(&parent) = state
             .graph
             .get_hash()
-            .get(&parent_addr.coerce(&graph_hash)?)
+            .get(&node.parent_addr.coerce(&graph_hash)?)
         else {
-            return Err(CursorError::InvalidAddress(parent_addr.clone()));
+            return Err(CursorError::InvalidAddress(node.parent_addr.clone()));
         };
 
         let Some((i, curr_node)): Option<(usize, &Node)> = _filter_children(parent)

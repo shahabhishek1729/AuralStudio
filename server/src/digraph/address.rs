@@ -7,7 +7,7 @@ use std::collections::HashMap;
 #[macro_export]
 macro_rules! addr {
     ($($id:expr),*) => {
-        Address::new(vec![$($id),*])
+        crate::digraph::address::Address::new(vec![$($id),*])
     };
 }
 
@@ -144,6 +144,7 @@ pub(crate) trait Addressable {
     fn get_hash(&self) -> HashMap<Address, &Node> {
         unreachable!("Method `get_hash` should only be called on &[Node] and &'mut [Node]")
     }
+
     /// There are 4 rules to addressing nodes:
     /// 1. The roots have address (i, 0, 0) and their direct children will be (i, 0, j)
     /// 2. If a node has vertical children, append a 0. For horizontal children, add two 0's.
@@ -194,7 +195,7 @@ impl Addressable for &mut [Node] {
                 }
             }
             node.addr = Address::new(addr);
-            node.parent_addr = Some(parent_addr.clone());
+            node.parent_addr = parent_addr.clone();
 
             let mut fn_idx: isize = -1;
             node.children.iter_mut().enumerate().for_each(|(i_, n_)| {

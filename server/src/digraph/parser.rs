@@ -93,7 +93,7 @@ pub(crate) struct Node {
     #[serde(rename = "address")]
     pub(super) addr: Address,
     #[serde(rename = "parent")]
-    pub(super) parent_addr: Option<Address>,
+    pub(super) parent_addr: Address,
 }
 
 impl Default for Node {
@@ -104,7 +104,7 @@ impl Default for Node {
             kind: NodeKind::OUTPUT,
             pieces: vec![],
             addr: Address::new(vec![]),
-            parent_addr: None,
+            parent_addr: Address::new(vec![]),
         }
     }
 }
