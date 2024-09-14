@@ -211,7 +211,7 @@ impl CursorDir {
 
 /// The modes a user can be in when navigating through the digraph
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-pub(crate) enum ADMode {
+pub(super) enum ADMode {
     /// Used to insert code or replace existing code (i.e., modifying the digraph)
     EDIT(Option<NodeKind>),
     /// Used for moving around in the digraph, running code or any other non-modifying actions.
@@ -222,7 +222,7 @@ pub(crate) enum ADMode {
 pub(crate) struct CursorState {
     pub(crate) block_loc: Address,
     pub(crate) node_loc: Address,
-    pub(crate) mode: ADMode,
+    pub(super) mode: ADMode,
     pub(super) graph: Vec<Node>,
 }
 
@@ -268,7 +268,7 @@ impl CursorState {
 mod tests {
     use super::*;
     use crate::addr;
-    use crate::digraph::address::{Address, Addressable};
+    use crate::digraph::address::Addressable;
     use crate::digraph::parser::Parser;
     use crate::digraph::state::{CursorError::InvalidMotion, CursorState};
 

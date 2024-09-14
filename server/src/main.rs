@@ -97,7 +97,8 @@ fn handle_event(event: String, payload: CursorState) {
     };
 
     let mut state: CursorState = payload.into();
-    let editor = e.parse_command(&mut state);
+    e.parse_command(&mut state)
+        .expect("Parsing command should work");
 }
 
 fn main() {

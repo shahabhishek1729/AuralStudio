@@ -310,7 +310,7 @@ mod tests {
 
     mod addr_ops {
         use super::*;
-        use crate::digraph::address::{Address, Addressable};
+        use crate::digraph::address::Addressable;
 
         const SOURCE: &'static str =
             "define f of x\noutput x\nlet my_age be 3\ndone define\ndefine g of x\n\
@@ -347,7 +347,6 @@ mod tests {
 
         #[test]
         fn next_addr() {
-            let nodes = _test_setup();
             let addr = addr!(0, 0, 0);
             assert_eq!(addr.next(), Some(addr!(0, 0, 1)));
         }

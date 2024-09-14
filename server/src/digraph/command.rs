@@ -21,7 +21,8 @@ const VIEW_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "l" => Command::NavRight,
     " " => Command::NavIn,
     "Backspace" => Command::NavOut,
-    "Enter" => Command::Insert
+    "Enter" => Command::Insert,
+    "r" => Command::Run,
 };
 
 const EDIT_KEYMAP: phf::Map<&'static str, Command> = phf_map! {};
