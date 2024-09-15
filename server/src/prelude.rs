@@ -162,6 +162,8 @@ pub(crate) enum CursorError {
     InvalidMotion(CursorDir),
     #[error("couldn't find address: {} in the file", .0)]
     AddrNotFound(Address),
+    #[error("couldn't find parent (whose address should be {}", .0)]
+    ParentNotFound(Address),
     #[error("cannot increment an empty address")]
     EmptyAddr,
     #[error("cannot add to a conditional that already has a 'yes' and 'no' branch")]

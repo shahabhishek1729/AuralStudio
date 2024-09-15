@@ -6,16 +6,11 @@ use crate::prelude::CursorError;
 
 impl CursorState {
     pub(super) fn to_insert(&mut self) -> Result<(), CursorError> {
-        let mut hash = self.graph.get_hash();
-
-        let Some(curr_node) = hash.get_mut(&self.node_loc) else {
+        let hash = self.graph.get_hash();
+        let Some(curr_node) = hash.get(&self.node_loc) else {
             return Err(CursorError::AddrNotFound(self.node_loc.clone()));
         };
-
-        let ref mut curr_node_ = &curr_node.clone();
-        let mut hash_ = self.graph.get_hash();
-
-        let parent_node = hash_.get_mut(&curr_node.parent_addr).unwrap_or(curr_node_);
+        let parent_addr = curr_node.parent_addr.clone();
 
         let (insert_loc, expecting) = match curr_node.kind {
             super::parser::NodeKind::CONDTL if self._at_node() => {
@@ -54,18 +49,24 @@ impl CursorState {
 
                 // NOTE: Subtraction is safe because this address must be >= 1 (parent is 0)
                 let child_ix = next_addr.last().expect("child address cannot be empty") - 1;
+                let hash_ = self.graph.get_hash_mut();
+
+                let Some(parent_node) = hash_.get(&parent_addr) else {
+                    return Err(CursorError::ParentNotFound(parent_addr));
+                };
+
+                // SAFETY: The parent node must be valid because this node is not a root function
+                // (which would be in the FNDEF branch) so `parent_addr` must point to a valid node.
+                let parent_node = unsafe { &mut **parent_node };
                 let new_node = Node {
                     line: 0, // TODO: How to increment all subsequent line numbers efficiently?
                     children: vec![],
                     kind: NodeKind::PENDING,
                     pieces: vec![Piece::PENDING],
                     addr: next_addr.clone(),
-                    parent_addr: parent_node.addr.clone(),
+                    parent_addr,
                 };
-
-                let mut parent_clone = parent_node.clone();
-                parent_clone.children.insert(child_ix, new_node);
-                *parent_node = &parent_clone;
+                parent_node.children.insert(child_ix, new_node);
 
                 (next_addr, None) // There are a number of possible nodes that could follow
             }
