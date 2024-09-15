@@ -36,7 +36,7 @@ impl CursorState {
                         // <1 (new level), 0 (first child in that level), 0 (root of the block)>
                         self.block_loc.join(&[1, 0, 0])
                     } else {
-                        // There are global children -> precondition = curr_addr.len() % 2 == 0
+                        // There are global children -> precondition: curr_addr.len() % 2 == 0
                         let Some(next_addr) = self.block_loc.next() else {
                             return Err(CursorError::EmptyAddr);
                         };
