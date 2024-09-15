@@ -145,6 +145,10 @@ pub(crate) trait Addressable {
         unreachable!("Method `get_hash` should only be called on &[Node] and &'mut [Node]")
     }
 
+    fn get_hash_mut(&mut self) -> HashMap<Address, *mut Node> {
+        unreachable!("Method `get_hash` should only be called on &[Node] and &'mut [Node]")
+    }
+
     /// There are 4 rules to addressing nodes:
     /// 1. The roots have address (i, 0, 0) and their direct children will be (i, 0, j)
     /// 2. If a node has vertical children, append a 0. For horizontal children, add two 0's.
@@ -165,6 +169,27 @@ impl Addressable for Vec<Node> {
             node.children.iter().for_each(|n| _inner(n, _hm));
         }
         self.iter().for_each(|ref n| _inner(n, &mut hm));
+        hm
+    }
+
+    fn get_hash_mut(&mut self) -> HashMap<Address, *mut Node> {
+        let mut hm: HashMap<Address, *mut Node> = HashMap::new();
+        // Recursively traverse the graph, adding each node to the map and handling its subtree.
+        fn _inner<'a>(node: *mut Node, _hm: &mut HashMap<Address, *mut Node>) {
+            // SAFETY: We can only reach this function the outer `get_hash_mut`, where we directly
+            // cast each node into a `*mut Node` - there is no possibility that in between that
+            // call and this block, the pointer becomes a dangling reference.
+            unsafe {
+                let node_ref = &mut *node;
+                _hm.insert(node_ref.addr.clone(), node);
+                node_ref
+                    .children
+                    .iter_mut()
+                    .for_each(|n| _inner(n as *mut Node, _hm));
+            }
+        }
+        self.iter_mut()
+            .for_each(|n| _inner(n as *mut Node, &mut hm));
         hm
     }
 }
