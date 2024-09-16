@@ -62,17 +62,19 @@ impl CursorState {
         self.mode = ADMode::EDIT(expecting);
         self.block_loc = insert_loc;
 
-        // Re-sync up the graph with the new additions of nodes
+        // Re-sync the graph addresses with the new additions of nodes
         (&mut self.graph[..]).fill_addr();
         Ok(())
     }
 
     // Update graph with a new function (@ `at_addr`) as a child of the function @ `from_addr`.
+    #[inline]
     fn _insert_fn(&mut self, at_addr: &Address, from_addr: Address) -> Result<(), CursorError> {
         let hash_ = self.graph.get_hash_mut();
         let Some(parent_node) = hash_.get(&from_addr) else {
             return Err(CursorError::ParentNotFound(from_addr));
         };
+
         // SAFETY: The parent node must be valid because this node is not a root function
         // (which would be in the FNDEF branch) so `parent_addr` must point to a valid node.
         let parent_node = unsafe { &mut **parent_node };
@@ -88,6 +90,7 @@ impl CursorState {
         Ok(())
     }
 
+    #[inline]
     // Update graph with a new node (@ `at_addr`) as the `index`th child of the node @ `from_addr`.
     fn _insert_other(
         &mut self,
