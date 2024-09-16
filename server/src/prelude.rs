@@ -169,3 +169,5 @@ pub(crate) enum CursorError {
     #[error("cannot add to a conditional that already has a 'yes' and 'no' branch")]
     InsertConditional,
 }
+
+pub(crate) enum TranspileError {}
