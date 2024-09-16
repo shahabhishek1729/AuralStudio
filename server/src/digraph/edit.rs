@@ -189,8 +189,13 @@ mod tests {
             state.to_insert().expect("Could not toggle node");
             assert_eq!(state.block_loc, addr!(1, 0, 2));
 
-            dbg!(&state);
-            assert!(false);
+            let hash = state.graph.get_hash();
+            assert_eq!(
+                hash.get(&state.block_loc)
+                    .expect("Should find a node at <1, 0, 2>")
+                    .kind,
+                NodeKind::PENDING
+            );
         }
     }
 }
