@@ -170,4 +170,5 @@ pub(crate) enum CursorError {
     InsertConditional,
 }
 
+#[derive(Debug, Error)]
 pub(crate) enum TranspileError {}

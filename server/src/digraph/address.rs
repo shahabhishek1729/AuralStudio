@@ -45,7 +45,7 @@ pub(crate) struct Address {
 }
 
 impl Address {
-    pub(super) fn new(addr: Vec<usize>) -> Self {
+    pub(crate) fn new(addr: Vec<usize>) -> Self {
         Self { addr }
     }
 

@@ -4,7 +4,6 @@ use crate::prelude::Stack;
 use crate::scanner::rtl_token::RTLToken;
 use crate::scanner::scanner::{Scanner, Token};
 use serde_derive::{Deserialize, Serialize};
-use std::borrow::Cow;
 use thiserror::Error;
 
 /// Represents a single line of code, which is rendered in a digraph as a single node.
@@ -85,16 +84,16 @@ use thiserror::Error;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct Node {
     // Since each Node is itself a line, this serves as a primary key
-    pub(super) line: usize,
+    pub(crate) line: usize,
     // Used in functions, conditionals, loops, classes, etc.
     pub(crate) children: Vec<Node>,
     pub(crate) kind: NodeKind,
     // The rest of the token, if applicable
     pub(crate) pieces: Vec<Piece>,
     #[serde(rename = "address")]
-    pub(super) addr: Address,
+    pub(crate) addr: Address,
     #[serde(rename = "parent")]
-    pub(super) parent_addr: Address,
+    pub(crate) parent_addr: Address,
     pub(crate) rtl: Option<String>,
 }
 
@@ -140,7 +139,7 @@ impl Node {
 /// word in the line (e.g., 'define ...' means that the line is a Node of type `FNDEF`). For
 /// function calls, however, the first word will be an identifier, and will be followed by 'of'.
 #[derive(Debug, Copy, PartialEq, Clone, Serialize, Deserialize)]
-pub(super) enum NodeKind {
+pub(crate) enum NodeKind {
     /// Function definitions
     FNDEF,
     /// Variable declarations
@@ -172,7 +171,7 @@ pub(super) enum NodeKind {
 /// pieces include an individual constant (e.g., a number, string, boolean, etc.), opreator or
 /// identifier.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
-pub(super) enum Piece {
+pub(crate) enum Piece {
     /// Identifiers (keywords or custom-defined)
     IDENT(String),
     /// Numbers (includes `integer`s and `float`s.
@@ -195,7 +194,7 @@ pub(super) enum Piece {
 
 /// An enum of every kind of operator supported in Rattle
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
-pub(super) enum OpKind {
+pub(crate) enum OpKind {
     /// +
     ADD,
     /// -
@@ -375,7 +374,7 @@ impl Parser {
                     let var_name = var_name.unwrap_identifier();
 
                     let (expr, rtl) = self._collect_line()?;
-                    let pieces = [&[Piece::IDENT(var_name)], &expr[..]].concat();
+                    let pieces = [&[Piece::IDENT(var_name.clone())], &expr[..]].concat();
 
                     let node = Node {
                         kind: NodeKind::VARDECL,
@@ -383,7 +382,7 @@ impl Parser {
                         children: vec![],
                         pieces,
                         addr: Address::new(vec![]),
-                        rtl: Some(format!("let {}", rtl)),
+                        rtl: Some(format!("let {} {}", var_name, rtl)),
                         ..Default::default()
                     };
                     self.push_node(node, &mut nodes)?;
@@ -403,12 +402,12 @@ impl Parser {
                             children: vec![],
                             pieces: vec![],
                             addr: Address::new(vec![]),
-                            rtl: None,
+                            rtl: Some(format!("if {}", rtl)),
                             ..Default::default()
                         }],
                         pieces: protasis,
                         addr: Address::new(vec![]),
-                        rtl: Some(format!("if {}", rtl)),
+                        rtl: None,
                         ..Default::default()
                     };
                     self.push_node(node, &mut nodes)?;
