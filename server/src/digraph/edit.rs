@@ -85,6 +85,7 @@ impl CursorState {
             pieces: vec![Piece::PENDING],
             addr: at_addr.clone(),
             parent_addr: from_addr,
+            rtl: Some("define placeholder".into()),
         };
         parent_node.children.push(new_node);
         Ok(())
@@ -112,6 +113,7 @@ impl CursorState {
             pieces: vec![Piece::PENDING],
             addr: at_addr.clone(),
             parent_addr: from_addr,
+            rtl: Some("placeholder".into()),
         };
         parent_node.children.insert(index, new_node);
         Ok(())

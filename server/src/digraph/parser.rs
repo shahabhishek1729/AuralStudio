@@ -4,6 +4,7 @@ use crate::prelude::Stack;
 use crate::scanner::rtl_token::RTLToken;
 use crate::scanner::scanner::{Scanner, Token};
 use serde_derive::{Deserialize, Serialize};
+use std::borrow::Cow;
 use thiserror::Error;
 
 /// Represents a single line of code, which is rendered in a digraph as a single node.
@@ -86,14 +87,15 @@ pub(crate) struct Node {
     // Since each Node is itself a line, this serves as a primary key
     pub(super) line: usize,
     // Used in functions, conditionals, loops, classes, etc.
-    pub(super) children: Vec<Node>,
-    pub(super) kind: NodeKind,
+    pub(crate) children: Vec<Node>,
+    pub(crate) kind: NodeKind,
     // The rest of the token, if applicable
-    pub(super) pieces: Vec<Piece>,
+    pub(crate) pieces: Vec<Piece>,
     #[serde(rename = "address")]
     pub(super) addr: Address,
     #[serde(rename = "parent")]
     pub(super) parent_addr: Address,
+    pub(crate) rtl: Option<String>,
 }
 
 impl Default for Node {
@@ -105,6 +107,7 @@ impl Default for Node {
             pieces: vec![],
             addr: Address::new(vec![]),
             parent_addr: Address::new(vec![]),
+            rtl: None,
         }
     }
 }
@@ -270,12 +273,15 @@ impl Parser {
             match curr_token.rtl_token {
                 RTLToken::ImportIdentifier => {
                     // 'grab ...'
+                    let line = curr_token.line;
+                    let (pieces, rtl) = self._collect_line()?;
                     let node = Node {
                         kind: NodeKind::GRABPKG,
-                        line: curr_token.line,
+                        line,
                         children: vec![],
-                        pieces: self._collect_line()?,
+                        pieces,
                         addr: Address::new(vec![]),
+                        rtl: Some(format!("grab {}", rtl)),
                         ..Default::default()
                     };
                     self.push_node(node, &mut nodes)?;
@@ -283,12 +289,15 @@ impl Parser {
 
                 RTLToken::PrintToken => {
                     // 'output ...'
+                    let line = curr_token.line;
+                    let (pieces, rtl) = self._collect_line()?;
                     let node = Node {
                         kind: NodeKind::OUTPUT,
-                        line: curr_token.line,
+                        line,
                         children: vec![],
-                        pieces: self._collect_line()?,
+                        pieces,
                         addr: Address::new(vec![]),
+                        rtl: Some(format!("output {}", rtl)),
                         ..Default::default()
                     };
                     self.push_node(node, &mut nodes)?;
@@ -296,12 +305,15 @@ impl Parser {
 
                 RTLToken::ReturnIdentifier => {
                     // 'output ...'
+                    let line = curr_token.line;
+                    let (pieces, rtl) = self._collect_line()?;
                     let node = Node {
                         kind: NodeKind::RETURN,
-                        line: curr_token.line,
+                        line,
                         children: vec![],
-                        pieces: self._collect_line()?,
+                        pieces,
                         addr: Address::new(vec![]),
+                        rtl: Some(format!("return {}", rtl)),
                         ..Default::default()
                     };
                     self.push_node(node, &mut nodes)?;
@@ -318,8 +330,8 @@ impl Parser {
                         );
                     };
                     let fn_name: String = fn_name.unwrap_identifier();
-                    let args: Vec<Piece> = self._collect_line()?;
-                    let pieces: Vec<Piece> = [&[Piece::IDENT(fn_name)], &args[..]].concat();
+                    let (args, rtl): (Vec<Piece>, String) = self._collect_line()?;
+                    let pieces: Vec<Piece> = [&[Piece::IDENT(fn_name.clone())], &args[..]].concat();
 
                     let node = Node {
                         kind: NodeKind::FNDEF,
@@ -327,6 +339,7 @@ impl Parser {
                         children: vec![],
                         pieces,
                         addr: Address::new(vec![]),
+                        rtl: Some(format!("define {} of {}", fn_name, rtl)),
                         ..Default::default()
                     };
                     self.push_node(node, &mut nodes)?;
@@ -360,7 +373,9 @@ impl Parser {
                         );
                     };
                     let var_name = var_name.unwrap_identifier();
-                    let pieces = [&[Piece::IDENT(var_name)], &self._collect_line()?[..]].concat();
+
+                    let (expr, rtl) = self._collect_line()?;
+                    let pieces = [&[Piece::IDENT(var_name)], &expr[..]].concat();
 
                     let node = Node {
                         kind: NodeKind::VARDECL,
@@ -368,6 +383,7 @@ impl Parser {
                         children: vec![],
                         pieces,
                         addr: Address::new(vec![]),
+                        rtl: Some(format!("let {}", rtl)),
                         ..Default::default()
                     };
                     self.push_node(node, &mut nodes)?;
@@ -376,7 +392,7 @@ impl Parser {
                 RTLToken::IfIdentifier => {
                     // 'if ...'
                     let curr_line = curr_token.line;
-                    let protasis = self._collect_line()?;
+                    let (protasis, rtl) = self._collect_line()?;
 
                     let node = Node {
                         kind: NodeKind::CONDTL,
@@ -387,10 +403,12 @@ impl Parser {
                             children: vec![],
                             pieces: vec![],
                             addr: Address::new(vec![]),
+                            rtl: None,
                             ..Default::default()
                         }],
                         pieces: protasis,
                         addr: Address::new(vec![]),
+                        rtl: Some(format!("if {}", rtl)),
                         ..Default::default()
                     };
                     self.push_node(node, &mut nodes)?;
@@ -428,6 +446,7 @@ impl Parser {
                         children: vec![],
                         pieces: vec![],
                         addr: Address::new(vec![]),
+                        rtl: Some("otherwise".into()),
                         ..Default::default()
                     };
                     self.push_node(node, &mut nodes)?;
@@ -445,12 +464,16 @@ impl Parser {
 
                 RTLToken::ForIdentifier => {
                     // 'for ...'
+                    let line = curr_token.line;
+                    let (pieces, rtl) = self._collect_line()?;
+
                     let node = Node {
                         kind: NodeKind::FORLOOP,
-                        line: curr_token.line,
+                        line,
                         children: vec![],
-                        pieces: self._collect_line()?,
+                        pieces,
                         addr: Address::new(vec![]),
+                        rtl: Some(format!("for {}", rtl)),
                         ..Default::default()
                     };
                     self.push_node(node, &mut nodes)?;
@@ -504,19 +527,26 @@ impl Parser {
         Ok(nodes)
     }
 
-    fn _collect_line(&mut self) -> anyhow::Result<Vec<Piece>> {
+    fn _collect_line(&mut self) -> anyhow::Result<(Vec<Piece>, String)> {
         let mut collected: Vec<Piece> = vec![];
+        let mut rtl = String::new();
+
         loop {
             let curr = self.advance_();
             if curr.rtl_token == RTLToken::LineBreak {
-                break Ok(collected);
+                break Ok((collected, rtl));
             }
 
             let curr = curr.clone();
             collected.push(self._collect_piece(&curr)?);
+            rtl.push_str(&curr.lexeme);
+
             if self.line_end_reached() {
-                break Ok(collected);
+                break Ok((collected, rtl));
             }
+
+            // Haven't reached the end, something will follow, so push a space
+            rtl.push(' ');
         }
     }
 
@@ -973,8 +1003,9 @@ mod tests {
                           define";
 
             let mut parser = Parser::new(String::from(source)).unwrap();
+            let tokens = parser.parse().unwrap();
             assert_eq!(
-                parser.parse().unwrap(),
+                tokens,
                 vec![
                     make_node!(line 1 -> FNDEF [piece!(IDENT "f"), piece!(IDENT "x")]; {
                         make_node!(line 2 -> OUTPUT [piece!(IDENT "x")]),
