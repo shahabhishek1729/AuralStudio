@@ -16,17 +16,16 @@ impl CursorState {
     /// ```rust
     /// // Assume `nodes` references the parsed version of SOURCE.
     /// let block_loc = addr!(0, 0);
-    /// let node_loc = block_loc
-    ///     .coerce(&nodes.get_hash())
-    ///     .expect("Node coercion should work");
     ///
     /// let mut state = CursorState {
     ///     block_loc,
-    ///     node_loc,
+    ///     node_loc, // Assume `node_loc` is defined as a coerced `block_loc`
     ///     mode: ADMode::VIEW,
     ///     graph: nodes.to_vec(),
     /// };
     /// state.to_insert().expect("Could not toggle node");
+    ///
+    /// // Automatically creates a new address for this node and adjusts all other addresses.
     /// assert_eq!(state.block_loc, addr!(0, 1, 2, 0));
 
     /// let hash = state.graph.get_hash();
@@ -264,7 +263,6 @@ mod tests {
             state.to_insert().expect("Could not toggle node");
             assert_eq!(state.block_loc, addr!(0, 1, 2, 0));
 
-            dbg!(&state.graph);
             let hash = state.graph.get_hash();
             assert_eq!(
                 hash.get(&state.block_loc)
