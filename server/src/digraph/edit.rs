@@ -6,6 +6,38 @@ use crate::digraph::util::*;
 use crate::prelude::CursorError;
 
 impl CursorState {
+    /// Transforms a `CursorState` object from viewing to editing mode.
+    ///
+    /// From a given node, when a user attempts to "insert below", determines what the address and
+    /// kind of the new node should be (global inserts create functions, local inserts create
+    /// placeholder nodes).
+    ///
+    /// # Examples
+    /// ```rust
+    /// // Assume `nodes` references the parsed version of SOURCE.
+    /// let block_loc = addr!(0, 0);
+    /// let node_loc = block_loc
+    ///     .coerce(&nodes.get_hash())
+    ///     .expect("Node coercion should work");
+    ///
+    /// let mut state = CursorState {
+    ///     block_loc,
+    ///     node_loc,
+    ///     mode: ADMode::VIEW,
+    ///     graph: nodes.to_vec(),
+    /// };
+    /// state.to_insert().expect("Could not toggle node");
+    /// assert_eq!(state.block_loc, addr!(0, 1, 2, 0));
+
+    /// let hash = state.graph.get_hash();
+    /// // We can auto-infer that the new node is of kind FNDEF.
+    /// assert_eq!(
+    ///     hash.get(&state.block_loc)
+    ///         .expect(&format!("Should find a node at {:?}", state.block_loc))
+    ///         .kind,
+    ///     NodeKind::FNDEF
+    /// );
+    /// ```
     pub(super) fn to_insert(&mut self) -> Result<(), CursorError> {
         let hash = self.graph.get_hash();
         let Some(curr_node) = hash.get(&self.node_loc) else {
