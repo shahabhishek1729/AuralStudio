@@ -80,7 +80,17 @@ impl CursorState {
         let parent_node = unsafe { &mut **parent_node };
         let new_node = Node {
             line: 0, // TODO: How to increment all subsequent line numbers efficiently?
-            children: vec![],
+            children: vec![Node {
+                line: 0,
+                kind: NodeKind::PENDING,
+                pieces: vec![],
+                addr: at_addr
+                    .next()
+                    .expect("Insertion location cannot be an empty address"),
+                parent_addr: at_addr.clone(),
+                children: vec![],
+                rtl: Some("placeholder".into()),
+            }],
             kind: NodeKind::FNDEF,
             pieces: vec![Piece::PENDING],
             addr: at_addr.clone(),
@@ -200,6 +210,35 @@ mod tests {
                     .expect("Should find a node at <1, 0, 2>")
                     .kind,
                 NodeKind::PENDING
+            );
+        }
+
+        #[test]
+        fn function_insertion() {
+            let mut parser = Parser::new(String::from(SOURCE)).unwrap();
+            let mut nodes = parser.parse().unwrap();
+            (&mut nodes[..]).fill_addr();
+
+            let block_loc = addr!(0, 0);
+            let node_loc = block_loc
+                .coerce(&nodes.get_hash())
+                .expect("Node coercion should work");
+            let mut state = CursorState {
+                block_loc,
+                node_loc,
+                mode: ADMode::VIEW,
+                graph: nodes.to_vec(),
+            };
+            state.to_insert().expect("Could not toggle node");
+            assert_eq!(state.block_loc, addr!(0, 1, 2, 0));
+
+            dbg!(&state.graph);
+            let hash = state.graph.get_hash();
+            assert_eq!(
+                hash.get(&state.block_loc)
+                    .expect(&format!("Should find a node at {:?}", state.block_loc))
+                    .kind,
+                NodeKind::FNDEF
             );
         }
     }
