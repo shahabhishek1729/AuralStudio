@@ -2,7 +2,7 @@ use std::cmp;
 
 use crate::error::{
     MiscellaneousSE, NegativeIndentsSE, PoorlyFormattedSE, SyntaxError, TokenOutOfBoundsSE,
-    TokenOutOfLineSE, UnequalArgsSE, UnexpectedTokenSE, UnsupportedFeatureSE,
+    TokenOutOfLineSE, UnequalArgsSE, UnexpectedTokenSE, UnimplementedSE, UnsupportedFeatureSE,
 };
 use crate::prelude::*;
 use crate::scanner::rtl_token::RTLToken;
@@ -166,29 +166,30 @@ pub const N_SPACES_INDENT: usize = 4usize;
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 pub struct Decompiler {
-    ///
+    /// The output of our Scanner (the list of tokens found in our program sequentially)
     pub tokens: Vec<Token>,
-    ///
+    /// The transpiled Python equivalent of the `tokens` in our program.
     pub py: String,
-    ///
+    /// The token index from which we start (set to 0 initially)
     pub start: usize,
-    ///
+    /// The token index we are currently processing
     pub curr: usize,
     _line: usize,
-    ///
+    /// The depth of indentation levels we have reached in the transpiled Python
     pub idnt: i8,
 }
 
 impl Decompiler {
-    ///
+    /// Allows us to create a new Decompiler with the following defaults:
+    /// `tokens`: set to the result of running `Scanner::scan()` on our input source file.
+    /// `start`: Set to 0, since that is where we begin parsing from.
+    /// `curr`: Set to 0, since we must begin at `start`.
+    /// `_line`: Set to 1, since decompilation always begins at line 1.
+    /// `idnt`: Set to 0, since a brand new program has no indentation.
+    /// `py`: `String::new()`, since we haven't generated any Python yet.
     pub fn new(source: &str) -> Result<Self, String> {
         let mut scanner = Scanner::new(source);
         let tokens = scanner.scan()?;
-        dbg!(&tokens);
-
-        // let mut write = INDENT.write().unwrap();
-        // *write = 0;
-        // drop(write);
 
         Ok(Self {
             tokens,
@@ -200,7 +201,7 @@ impl Decompiler {
         })
     }
 
-    ///
+    /// Runs the Decompiler, and is the primary function in this primitive
     pub fn decompile(&mut self) -> Result<(), String> {
         let mut errors: Vec<String> = vec![];
 
@@ -236,8 +237,6 @@ impl Decompiler {
     pub fn decompile_line_(&mut self) -> RESULT {
         let next = &lookahead_!(self).unwrap();
 
-        dbg!(format!("Currently decompiling {}", &next.rtl_token));
-
         match next.rtl_token {
             RTLToken::VarIdentifier => self.decompile_vars_()?,
             RTLToken::IfIdentifier => self.decompile_if_()?,
@@ -258,7 +257,6 @@ impl Decompiler {
             RTLToken::StringVal => self.push_str(&self.tokens[self.curr].unwrap_string().fmt()),
             RTLToken::BooleanVal => self.push_str(&self.tokens[self.curr].unwrap_bool().fmt()),
             RTLToken::ListVal => {
-                dbg!("HERE WE GO");
                 let list = self.decompile_lists(false)?;
                 self.push_str(&list);
             }
@@ -267,7 +265,6 @@ impl Decompiler {
                 self.push_str(&tup);
             }
             RTLToken::DictVal => {
-                dbg!("HERE");
                 let dict = self.decompile_dicts(false)?;
                 self.push_str(&dict);
             }
@@ -293,9 +290,6 @@ impl Decompiler {
             }
             RTLToken::ObjIdentifier => self.push_str(&self.tokens[self.curr].unwrap_identifier()),
             RTLToken::LineBreak => {
-                // Previously this was implemented using a static, global Mutex.
-                // This has now been refactored. Original implementation:
-                // let n_indents = cmp::max(*INDENT.read().unwrap(), 0);
                 let n_indents = cmp::max(self.idnt, 0);
                 if n_indents < 0 {
                     return Err(Box::new(NegativeIndentsSE::new(next.line)));
@@ -303,9 +297,6 @@ impl Decompiler {
                 let full_indent = " ".repeat(N_SPACES_INDENT).repeat(n_indents as usize);
                 self.push_str(&format!("\n{}", full_indent))
             }
-            // RTLToken::LineBreak => {
-            //     self.indent_();
-            // }
             RTLToken::BlockEnd => {
                 self.dedent_();
             }
@@ -334,6 +325,9 @@ impl Decompiler {
                     next.line,
                 )));
             }
+            RTLToken::PENDING => {
+                return Err(Box::new(UnimplementedSE::new(next.line)));
+            }
             _ => {
                 return Err(Box::new(MiscellaneousSE::new(
                     format!(
@@ -353,8 +347,6 @@ impl Decompiler {
     fn parse_idx(&mut self, inplace: bool) -> RESVAL<Option<String>> {
         let curr_line = self.tokens[self.curr].line;
         let next_op = self.advance_();
-
-        dbg!(&next_op);
 
         if next_op.line != curr_line {
             return Err(Box::new(PoorlyFormattedSE::new(
@@ -435,7 +427,6 @@ impl Decompiler {
         }
 
         let next = next_a.unwrap();
-        dbg!(&next);
 
         // let next = self.advance_();
         match next.rtl_token {
@@ -541,7 +532,6 @@ impl Decompiler {
         self.push_str(&format!("if {}:", cond));
         self.indent_();
 
-        dbg!(&lookahead_!(self));
         Ok(())
     }
 
@@ -605,7 +595,6 @@ impl Decompiler {
         let _ = self.advance_();
 
         let expr = self.decompile_expr(false)?;
-        dbg!(&expr);
 
         self.push_str(&format!("print({})", expr));
 
@@ -670,7 +659,6 @@ impl Decompiler {
             Ok(_) => {
                 let _ = self.advance_();
                 let pkg_alias = self.advance_();
-                dbg!(&pkg_alias);
                 token_eq!(self, RTLToken::ObjIdentifier)?;
 
                 self.push_str(&format!(
@@ -680,13 +668,10 @@ impl Decompiler {
                 ))
             }
             Err(_) => {
-                dbg!("HHHH");
                 self.push_str(&format!("import {}", pkg_name));
             }
         }
 
-        let next = &lookahead_!(self);
-        dbg!(format!("PROCESSING {:?}", next));
         Ok(())
     }
 
@@ -724,8 +709,6 @@ impl Decompiler {
             args.push(arg);
             next = self.advance_();
         }
-
-        dbg!(&args);
 
         if fn_name == "both" || fn_name == "either" {
             if args.len() <= 1 {
@@ -781,7 +764,6 @@ impl Decompiler {
         token_eq!(self, RTLToken::TupleVal)?;
         self.advance_();
         let args = self.decompile_args()?;
-        dbg!(&args);
         Ok(format!("({})", args))
     }
 
@@ -868,13 +850,6 @@ impl Decompiler {
             _next2 = lookahead_!(self, 2);
         }
 
-        // if no_dots {
-        //     self.advance_();
-        // }
-        //
-        // self.retreat_();
-
-        // dbg!("Now, we have this left:");
         let _x = lookahead_!(self);
 
         Ok(names.join("."))
@@ -883,9 +858,7 @@ impl Decompiler {
     ///
     pub fn decompile_expr(&mut self, from_call: bool) -> Result<String, Box<dyn SyntaxError>> {
         let prev = lookahead_!(self);
-        dbg!(&prev);
         if prev.is_none() {
-            dbg!("No token found at the current position to start a new expression");
             return Err(Box::new(PoorlyFormattedSE::new(
                 String::from("expression"),
                 None,
@@ -895,7 +868,6 @@ impl Decompiler {
         let mut prev = prev.unwrap();
 
         if !(Self::resolves_to_val_(&prev) || self.is_unary_()) {
-            dbg!("No value, identifier or unary expression was found at the current position");
             return Err(Box::new(PoorlyFormattedSE::new(
                 String::from("expression"),
                 None,
@@ -909,9 +881,7 @@ impl Decompiler {
             RTLToken::NotLogical => String::from("not "),
             RTLToken::Unpack => String::from("*"),
             RTLToken::ObjIdentifier | RTLToken::RawSequence => {
-                let name = self.chained_identifiers_(prev.clone())?;
-                dbg!(&name);
-                name
+                self.chained_identifiers_(prev.clone())?
             }
             RTLToken::NumericVal => prev.unwrap_numeric().fmt(),
             RTLToken::StringVal => prev.unwrap_string().fmt(),
@@ -939,9 +909,7 @@ impl Decompiler {
                 break;
             }
             let curr = curr_a.unwrap();
-            dbg!(&curr);
 
-            // let curr = self.tokens[self.curr].clone();
             if from_call
                 && (curr.rtl_token == RTLToken::ExprEnd || prev.rtl_token == RTLToken::ExprEnd)
             {
@@ -950,7 +918,6 @@ impl Decompiler {
             }
 
             if Self::resolves_to_val_(&prev) {
-                dbg!("Resolves to val");
                 match curr.rtl_token {
                     RTLToken::AddOperation => {
                         expr.push_str(&&String::from(" + "));
@@ -1009,13 +976,11 @@ impl Decompiler {
                         expr.push_str(&self.parse_idx(false)?.unwrap_or(String::new()));
                     }
                     _ => {
-                        dbg!("NO BYE");
                         broken = true;
                         break;
                     }
                 }
             } else {
-                dbg!("Resolves to op");
                 assert!(Self::resolves_to_op_(&prev));
                 match curr.rtl_token {
                     RTLToken::NotLogical => {
@@ -1040,14 +1005,12 @@ impl Decompiler {
                     RTLToken::TupleVal => expr.push_str(&&self.decompile_tuples(true)?),
                     RTLToken::FnCallIdentifier => expr.push_str(&&self.decompile_calls_(true)?),
                     _ => {
-                        dbg!("NO BYE");
                         broken = true;
                         break;
                     }
                 }
             }
             prev = curr;
-            dbg!("ADVANCING");
             let _ = self.advance_();
         }
 
@@ -1055,16 +1018,12 @@ impl Decompiler {
             let _ = self.advance_();
         }
 
-        dbg!(&lookahead_!(self));
-
         Ok(expr)
     }
 
     fn is_unary_(&self) -> bool {
         let curr_ = self.tokens[self.curr].rtl_token;
-        dbg!(&curr_);
         let next_ = lookahead_!(self, 2);
-        dbg!(&next_);
         (curr_ == RTLToken::NotLogical || curr_ == RTLToken::Unpack)
             && next_.is_some()
             && Self::resolves_to_val_(&next_.unwrap())

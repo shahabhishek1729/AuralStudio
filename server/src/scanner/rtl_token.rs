@@ -142,6 +142,8 @@ pub enum RTLToken {
     AndDelim,
     /// The token used to index into lists, tuples or dictionaries ('[' and ']' in Python)
     IdxOperator,
+    /// A digraph operation that is still in progress
+    PENDING,
 }
 
 impl std::fmt::Display for RTLToken {

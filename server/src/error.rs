@@ -123,6 +123,11 @@ pub struct MiscellaneousSE {
     pub line_num: usize,
 }
 
+#[derive(Debug, Clone)]
+pub struct UnimplementedSE {
+    pub line_num: usize,
+}
+
 impl UnexpectedTokenSE {
     /// Creates a new instance of an UnexpectedTokenSE error.
     ///
@@ -357,6 +362,47 @@ impl SyntaxError for UnsupportedFeatureSE {
             }
             _ => format!("{} are not presently supported in Rattle", self.feature_token)
         }
+    }
+
+    fn get_line_num(&self) -> usize {
+        self.line_num
+    }
+}
+
+impl UnimplementedSE {
+    /// Creates a new instance of a UnsupportedFeatureSE error.
+    ///
+    /// # Examples
+    /// ```rust
+    /// use rattlesnake::error::UnimplementedSE;
+    /// let error = UnimplementedSE::new(1usize);
+    /// ````
+    pub fn new(line_num: usize) -> Self {
+        Self { line_num }
+    }
+}
+
+impl From<Result<(), Box<dyn SyntaxError>>> for UnimplementedSE {
+    fn from(value: Result<(), Box<dyn SyntaxError>>) -> Self {
+        match value {
+            Ok(_) => return Self::new(0),
+            Err(r) => {
+                let b = &*r.as_any();
+                match b.downcast_ref::<Self>() {
+                    Some(i) => return i.clone(),
+                    _ => return Self::new(0),
+                }
+            }
+        }
+    }
+}
+
+impl SyntaxError for UnimplementedSE {
+    fn get_msg(&self) -> String {
+        format!(
+            "Found code that is still not finished on line {}",
+            self.line_num
+        )
     }
 
     fn get_line_num(&self) -> usize {
