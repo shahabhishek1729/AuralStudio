@@ -512,6 +512,20 @@ impl Parser {
                         ended_str
                     );
                 }
+                RTLToken::PENDING => {
+                    // 'output ...'
+                    let line = curr_token.line;
+                    let node = Node {
+                        kind: NodeKind::PENDING,
+                        line,
+                        children: vec![],
+                        pieces: vec![Piece::PENDING],
+                        addr: Address::new(vec![]),
+                        rtl: Some("placeholder".into()),
+                        ..Default::default()
+                    };
+                    self.push_node(node, &mut nodes)?;
+                }
 
                 RTLToken::LineBreak => continue,
                 RTLToken::EOF => break,

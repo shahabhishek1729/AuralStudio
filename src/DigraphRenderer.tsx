@@ -1,6 +1,7 @@
 import { ArcherContainer, ArcherElement } from "react-archer";
 import { getColor, RenderPiece, Token } from "./PieceRenderer";
 import { FileToken } from "./archive/Token";
+import { RTLNode, RTLPiece } from "./types";
 
 const token_type = {
   FNDEF: "function",
@@ -32,7 +33,7 @@ const rowStyle = {
 //  - 'no' branch of if-statements
 const ARROW_NODES = [token_type.CONDTLY, token_type.CONDTLN];
 
-function RenderNode({ node, parent, selectedIdx, address }) {
+function RenderNode({ node, parent, selectedIdx }) {
   const indent = parent && parent.kind && parent.kind === "FNDEF";
   return (
     <div
@@ -40,7 +41,9 @@ function RenderNode({ node, parent, selectedIdx, address }) {
         display: "flex",
         flexDirection: "column",
         gap: "10px",
-        alignItems: ARROW_NODES.includes(token_type[node.kind])
+        alignItems: ARROW_NODES.includes(
+          token_type[node.kind as keyof typeof token_type],
+        )
           ? "start" // TODO: Center or keep alignment as-is?
           : "start",
       }}
@@ -48,8 +51,10 @@ function RenderNode({ node, parent, selectedIdx, address }) {
       <ArcherElement
         id={node.line}
         relations={node.children
-          .filter((c) => ARROW_NODES.includes(token_type[c.kind]))
-          .map((c) => {
+          .filter((c: RTLNode) =>
+            ARROW_NODES.includes(token_type[c.kind as keyof typeof token_type]),
+          )
+          .map((c: RTLNode) => {
             return {
               targetId: c.line,
               targetAnchor: "top",
@@ -69,26 +74,28 @@ function RenderNode({ node, parent, selectedIdx, address }) {
           }}
         >
           <Token
-            token_type={token_type[node.kind]}
+            token_type={token_type[node.kind as keyof typeof token_type]}
             puzzle_color={
               node.pieces.length > 0 ? getColor(node.pieces[0]) : "transparent"
             }
             first={indent && parent.children[0].line === node.line}
             indent={indent}
           />
-          {node.pieces.map((piece, index) => RenderPiece(piece, index === 0))}
+          {node.pieces.map((piece: RTLPiece, index: number) =>
+            RenderPiece(piece, index === 0),
+          )}
         </div>
       </ArcherElement>
 
-      {token_type[node.kind] !== "conditional" ? (
-        node.children.map((n) => (
+      {token_type[node.kind as keyof typeof token_type] !== "conditional" ? (
+        node.children.map((n: RTLNode) => (
           <RenderNode node={n} parent={node} selectedIdx={selectedIdx} />
         ))
       ) : (
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ height: "50px" }} />
           <div style={{ display: "flex", flexDirection: "row" }}>
-            {node.children.map((n) => (
+            {node.children.map((n: RTLNode) => (
               <RenderNode node={n} parent={node} selectedIdx={selectedIdx} />
             ))}
           </div>

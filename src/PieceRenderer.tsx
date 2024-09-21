@@ -50,6 +50,8 @@ export function RenderPiece(piece: RTLPiece, first: boolean) {
           chained={first}
         />
       );
+    case "PENDING":
+      return <RenderPending />;
     default:
       throw new Error("Invalid piece found!");
   }
@@ -146,6 +148,26 @@ export function RenderOperator({ op_name }) {
   );
 }
 
+export function RenderPending() {
+  return (
+    <div
+      style={{
+        background: "transparent",
+        height: "36px",
+        width: "fit-content",
+        minWidth: `26px`,
+        borderRadius: "0px 10px 10px 0px",
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "center", //Centered vertically
+        alignItems: "center", //Centered horizontally
+        paddingLeft: "5px",
+        paddingRight: "5px",
+      }}
+    />
+  );
+}
+
 const TOKEN_MAP: token_metadata = {
   file: ["#FFFFFF", rattle_icon],
   function: ["#FE4949", gear],
@@ -157,6 +179,7 @@ const TOKEN_MAP: token_metadata = {
   output: ["#BC272a", output],
   return: ["#B140B4", book],
   list: ["#06975A", question],
+  pending: ["transparent", ""],
 };
 
 export const SYMBOL_MAP: symbol_metadata = {
@@ -166,6 +189,7 @@ export const SYMBOL_MAP: symbol_metadata = {
   text: ["#374f40", "#FFFFFF", 16, 36],
   ident: ["#000000", "#FFFFFF", 16, 36],
   call: ["#FFFFFF", "#000000", 16, 36],
+  pending: ["transparent", "#FFFFFF", 16, 36],
 };
 
 const OP_TO_NAME: op_kind = {
@@ -282,6 +306,7 @@ export function Token({ token_type, puzzle_color, first, indent }) {
           width: "fit-content",
           borderRadius:
             puzzle_color === "transparent" ? "10px" : "10px 0px 0px 10px",
+          border: token_type === "pending" ? "1px dashed white" : "",
           display: "flex",
           flexDirection: "row",
           justifyContent: "center", //Centered vertically
@@ -289,15 +314,22 @@ export function Token({ token_type, puzzle_color, first, indent }) {
           paddingLeft: "8px",
         }}
       >
-        <p
+        <span
           style={{
             fontFamily: "JetBrains Mono",
-            fontWeight: "bold",
+            fontWeight: token_type === "pending" ? "" : "bold",
             paddingRight: puzzle_color === "transparent" ? "8px" : "5px",
+            whiteSpace: "pre-wrap",
+            cursor: token_type === "pending" ? "pointer" : "default",
+            fontSize: token_type === "pending" ? "28px" : "",
           }}
         >
-          {token_type === "conditional" ? "is" : token_type}
-        </p>
+          {token_type === "conditional"
+            ? "is"
+            : token_type === "pending"
+              ? "    +    "
+              : token_type}
+        </span>
         {puzzle_color !== "transparent" ? (
           <svg
             width="20"

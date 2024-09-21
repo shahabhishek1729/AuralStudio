@@ -64,9 +64,7 @@ pub(crate) struct KeyboardEvent {
 
 impl KeyboardEvent {
     pub(crate) fn parse_command(&self, state: &mut CursorState) -> Result<(), CursorError> {
-        dbg!("Called");
         let command = Command::from(&self.key, &state.mode);
-        dbg!(&command);
 
         match command {
             Command::NavUp

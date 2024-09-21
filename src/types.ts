@@ -5,9 +5,10 @@ export interface RTLNode {
 	pieces: RTLPiece[],
 	address: string,
 	parent?: string,
+	rtl: string | null,
 }
 
-export type RTLPiece = "NOTHING" | _PieceInterface;
+export type RTLPiece = "NOTHING" | "PENDING" | _PieceInterface;
 interface _PieceInterface {
 	IDENT?: string,
 	NUMBER?: number,
@@ -23,7 +24,6 @@ export interface CursorState {
 	block_loc: Address, 
 	node_loc: Address,
 	mode: ADMode,
-	insert_at: Address | null,
 }
 
 export interface Editor {
@@ -42,7 +42,7 @@ type Address = string; // Addresses are stored as IPv4-style strings in JSON
  * @returns {string} A string-ified form of the piece
  */
 export function extractPieceType(piece: RTLPiece): string {
-	if (piece === "NOTHING") return piece;
+	if (piece === "NOTHING" || piece === "PENDING") return piece;
 	const types = ["IDENT", "NUMBER", "OP", "TEXT", "BOOL", "FNCALL", "LIST"];
 	for (const type_ of types) {
 		if (type_ in piece) return type_;
@@ -57,6 +57,7 @@ export interface symbol_metadata {
   text: [string, string, number, number];
   ident: [string, string, number, number];
   call: [string, string, number, number];
+  pending: [string, string, number, number];
 }
 
 export interface token_metadata {
@@ -70,6 +71,7 @@ export interface token_metadata {
   output: [string, string];
   return: [string, string];
   list: [string, string];
+  pending: [string, string];
 }
 
 export interface op_kind {

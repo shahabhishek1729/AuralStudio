@@ -3,7 +3,7 @@
  * individual pieces, nodes, blocks and subtrees.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ArcherContainer, ArcherElement } from "react-archer";
 import rattle_icon from "./assets/rattle_icon.png";
 import { ReactNode } from "react";
@@ -20,6 +20,7 @@ const token_type = {
   CONDTLY: "yes",
   CONDTLN: "no",
   RETURN: "return",
+  PENDING: "pending",
 };
 
 // The kinds of nodes that would require an arrow to be drawn towards them.
@@ -238,6 +239,7 @@ function RenderNode(
     return;
   }
 
+  // If this node is part of a function definition, it needs to be indented
   const indent = parent && parent.kind && parent.kind === "FNDEF";
   return (
     <div

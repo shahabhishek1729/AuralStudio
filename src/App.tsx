@@ -11,7 +11,7 @@ import { FileTree } from "./FileTree.tsx";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Digraph } from "./Digraph.tsx";
-import { CursorState, RTLNode, Editor } from "./types.ts";
+import { CursorState, RTLNode } from "./types.ts";
 
 function App() {
   let [codeOutput, _] = useState<string>("Code output will appear here...");
@@ -21,10 +21,9 @@ function App() {
     block_loc: "",
     node_loc: "",
     mode: "VIEW",
-    insert_at: null,
   });
 
-  let source = `define f of x\noutput x\ndefine f1 of x\noutput x\ndone define\ndefine f2 of x\noutput x\ndefine f21 of x\noutput x\ndone define\ndefine f22 of x\noutput x\ndone define\ndone define\ndone define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define`;
+  let source = `define f of x\noutput x\ndefine f1 of x\noutput x\ndone define\ndefine f2 of x\noutput x\ndefine f21 of x\noutput x\ndone define\ndefine f22 of x\noutput x\ndone define\ndone define\ndone define\ndefine g of x\noutput x plus 1\nplaceholder\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define`;
 
   useEffect(() => {
     invoke("parse_file", { source: source }).then((o: any) => {
@@ -34,7 +33,6 @@ function App() {
         block_loc: "0.0",
         node_loc: "0.0.0",
         mode: "VIEW",
-        insert_at: null,
       });
     });
   }, []);
@@ -45,10 +43,12 @@ function App() {
       event: JSON.stringify({ key: e.key }),
       payload: payload,
     }).then((state_editor: unknown) => {
-      const new_payload = (
-        state_editor as Array<CursorState | Editor | undefined>
-      )[0];
-      if (payload !== new_payload) setPayload(new_payload as CursorState);
+      const new_payload = state_editor as CursorState;
+      if (payload !== new_payload) {
+        console.log("New payload!");
+        console.log(new_payload);
+        setPayload(new_payload);
+      }
     });
   };
 
@@ -116,7 +116,7 @@ function App() {
 
           <div style={{ height: "20px" }} />
 
-          {Digraph(treeSource, payload)}
+          {Digraph(payload.graph, payload)}
 
           <div
             style={{
