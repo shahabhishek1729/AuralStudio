@@ -1,4 +1,6 @@
+use super::parser::NodeKind;
 use super::state::CursorError;
+use crate::digraph::address::Addressable;
 use crate::digraph::command::Command;
 use crate::digraph::state::{CursorDir, CursorState};
 use serde_derive::{Deserialize, Serialize};
@@ -90,6 +92,18 @@ impl KeyboardEvent {
             }
             Command::InsertMode => state.to_insert()?,
             Command::ViewMode => state.to_view(),
+            Command::InsertVar => {
+                let hash = state.graph.get_hash_mut();
+                let Some(curr_node) = hash.get(&state.block_loc) else {
+                    return Err(CursorError::AddrNotFound(state.block_loc.clone()));
+                };
+
+                // SAFETY: We know this reference must be valid because we just retrieved the
+                // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
+                // been dropped since its creation (no concurrency), so this is safe.
+                let curr_node = unsafe { &mut **curr_node };
+                curr_node.kind = NodeKind::VARDECL;
+            }
             Command::Run => todo!(),
             _ => todo!(),
         }

@@ -12,6 +12,7 @@ pub(super) enum Command {
     InsertMode,
     ViewMode,
     Run,
+    InsertVar,
     NULL,
 }
 
@@ -28,6 +29,7 @@ const VIEW_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
 
 const EDIT_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "Escape" => Command::ViewMode,
+    "v" => Command::InsertVar,
 };
 
 impl Command {
