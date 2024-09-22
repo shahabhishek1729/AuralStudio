@@ -11,7 +11,7 @@ import { FileTree } from "./FileTree.tsx";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Digraph } from "./Digraph.tsx";
-import { CursorState } from "./types.ts";
+import { CursorState, RTLPiece, extractPieceType } from "./types.ts";
 
 function App() {
   let [codeOutput, _] = useState<string>("Code output will appear here...");
@@ -41,8 +41,16 @@ function App() {
       payload: payload,
     }).then((state_editor: unknown) => {
       const new_payload = state_editor as CursorState;
-      // Prevent useEffect loops
+      // Prevent useEffect loops by only setting `payload` on a change
       if (payload !== new_payload) setPayload(new_payload);
+      if (
+        typeof new_payload.mode === "object" &&
+        "EDIT" in new_payload.mode &&
+        new_payload.mode["EDIT"]
+      ) {
+        const piece = new_payload.mode["EDIT"] as RTLPiece;
+        const pieceType = extractPieceType(piece);
+      }
     });
   };
 

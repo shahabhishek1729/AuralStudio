@@ -56,6 +56,7 @@ export function Digraph(source: RTLNode[], state: CursorState) {
   const borderRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
+  // Builds a sliding border around selected nodes within the graph
   // TODO: Scale when resizing windows (moving border when selecting groups)
   useEffect(() => {
     if (selectedAddr !== null && borderRef.current && containerRef.current) {
@@ -105,7 +106,7 @@ export function Digraph(source: RTLNode[], state: CursorState) {
               };
             })}
           >
-            {FileNode("linalg.rattle")}
+            {FileNode("linalg.rattle") /* TODO: Remove hardcoded file name */}
           </ArcherElement>
         </div>
 

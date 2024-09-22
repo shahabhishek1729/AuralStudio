@@ -32,7 +32,10 @@ export interface Editor {
 	expecting: string | null
 }
 
-type ADMode = "VIEW" | "EDIT";
+type ADMode = "VIEW" | {
+	"EDIT": _PieceInterface | null
+};
+
 type Address = string; // Addresses are stored as IPv4-style strings in JSON 
 
 /**

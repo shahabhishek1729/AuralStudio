@@ -8,6 +8,7 @@ use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct KeyboardEvent {
     pub key: String,
+    /*
     #[serde(rename = "ctrlKey")]
     ctrl_key: bool,
     #[serde(rename = "metaKey")]
@@ -16,6 +17,7 @@ pub(crate) struct KeyboardEvent {
     shift_key: bool,
     #[serde(rename = "altKey")]
     alt_key: bool,
+    */
 }
 
 impl KeyboardEvent {
