@@ -9,8 +9,8 @@ pub(super) enum Command {
     NavRight,
     NavIn,
     NavOut,
-    Insert,
-    View,
+    InsertMode,
+    ViewMode,
     Run,
     NULL,
 }
@@ -22,12 +22,12 @@ const VIEW_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "l" => Command::NavRight,
     " " => Command::NavIn,
     "Backspace" => Command::NavOut,
-    "Enter" => Command::Insert,
+    "Enter" => Command::InsertMode,
     "r" => Command::Run,
 };
 
 const EDIT_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
-    "Escape" => Command::View,
+    "Escape" => Command::ViewMode,
 };
 
 impl Command {

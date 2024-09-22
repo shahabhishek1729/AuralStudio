@@ -88,8 +88,8 @@ impl KeyboardEvent {
                     let _ = state.coerce();
                 }
             }
-            Command::Insert => state.to_insert()?,
-            Command::View => state.to_view(),
+            Command::InsertMode => state.to_insert()?,
+            Command::ViewMode => state.to_view(),
             Command::Run => todo!(),
             _ => todo!(),
         }
