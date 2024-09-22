@@ -36,17 +36,13 @@ function App() {
   }, []);
 
   const onKeyUp = (e: KeyboardEvent) => {
-    console.log("hey ");
     invoke("handle_event", {
       event: JSON.stringify({ key: e.key }),
       payload: payload,
     }).then((state_editor: unknown) => {
       const new_payload = state_editor as CursorState;
-      if (payload !== new_payload) {
-        console.log("New payload!");
-        console.log(new_payload);
-        setPayload(new_payload);
-      }
+      // Prevent useEffect loops
+      if (payload !== new_payload) setPayload(new_payload);
     });
   };
 
