@@ -149,23 +149,7 @@ export function RenderOperator({ op_name }) {
 }
 
 export function RenderPending() {
-  return (
-    <div
-      style={{
-        background: "transparent",
-        height: "36px",
-        width: "fit-content",
-        minWidth: `26px`,
-        borderRadius: "0px 10px 10px 0px",
-        display: "flex",
-        flexDirection: "row",
-        justifyContent: "center", //Centered vertically
-        alignItems: "center", //Centered horizontally
-        paddingLeft: "5px",
-        paddingRight: "5px",
-      }}
-    />
-  );
+  return Symbol("pending", "transparent", "  +  ");
 }
 
 const TOKEN_MAP: token_metadata = {
@@ -189,7 +173,7 @@ export const SYMBOL_MAP: symbol_metadata = {
   text: ["#374f40", "#FFFFFF", 16, 36],
   ident: ["#000000", "#FFFFFF", 16, 36],
   call: ["#FFFFFF", "#000000", 16, 36],
-  pending: ["transparent", "#FFFFFF", 16, 36],
+  pending: ["#000000", "#FFFFFF", 16, 36],
 };
 
 const OP_TO_NAME: op_kind = {
@@ -272,7 +256,7 @@ export function Symbol(type: string, puzzle_color: string, symbol?: string) {
         paddingRight: "5px",
       }}
     >
-      <p
+      <span
         style={{
           fontFamily: "JetBrains Mono",
           textAlign: "start",
@@ -281,7 +265,7 @@ export function Symbol(type: string, puzzle_color: string, symbol?: string) {
         }}
       >
         {symbol}
-      </p>
+      </span>
     </div>
   );
 }

@@ -11,11 +11,10 @@ import { FileTree } from "./FileTree.tsx";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Digraph } from "./Digraph.tsx";
-import { CursorState, RTLNode } from "./types.ts";
+import { CursorState } from "./types.ts";
 
 function App() {
   let [codeOutput, _] = useState<string>("Code output will appear here...");
-  let [treeSource, setTreeSource] = useState<Array<RTLNode>>([]);
   let [payload, setPayload] = useState<CursorState>({
     graph: [],
     block_loc: "",
@@ -23,11 +22,10 @@ function App() {
     mode: "VIEW",
   });
 
-  let source = `define f of x\noutput x\ndefine f1 of x\noutput x\ndone define\ndefine f2 of x\noutput x\ndefine f21 of x\noutput x\ndone define\ndefine f22 of x\noutput x\ndone define\ndone define\ndone define\ndefine g of x\noutput x plus 1\nplaceholder\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define`;
+  let source = `define f of x\noutput x\ndefine f1 of x\noutput x\ndone define\ndefine f2 of x\noutput x\ndefine f21 of x\noutput x\ndone define\ndefine f22 of x\noutput x\ndone define\ndone define\ndone define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define`;
 
   useEffect(() => {
     invoke("parse_file", { source: source }).then((o: any) => {
-      setTreeSource(o);
       setPayload({
         graph: o,
         block_loc: "0.0",
