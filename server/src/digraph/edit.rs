@@ -73,7 +73,7 @@ impl CursorState {
 
                 self._insert_fn(&insert_loc_, curr_addr)?;
 
-                (insert_loc_, Some(NodeKind::FNDEF))
+                (insert_loc_, Some(Piece::IDENT(String::new()))) // function name must follow
             }
             _ => {
                 // If we're on a node, just make a new node below and as the new `insert_loc`
@@ -86,7 +86,7 @@ impl CursorState {
 
                 self._insert_other(&next_addr, parent_addr, child_ix)?;
 
-                (next_addr, None) // There are a number of possible nodes that could follow
+                (next_addr, None) // any possible `Token` could follow
             }
         };
 
