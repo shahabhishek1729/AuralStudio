@@ -89,6 +89,7 @@ impl KeyboardEvent {
                 }
             }
             Command::Insert => state.to_insert()?,
+            Command::View => state.to_view(),
             Command::Run => todo!(),
             _ => todo!(),
         }

@@ -10,6 +10,7 @@ pub(super) enum Command {
     NavIn,
     NavOut,
     Insert,
+    View,
     Run,
     NULL,
 }
@@ -25,7 +26,9 @@ const VIEW_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "r" => Command::Run,
 };
 
-const EDIT_KEYMAP: phf::Map<&'static str, Command> = phf_map! {};
+const EDIT_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
+    "Escape" => Command::View,
+};
 
 impl Command {
     pub(super) fn from<'a>(key: &'a str, mode: &ADMode) -> &'a Self {

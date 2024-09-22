@@ -98,6 +98,11 @@ impl CursorState {
         Ok(())
     }
 
+    /// Toggles `CursorState` back to viewing mode
+    pub(super) fn to_view(&mut self) {
+        self.mode = ADMode::VIEW;
+    }
+
     // Update graph with a new function (@ `at_addr`) as a child of the function @ `from_addr`.
     #[inline]
     fn _insert_fn(&mut self, at_addr: &Address, from_addr: Address) -> Result<(), CursorError> {
