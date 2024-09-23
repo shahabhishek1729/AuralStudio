@@ -70,22 +70,25 @@ impl CursorState {
                     // Append <num_blocks (the index of the new node), 0 (root of the block)>
                     next_addr.join(&[num_blocks, 0])
                 };
-
                 self._insert_fn(&insert_loc_, curr_addr)?;
-
                 (insert_loc_, Some(Piece::IDENT(String::new()))) // function name must follow
+            }
+            super::parser::NodeKind::FNDEF if self._at_node() => {
+                // If we're on a node, just make a new node below and as the new `insert_loc`
+                let Some(next_addr) = self.block_loc.next() else {
+                    return Err(CursorError::EmptyAddr);
+                };
+                self._insert_other(&next_addr, curr_addr, 0)?;
+                (next_addr, None) // any possible `Token` could follow
             }
             _ => {
                 // If we're on a node, just make a new node below and as the new `insert_loc`
                 let Some(next_addr) = self.block_loc.next() else {
                     return Err(CursorError::EmptyAddr);
                 };
-
                 // NOTE: Subtraction is safe because this address must be >= 1 (parent is 0)
                 let child_ix = next_addr.last().expect("child address cannot be empty") - 1;
-
                 self._insert_other(&next_addr, parent_addr, child_ix)?;
-
                 (next_addr, None) // any possible `Token` could follow
             }
         };
