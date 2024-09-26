@@ -1,4 +1,4 @@
-use super::parser::{NodeKind, Piece};
+use super::parser::NodeKind;
 use super::state::{ADMode, CursorError};
 use crate::digraph::address::Addressable;
 use crate::digraph::command::Command;
@@ -59,7 +59,7 @@ impl KeyboardEvent {
                 // been dropped since its creation (no concurrency), so this is safe.
                 let curr_node = unsafe { &mut **curr_node };
                 curr_node.kind = NodeKind::VARDECL;
-                state.mode = ADMode::EDIT(Some(Piece::IDENT(String::new())));
+                state.mode = ADMode::EDIT(super::state::Expecting::IdentPiece);
             }
             Command::Run => todo!(),
             _ => todo!(),

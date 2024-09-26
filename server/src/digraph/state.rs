@@ -1,4 +1,3 @@
-use super::parser::Piece;
 use crate::addr;
 use crate::check;
 use crate::digraph::address::{Address, Addressable};
@@ -210,11 +209,22 @@ impl CursorDir {
     }
 }
 
+/// When pieces are pending, there are three possibilities of the next piece we're expecting
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub(super) enum Expecting {
+    /// A piece that would be part of an expression (e.g., literals, operators)
+    ExprPieces,
+    /// A variable or package name
+    IdentPiece,
+    /// We don't know what we're expecting next, so open to any piece
+    AnyPiece,
+}
+
 /// The modes a user can be in when navigating through the digraph
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub(super) enum ADMode {
     /// Used to insert code or replace existing code (i.e., modifying the digraph)
-    EDIT(Option<Piece>),
+    EDIT(Expecting),
     /// Used for moving around in the digraph, running code or any other non-modifying actions.
     VIEW,
 }

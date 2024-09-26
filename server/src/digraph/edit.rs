@@ -1,6 +1,6 @@
 use super::address::Address;
 use super::parser::{Node, NodeKind, Piece};
-use super::state::{ADMode, CursorState};
+use super::state::{ADMode, CursorState, Expecting};
 use crate::digraph::address::Addressable;
 use crate::digraph::util::*;
 use crate::prelude::CursorError;
@@ -71,7 +71,7 @@ impl CursorState {
                     next_addr.join(&[num_blocks, 0])
                 };
                 self._insert_fn(&insert_loc_, curr_addr)?;
-                (insert_loc_, Some(Piece::IDENT(String::new()))) // function name must follow
+                (insert_loc_, Expecting::IdentPiece) // function name must follow
             }
             super::parser::NodeKind::FNDEF if self._at_node() => {
                 // If we're on a node, just make a new node below and as the new `insert_loc`
@@ -79,7 +79,7 @@ impl CursorState {
                     return Err(CursorError::EmptyAddr);
                 };
                 self._insert_other(&next_addr, curr_addr, 0)?;
-                (next_addr, None) // any possible `Token` could follow
+                (next_addr, Expecting::AnyPiece) // any possible `Token` could follow
             }
             _ => {
                 // If we're on a node, just make a new node below and as the new `insert_loc`
@@ -89,7 +89,7 @@ impl CursorState {
                 // NOTE: Subtraction is safe because this address must be >= 1 (parent is 0)
                 let child_ix = next_addr.last().expect("child address cannot be empty") - 1;
                 self._insert_other(&next_addr, parent_addr, child_ix)?;
-                (next_addr, None) // any possible `Token` could follow
+                (next_addr, Expecting::AnyPiece) // any possible `Token` could follow
             }
         };
 
