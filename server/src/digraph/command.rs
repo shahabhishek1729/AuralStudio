@@ -1,6 +1,12 @@
 use super::state::ADMode;
 use phf::phf_map;
 
+/// Kinds of commands that can be made within the Editor.
+/// Basic nomenclature:
+/// - Nav*: Moves between nodes
+/// - Insert*: Inserts nodes
+/// - Add*: Inserts pieces
+/// - *Mode: Toggles mode (viewing <-> editing)
 #[derive(Debug)]
 pub(super) enum Command {
     NavUp,
@@ -9,10 +15,10 @@ pub(super) enum Command {
     NavRight,
     NavIn,
     NavOut,
-    InsertMode,
+    InsertVar,
+    EditMode,
     ViewMode,
     Run,
-    InsertVar,
     NULL,
 }
 
@@ -23,7 +29,7 @@ const VIEW_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "l" => Command::NavRight,
     " " => Command::NavIn,
     "Backspace" => Command::NavOut,
-    "Enter" => Command::InsertMode,
+    "Enter" => Command::EditMode,
     "r" => Command::Run,
 };
 

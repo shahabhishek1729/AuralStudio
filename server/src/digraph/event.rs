@@ -46,7 +46,7 @@ impl KeyboardEvent {
                     let _ = state.coerce();
                 }
             }
-            Command::InsertMode => state.to_insert()?,
+            Command::EditMode => state.to_insert()?,
             Command::ViewMode => state.to_view(),
             Command::InsertVar => {
                 let hash = state.graph.get_hash_mut();
