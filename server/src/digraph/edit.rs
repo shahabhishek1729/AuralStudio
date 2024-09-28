@@ -128,13 +128,13 @@ impl CursorState {
                     .expect("Insertion location cannot be an empty address"),
                 parent_addr: at_addr.clone(),
                 children: vec![],
-                rtl: Some("placeholder".into()),
+                rtl: Some("pretend".into()),
             }],
             kind: NodeKind::FNDEF,
             pieces: vec![Piece::PENDING],
             addr: at_addr.clone(),
             parent_addr: from_addr,
-            rtl: Some("define placeholder".into()),
+            rtl: Some("define pretend".into()),
         };
         parent_node.children.push(new_node);
         Ok(())
@@ -162,7 +162,7 @@ impl CursorState {
             pieces: vec![Piece::PENDING],
             addr: at_addr.clone(),
             parent_addr: from_addr,
-            rtl: Some("placeholder".into()),
+            rtl: Some("pretend".into()),
         };
         parent_node.children.insert(index, new_node);
         Ok(())

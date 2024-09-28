@@ -521,7 +521,7 @@ impl Parser {
                         children: vec![],
                         pieces: vec![Piece::PENDING],
                         addr: Address::new(vec![]),
-                        rtl: Some("placeholder".into()),
+                        rtl: Some("pretend".into()),
                         ..Default::default()
                     };
                     self.push_node(node, &mut nodes)?;
