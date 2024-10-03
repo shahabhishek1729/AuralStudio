@@ -24,7 +24,7 @@ impl KeyboardEvent {
     pub(crate) fn parse_command(&self, state: &mut CursorState) -> Result<(), CursorError> {
         let command = Command::from(&self.key, &state.mode);
 
-        match command {
+        match *command {
             Command::NavUp
             | Command::NavDown
             | Command::NavLeft
@@ -32,16 +32,7 @@ impl KeyboardEvent {
             | Command::NavIn
             | Command::NavOut => {
                 // This is a navigation command, move in the correct direction
-                let dir = match command {
-                    Command::NavLeft => CursorDir::LEFT,
-                    Command::NavDown => CursorDir::DOWN,
-                    Command::NavUp => CursorDir::UP,
-                    Command::NavRight => CursorDir::RIGHT,
-                    Command::NavIn => CursorDir::IN,
-                    Command::NavOut => CursorDir::OUT,
-                    _ => unreachable!("from navigation command match"),
-                };
-                if let Ok(new_addr) = state.navigate(dir) {
+                if let Ok(new_addr) = state.navigate(dir_map(*command)) {
                     state.block_loc = new_addr;
                     let _ = state.coerce();
                 }
@@ -65,5 +56,17 @@ impl KeyboardEvent {
             _ => {}
         }
         return Ok(());
+    }
+}
+
+fn dir_map(command: Command) -> CursorDir {
+    match command {
+        Command::NavUp => CursorDir::UP,
+        Command::NavDown => CursorDir::DOWN,
+        Command::NavLeft => CursorDir::LEFT,
+        Command::NavRight => CursorDir::RIGHT,
+        Command::NavIn => CursorDir::IN,
+        Command::NavOut => CursorDir::OUT,
+        _ => unreachable!("from dir_map"),
     }
 }

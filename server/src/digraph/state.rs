@@ -227,6 +227,8 @@ pub(super) enum ADMode {
     EDIT(Expecting),
     /// Used for moving around in the digraph, running code or any other non-modifying actions.
     VIEW,
+    /// Typing with keyboard (no special commands to be executed)
+    TYPE,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
