@@ -1,5 +1,6 @@
 use super::state::ADMode;
 use phf::phf_map;
+use std::borrow::Cow;
 
 /// Kinds of commands that can be made within the Editor.
 /// Basic nomenclature:
@@ -7,8 +8,8 @@ use phf::phf_map;
 /// - Insert*: Inserts nodes
 /// - Add*: Inserts pieces
 /// - *Mode: Toggles mode (viewing <-> editing)
-#[derive(Debug)]
-pub(super) enum Command {
+#[derive(Debug, Clone, Copy)]
+pub(super) enum Command<'a> {
     NavUp,
     NavDown,
     NavLeft,
@@ -20,6 +21,7 @@ pub(super) enum Command {
     ViewMode,
     Run,
     NULL,
+    TypeChar(&'a str),
 }
 
 const VIEW_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
@@ -38,12 +40,12 @@ const EDIT_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "v" => Command::InsertVar,
 };
 
-impl Command {
-    pub(super) fn from<'a>(key: &'a str, mode: &ADMode) -> &'a Self {
-        if *mode == ADMode::VIEW {
-            VIEW_KEYMAP.get(key).unwrap_or(&Command::NULL)
-        } else {
-            EDIT_KEYMAP.get(key).unwrap_or(&Command::NULL)
+impl<'a> Command<'a> {
+    pub(super) fn from(key: &'a str, mode: &ADMode) -> Cow<'a, Self> {
+        match *mode {
+            ADMode::VIEW => Cow::Borrowed(VIEW_KEYMAP.get(key).unwrap_or(&Command::NULL)),
+            ADMode::EDIT(_) => Cow::Borrowed(EDIT_KEYMAP.get(key).unwrap_or(&Command::NULL)),
+            ADMode::TYPE => Cow::Owned(Command::TypeChar(key)),
         }
     }
 }
