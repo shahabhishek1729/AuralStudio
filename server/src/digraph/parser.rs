@@ -349,7 +349,6 @@ impl Parser {
 
                     match self.waiting_parents.peek() {
                         Some(last) => {
-                            let last = last.clone();
                             self.waiting_parents.push(
                                 last.iter()
                                     .chain(&[insert_loc.len() - 1])
@@ -617,10 +616,7 @@ impl Parser {
             }
             RTLToken::TupleVal => todo!(),
             RTLToken::DictVal => todo!(),
-            _ => anyhow::bail!(
-                "Found a token that should never be here: {}",
-                token.rtl_token
-            ),
+            kind @ _ => anyhow::bail!("Found a token that should never be here: {}", kind),
         }
     }
 
@@ -726,6 +722,10 @@ mod tests {
         (TEXT $e:expr) => {{
             use crate::digraph::parser::Piece;
             Piece::TEXT($e.to_string())
+        }};
+        (LIST [$($e:expr),*]) => {{
+            use crate::digraph::parser::Piece;
+            Piece::LIST(vec![$($e),*])
         }};
         (True) => {{
             use crate::digraph::parser::Piece;
@@ -1004,6 +1004,20 @@ mod tests {
                             make_node!(line 3 -> OUTPUT [piece!(IDENT "x")])
                         })
                     })
+                ]
+            );
+        }
+
+        #[test]
+        fn list() {
+            let source = "let x be list 1 2 done";
+
+            let mut parser = Parser::new(source.to_string()).unwrap();
+            assert_eq!(
+                parser.parse().unwrap(),
+                vec![
+                    make_node!(line 1 -> VARDECL [piece!(IDENT "x"), Piece::OP(OpKind::ASSN), 
+                        piece!(LIST [piece!(IDENT "list"), piece!(# 1), piece!(# 2)])])
                 ]
             );
         }

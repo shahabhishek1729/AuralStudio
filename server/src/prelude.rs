@@ -141,7 +141,7 @@ where
         self.elements.pop()
     }
 
-    pub(crate) fn peek(&mut self) -> Option<&T> {
+    pub(crate) fn peek(&self) -> Option<&T> {
         self.elements.last()
     }
 
