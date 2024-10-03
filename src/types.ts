@@ -34,7 +34,7 @@ export interface CursorState {
 }
 
 // Either we are viewing or editing the digraph; if editing, we might be expecting a certain piece
-type ADMode = "VIEW" | { "EDIT": _ExpectingPiece };
+type ADMode = "VIEW" | "TYPE" | { "EDIT": _ExpectingPiece };
 /**
  * The kind of piece we're expecting to see next in the digraph.
  * When pieces are pending, there are three possibilities of the next piece we're expecting

@@ -11,12 +11,7 @@ import { FileTree } from "./FileTree.tsx";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Digraph } from "./Digraph.tsx";
-import {
-  CursorState,
-  RTLPiece,
-  _ExpectingPiece,
-  extractPieceType,
-} from "./types.ts";
+import { CursorState, _ExpectingPiece } from "./types.ts";
 
 function App() {
   let [codeOutput, _] = useState<string>("Code output will appear here...");
@@ -56,6 +51,13 @@ function App() {
         const piece = new_payload.mode["EDIT"] as _ExpectingPiece;
         if (piece === "IdentPiece") {
           // TODO: Capture audio and transcribe to get IDENT.
+          speak("Name?");
+          setPayload({
+            graph: payload.graph,
+            block_loc: payload.block_loc,
+            node_loc: payload.node_loc,
+            mode: "TYPE",
+          });
         }
       }
     });
