@@ -51,6 +51,7 @@ function addrStep(addr: string, n: number = 1): string {
   return prefix.join(".");
 }
 
+// TODO: When editing, we need to render text boxes for strings + identifiers.
 export function DAG(source: RTLNode[], state: CursorState) {
   const selectedAddr = state.block_loc;
   const borderRef = useRef<HTMLDivElement | null>(null);
@@ -205,12 +206,12 @@ function RenderBlock(
 }
 
 function RenderNode(
-  node: RTLNode,
-  address: string,
-  selectedAddr: string,
-  parent?: RTLNode,
-  check_blocks: boolean = true,
-  recursive: boolean = true,
+  node: RTLNode, // The current node to be rendered
+  address: string, // The address at which to render it (for div IDs)
+  selectedAddr: string, // The address with the cursor (is it this one?)
+  parent?: RTLNode, // This node's parent
+  check_blocks: boolean = true, // Used on recursive calls
+  recursive: boolean = true, // Used on recursive calls
 ) {
   if (LOCAL_BLOCK_NODES.includes(node.kind) && check_blocks) {
     return (
