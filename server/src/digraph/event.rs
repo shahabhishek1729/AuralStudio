@@ -53,6 +53,7 @@ impl KeyboardEvent {
                 state.mode = ADMode::EDIT(super::state::Expecting::IdentPiece);
             }
             Command::Run => todo!(),
+            Command::TypeChar(c) => todo!(),
             _ => {}
         }
         return Ok(());

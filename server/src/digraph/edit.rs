@@ -102,6 +102,7 @@ impl CursorState {
     }
 
     /// Toggles `CursorState` back to viewing mode
+    #[inline(always)]
     pub(super) fn to_view(&mut self) {
         self.mode = ADMode::VIEW;
     }
