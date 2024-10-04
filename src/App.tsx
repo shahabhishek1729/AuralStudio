@@ -10,7 +10,7 @@ import TabsComponent from "./TabsComponent";
 import { FileTree } from "./FileTree.tsx";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
-import { Digraph } from "./Digraph.tsx";
+import { DAG } from "./Digraph.tsx";
 import { CursorState, _ExpectingPiece } from "./types.ts";
 
 function App() {
@@ -127,7 +127,7 @@ function App() {
 
           <div style={{ height: "20px" }} />
 
-          {Digraph(payload.graph, payload)}
+          {DAG(payload.graph, payload)}
 
           <div
             style={{

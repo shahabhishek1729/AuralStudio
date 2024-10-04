@@ -51,7 +51,7 @@ function addrStep(addr: string, n: number = 1): string {
   return prefix.join(".");
 }
 
-export function Digraph(source: RTLNode[], state: CursorState) {
+export function DAG(source: RTLNode[], state: CursorState) {
   const selectedAddr = state.block_loc;
   const borderRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
