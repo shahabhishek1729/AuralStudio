@@ -20,6 +20,8 @@ const token_type = {
   CONDTLN: "no",
   RETURN: "return",
   PENDING: "pending",
+  FORLOOP: "for",
+  WHLLOOP: "while",
 };
 
 // The kinds of nodes that would require an arrow to be drawn towards them.
@@ -29,6 +31,7 @@ const token_type = {
 const ARROW_NODES = [token_type.CONDTLY, token_type.CONDTLN];
 const GLOBAL_BLOCK_NODES = ["FNDEF"];
 const LOCAL_BLOCK_NODES = ["CONDTL"];
+const INDENT_NODES = GLOBAL_BLOCK_NODES.concat(["FORLOOP", "WHLLOOP"]);
 
 const isBlock = (c: RTLNode) => GLOBAL_BLOCK_NODES.includes(c.kind);
 const hasBlocks = (c: RTLNode) => !!c.children.find(isBlock);

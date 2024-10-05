@@ -78,6 +78,8 @@ export interface token_metadata {
   conditional: [string, string];
   yes: [string, string];
   no: [string, string];
+  for: [string, string];
+  while: [string, string];
   library: [string, string];
   output: [string, string];
   return: [string, string];

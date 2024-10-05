@@ -174,6 +174,7 @@ const TOKEN_MAP: token_metadata = {
   conditional: ["#06975A", question],
   yes: ["#06975A", question],
   no: ["#06975A", question],
+  for: ["#06975A", question],
   library: ["#B140B4", book],
   output: ["#BC272a", output],
   return: ["#B140B4", book],
