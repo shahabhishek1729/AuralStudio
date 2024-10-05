@@ -22,7 +22,8 @@ function App() {
     mode: "VIEW",
   });
 
-  let source = `define inverse of m
+  // TODO: Cannot be rendered until we support indexing and loops
+  let final_source = `define inverse of m
 define determinant of m
 let x be m at 0 times m at 3
 let y be m at 1 times m at 2
@@ -32,6 +33,30 @@ define adjoint of m
 let result be list m at 3 0 minus m at 1 0 minus m at 2 m at 0 done 
 return result
 done define
+let d be determinant of m done
+let a be adjoint of m done
+let iterator be range of 4 done
+for i in iterator
+let m at i be 1 over d times a at i
+done for
+return m
+done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define`;
+
+  // Temporary source with indexing and loops removed
+  let source = `define inverse of m
+define determinant of m
+let x be 0 times m
+let y be m times 2
+return x minus y
+done define
+define adjoint of m 
+let result be list m 1 2 0 done 
+return result
+done define
+let d be determinant of m done
+let a be adjoint of m done
+let iterator be range of 4 done
+return iterator
 done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define`;
 
   useEffect(() => {
