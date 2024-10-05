@@ -5,7 +5,6 @@
 
 import { useEffect, useRef } from "react";
 import { ArcherContainer, ArcherElement } from "react-archer";
-import rattle_icon from "./assets/rattle_icon.png";
 import { ReactNode } from "react";
 import { CursorState, RTLNode } from "./types";
 import { ROW_STYLE, FLEX_COL, FLEX_ROW, BORDER_ANIMATION } from "./styles";
@@ -34,6 +33,7 @@ const LOCAL_BLOCK_NODES = ["CONDTL"];
 const isBlock = (c: RTLNode) => GLOBAL_BLOCK_NODES.includes(c.kind);
 const hasBlocks = (c: RTLNode) => !!c.children.find(isBlock);
 const getBlocks = (c: RTLNode) => c.children.filter(isBlock);
+const excludeBlocks = (c: RTLNode) => c.children.filter((c_) => !isBlock(c_));
 
 /**
  * Move an address one space forward (e.g., 1.0.2.1.0 => 1.0.2.1.1)
@@ -93,7 +93,6 @@ export function DAG(source: RTLNode[], state: CursorState) {
         <div
           style={{
             justifyContent: "center",
-            overflowX: "scroll",
             ...FLEX_ROW,
           }}
         >
@@ -241,8 +240,10 @@ function RenderNode(
     return;
   }
 
-  // If this node is part of a function definition, it needs to be indented
-  const indent = parent && parent.kind && parent.kind === "FNDEF";
+  // If this node is part of a function definition (and is not one itself),
+  // it needs to be indented.
+  const indent: boolean =
+    !!parent && !!parent.kind && parent.kind === "FNDEF" && !isBlock(node);
   return (
     <div
       id={address}
@@ -286,7 +287,11 @@ function RenderNode(
             puzzle_color={
               node.pieces.length > 0 ? getColor(node.pieces[0]) : "transparent"
             }
-            first={indent && parent.children[0].line === node.line}
+            first={
+              indent &&
+              !!parent &&
+              excludeBlocks(parent)[0].address === node.address
+            }
             indent={indent}
           />
           {node.pieces.map((piece, index) => RenderPiece(piece, index === 0))}
@@ -306,36 +311,22 @@ function FileNode(fname: string) {
   return (
     <div
       style={{
-        background: "white",
+        background: `linear-gradient(45deg, #5C89FD, #00D1FF)`,
         height: "40px",
         width: "fit-content",
         borderRadius: "10px",
         justifyContent: "center", //Centered vertically
         alignItems: "center", //Centered horizontally
-        paddingLeft: "60px",
+        paddingLeft: "10px",
         paddingRight: "10px",
         ...FLEX_ROW,
       }}
     >
-      <img
-        src={rattle_icon}
-        height="32px"
-        style={{
-          marginLeft: "-48px",
-          marginRight: "4px",
-        }}
-      />
-
-      <div
-        style={{ height: "40px", width: "1px", backgroundColor: "#000000" }}
-      ></div>
-
       <p
         style={{
           fontFamily: "JetBrains Mono",
           textAlign: "start",
-          marginLeft: "7px",
-          color: "black",
+          color: "white",
         }}
       >
         {fname}

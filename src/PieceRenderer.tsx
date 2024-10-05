@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Renders individual pieces (tokens and otherwise) for an acyclic
+ * digraph - can render operators, tokens, identifiers, numbers, chains, etc.
+ */
+
 import gear from "./assets/action_cpu.png";
 import question from "./assets/conditional_q4.png";
 import cube from "./assets/value_box.png";
@@ -120,6 +125,7 @@ export function RenderCall({ pieces, chained }) {
         {pieces.slice(1).map((b: RTLPiece) => (
           <>
             {RenderPiece(b, false)}
+            {/* Vertical line separator */}
             <div
               style={{
                 height: "36px",
@@ -270,6 +276,16 @@ export function Symbol(type: string, puzzle_color: string, symbol?: string) {
   );
 }
 
+/**
+ * A token is the first piece in a node (e.g., the "variable" keyword)
+ * @param token_type {string} the token's kind (e.g., function, variable, ...)
+ * @param puzzle_color {string} "transparent" if this token has no subsequent
+ *								tokens (e.g, "yes" token in a conditional),
+ *								otherwise any other string (all are equivalent)
+ * @param first {boolean} whether the this token is part of the first line of a
+ *						  global block (tells us whether to show the arrow)
+ * @param indent {boolean} whether to indent or not
+ */
 export function Token({ token_type, puzzle_color, first, indent }) {
   return (
     <div style={{ display: "flex", flexDirection: "row" }}>
