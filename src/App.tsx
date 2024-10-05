@@ -22,7 +22,17 @@ function App() {
     mode: "VIEW",
   });
 
-  let source = `define f of x\noutput x\ndefine f1 of x\noutput x\ndone define\ndefine f2 of x\noutput x\ndefine f21 of x\noutput x\ndone define\ndefine f22 of x\noutput x\ndone define\ndone define\ndone define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define`;
+  let source = `define inverse of m
+define determinant of m
+let x be m at 0 times m at 3
+let y be m at 1 times m at 2
+return x minus y
+done define
+define adjoint of m 
+let result be list m at 3 0 minus m at 1 0 minus m at 2 m at 0 done 
+return result
+done define
+done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define`;
 
   useEffect(() => {
     invoke("parse_file", { source: source }).then((o: any) => {

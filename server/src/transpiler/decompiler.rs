@@ -190,6 +190,7 @@ impl Decompiler {
     pub fn new(source: &str) -> Result<Self, String> {
         let mut scanner = Scanner::new(source);
         let tokens = scanner.scan()?;
+        dbg!(&tokens);
 
         Ok(Self {
             tokens,
@@ -584,7 +585,7 @@ impl Decompiler {
         Ok(())
     }
 
-    /// Decompiels print statements
+    /// Decompiles print statements
     /// Rattle: print string hello world over
     /// Python: print("hello world")
     pub fn decompile_prints_(&mut self) -> RESULT {
@@ -819,6 +820,7 @@ impl Decompiler {
             next = self.tokens[self.curr].to_owned();
         }
 
+        dbg!(&args);
         Ok(args.join(", "))
     }
 
@@ -855,7 +857,7 @@ impl Decompiler {
         Ok(names.join("."))
     }
 
-    ///
+    /// Decompiles expressions (i.e., anything that can be on the RHS of an assignment.
     pub fn decompile_expr(&mut self, from_call: bool) -> Result<String, Box<dyn SyntaxError>> {
         let prev = lookahead_!(self);
         if prev.is_none() {
@@ -868,6 +870,7 @@ impl Decompiler {
         let mut prev = prev.unwrap();
 
         if !(Self::resolves_to_val_(&prev) || self.is_unary_()) {
+            dbg!(&prev);
             return Err(Box::new(PoorlyFormattedSE::new(
                 String::from("expression"),
                 None,
@@ -876,6 +879,7 @@ impl Decompiler {
         }
 
         let mut expr = String::new();
+        dbg!("expression begins with ''");
 
         expr.push_str(&&match prev.rtl_token {
             RTLToken::NotLogical => String::from("not "),
@@ -892,18 +896,12 @@ impl Decompiler {
             RTLToken::ExprEnd => "".to_string(),
             _ => return Err(Box::new(MiscellaneousSE::new(String::from(""), prev.line))),
         });
+        dbg!(&expr);
 
         let mut broken = false;
 
         // let _ = self.advance_();
-        let mut i = 0;
-        loop {
-            // Prevents infinite loops in case of a bug
-            i += 1;
-            if i > 1000 {
-                break;
-            }
-
+        for _ in 0..usize::MAX {
             let curr_a = lookahead_!(self, 2);
             if curr_a.is_none() {
                 break;
@@ -917,6 +915,7 @@ impl Decompiler {
                 break;
             }
 
+            dbg!(&prev);
             if Self::resolves_to_val_(&prev) {
                 match curr.rtl_token {
                     RTLToken::AddOperation => {
@@ -974,8 +973,11 @@ impl Decompiler {
                     RTLToken::IdxOperator => {
                         let _ = self.advance_();
                         expr.push_str(&self.parse_idx(false)?.unwrap_or(String::new()));
+                        broken = true;
+                        break;
                     }
                     _ => {
+                        dbg!(&prev);
                         broken = true;
                         break;
                     }
