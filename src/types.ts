@@ -61,6 +61,18 @@ export function extractPieceType(piece: RTLPiece): string {
 	throw new Error(`Invalid piece found: ${piece}`);
 }
 
+export function extractPieceValue(piece: RTLPiece): string | undefined {
+	if (piece === "NOTHING" || piece === "PENDING") return undefined;
+	switch (extractPieceType(piece)) {
+		case "IDENT": return piece.IDENT
+		case "NUMBER": return `${piece.NUMBER}`
+		case "OP": return piece.OP
+		case "TEXT": return piece.TEXT
+		case "BOOL": return `${piece.BOOL}`
+	}
+	return undefined;
+}
+
 export interface symbol_metadata {
   constant: [string, string, number, number];
   arrow: [string, string, number, number];
@@ -105,5 +117,6 @@ export interface op_kind {
   IN: string;
   DOT: string;
   ASSN: string;
+  AT: string;
 }
 

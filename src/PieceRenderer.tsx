@@ -16,14 +16,26 @@ import {
   symbol_metadata,
   op_kind,
   token_metadata,
+  extractPieceValue,
 } from "./types";
 
-export function RenderPiece(piece: RTLPiece, first: boolean) {
+export function RenderPiece(
+  all_pieces: RTLPiece[],
+  piece: RTLPiece,
+  first: boolean,
+  i: number,
+) {
   const kind = extractPieceType(piece);
+
+  // Don't re-render indices that have already been compressed into the ident
+  if (i > 0 && all_pieces[i - 1]["OP"] === "AT") return <></>;
+
   switch (kind) {
     case "IDENT":
       return (
         <RenderIdentifier
+          pieces={all_pieces}
+          i={i}
           id_name={piece["IDENT" as keyof RTLPiece]}
           chained={first}
         />
@@ -62,6 +74,20 @@ export function RenderPiece(piece: RTLPiece, first: boolean) {
   }
 }
 
+export function RenderIndex({ piece }) {
+  return (
+    <p
+      style={{
+        fontFamily: "JetBrains Mono",
+        textAlign: "start",
+        fontSize: `16px`,
+      }}
+    >
+      #3
+    </p>
+  );
+}
+
 export function RenderNumber({ num, chained }) {
   return Symbol("constant", chained ? "" : "transparent", num.toString());
 }
@@ -78,8 +104,63 @@ export function RenderNothing({ chained }) {
   return Symbol("constant", chained ? "" : "transparent", "nothing");
 }
 
-export function RenderIdentifier({ id_name, chained }) {
-  return Symbol("ident", chained ? "" : "transparent", id_name);
+export function RenderIdentifier({ pieces, i, id_name, chained }) {
+  const type = "ident";
+  const puzzle_color = chained ? "" : "transparent";
+  const symbol = id_name;
+  const idxFollows = i < pieces.length - 2 && pieces[i + 1].OP === "AT";
+  let idx = "";
+  if (idxFollows) idx = ` #${extractPieceValue(pieces[i + 2])}`;
+
+  return (
+    <div
+      style={{
+        background: SYMBOL_MAP[type as keyof symbol_metadata][0],
+        height: `${SYMBOL_MAP[type as keyof symbol_metadata][3]}px`,
+        width: "fit-content",
+        minWidth: `${SYMBOL_MAP[type as keyof symbol_metadata][3] - 10}px`,
+        borderRadius:
+          puzzle_color === "transparent" ? "10px" : "0px 10px 10px 0px",
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "center", //Centered vertically
+        alignItems: "center", //Centered horizontally
+        paddingLeft: "5px",
+        paddingRight: "5px",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "JetBrains Mono",
+          textAlign: "start",
+          color: SYMBOL_MAP[type as keyof symbol_metadata][1],
+          fontSize: `${SYMBOL_MAP[type as keyof symbol_metadata][2]}px`,
+        }}
+      >
+        {symbol}
+      </span>
+      {idxFollows ? (
+        <span
+          style={{
+            fontFamily: "JetBrains Mono",
+            textAlign: "start",
+            color: SYMBOL_MAP["arrow"][1],
+            fontSize: `${SYMBOL_MAP["constant"][2]}px`,
+            whiteSpace: "pre",
+          }}
+        >
+          {idx}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function elementDone(pieces: RTLPiece[], i: number): boolean {
+  if (i === pieces.length - 1) return true;
+  const currType = extractPieceType(pieces[i]);
+  const nextType = extractPieceType(pieces[i + 1]);
+  return currType !== "OP" && nextType !== "OP";
 }
 
 export function RenderList({ pieces, chained }) {
@@ -145,6 +226,8 @@ export function RenderOperator({ op_name }) {
   const _type = op_name === "ASSN" ? "arrow" : "operator";
   const _name = OP_TO_NAME[op_name as keyof op_kind];
 
+  if (_name === "") return <></>;
+
   return (
     <>
       <div style={{ width: "6px" }} />
@@ -175,6 +258,7 @@ const TOKEN_MAP: token_metadata = {
   yes: ["#06975A", question],
   no: ["#06975A", question],
   for: ["#06975A", question],
+  while: ["#06975A", question],
   library: ["#B140B4", book],
   output: ["#BC272a", output],
   return: ["#B140B4", book],
@@ -210,6 +294,7 @@ const OP_TO_NAME: op_kind = {
   IN: "in",
   DOT: ".",
   ASSN: "->",
+  AT: "",
 };
 
 export function ChainSymbol(
@@ -298,7 +383,12 @@ export function Symbol(type: string, puzzle_color: string, symbol?: string) {
  */
 export function Token({ token_type, puzzle_color, first, indent }) {
   return (
-    <div style={{ display: "flex", flexDirection: "row" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+      }}
+    >
       {indent ? (
         <img
           style={{
