@@ -229,6 +229,8 @@ pub(crate) enum OpKind {
     IN,
     /// dot
     DOT,
+    /// indexing ([])
+    AT,
 }
 
 #[derive(Debug, Error)]
@@ -582,6 +584,7 @@ impl Parser {
             RTLToken::NotLogical => Ok(Piece::OP(OpKind::NOT)),
             RTLToken::MembershipOperator => Ok(Piece::OP(OpKind::IN)),
             RTLToken::DotOperator => Ok(Piece::OP(OpKind::DOT)),
+            RTLToken::IdxOperator => Ok(Piece::OP(OpKind::AT)),
             // Values
             RTLToken::NumericVal => Ok(Piece::NUMBER(token.unwrap_numeric())),
             RTLToken::BooleanVal => Ok(Piece::BOOL(token.unwrap_bool())),
@@ -1018,6 +1021,20 @@ mod tests {
                 vec![
                     make_node!(line 1 -> VARDECL [piece!(IDENT "x"), Piece::OP(OpKind::ASSN), 
                         piece!(LIST [piece!(IDENT "list"), piece!(# 1), piece!(# 2)])])
+                ]
+            );
+        }
+
+        #[test]
+        fn indexing() {
+            let source = "let x be mylist at 3";
+
+            let mut parser = Parser::new(String::from(source)).unwrap();
+            let tokens = parser.parse().unwrap();
+            assert_eq!(
+                tokens,
+                vec![
+                    make_node!(line 1 -> VARDECL [piece!(IDENT "x"), Piece::OP(OpKind::ASSN), piece!(IDENT "mylist"), Piece::OP(OpKind::AT), piece!(# 3)])
                 ]
             );
         }
