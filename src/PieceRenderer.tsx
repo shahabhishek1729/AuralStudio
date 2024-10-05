@@ -172,18 +172,23 @@ export function RenderList({ pieces, chained }) {
           border: `1px solid ${SYMBOL_MAP["constant"][0]}`,
           display: "flex",
           flexDirection: "row",
+          alignItems: "center",
         }}
       >
-        {pieces.slice(1).map((b: RTLPiece) => (
+        {pieces.slice(1).map((b: RTLPiece, i: number) => (
           <>
-            {RenderPiece(b, false)}
-            <div
-              style={{
-                height: "36px",
-                width: "1px",
-                backgroundColor: SYMBOL_MAP["constant"][0],
-              }}
-            />
+            <div style={{ transform: "scale(0.9)" }}>
+              {RenderPiece(pieces, b, false, i + 1)}
+            </div>
+            {elementDone(pieces, i + 1) ? (
+              <div
+                style={{
+                  height: "36px",
+                  width: "1px",
+                  backgroundColor: SYMBOL_MAP["constant"][0],
+                }}
+              />
+            ) : null}
           </>
         ))}
       </div>
@@ -203,17 +208,22 @@ export function RenderCall({ pieces, chained }) {
           flexDirection: "row",
         }}
       >
-        {pieces.slice(1).map((b: RTLPiece) => (
+        {pieces.slice(1).map((b: RTLPiece, i: number) => (
           <>
-            {RenderPiece(b, false)}
+            <div style={{ transform: "scale(0.9)" }}>
+              {RenderPiece(pieces, b, false, i + 1)}
+            </div>
             {/* Vertical line separator */}
-            <div
-              style={{
-                height: "36px",
-                width: "1px",
-                backgroundColor: SYMBOL_MAP["call" as keyof symbol_metadata][0],
-              }}
-            />
+            {elementDone(pieces, i + 1) ? (
+              <div
+                style={{
+                  height: "36px",
+                  width: "1px",
+                  backgroundColor:
+                    SYMBOL_MAP["call" as keyof symbol_metadata][0],
+                }}
+              />
+            ) : null}
           </>
         ))}
       </div>
@@ -271,7 +281,7 @@ export const SYMBOL_MAP: symbol_metadata = {
   arrow: ["transparent", "#FFCD4E", 20, 36],
   operator: ["#701490", "#FFFFFF", 20, 25],
   text: ["#374f40", "#FFFFFF", 16, 36],
-  ident: ["#000000", "#FFFFFF", 16, 36],
+  ident: ["#333333", "#FFFFFF", 16, 36],
   call: ["#FFFFFF", "#000000", 16, 36],
   pending: ["#000000", "#FFFFFF", 16, 36],
 };
