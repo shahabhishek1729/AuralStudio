@@ -302,3 +302,34 @@ fn test_asserts() {
     println!("{}", decompiler.py);
     assert_eq!(decompiler.py, "assert 3 == 3");
 }
+
+#[test]
+fn test_linalg() {
+    let source = "define inverse of m
+define determinant of m
+let x be m at 0 times m at 3
+let y be m at 1 times m at 2
+return x minus y
+done define
+define adjoint of m 
+let result be list m at 3 0 minus m at 1 0 minus m at 2 m at 0 done 
+return result
+done define
+done define";
+
+    let py_source = "def inverse(m):
+    def determinant(m):
+        x = m[0] * m[3]
+        y = m[1] * m[2]
+        return x - y
+        
+    def adjoint(m):
+        result = [m[3], 0 - m[1], 0 - m[2], m[0]]
+        return result
+        
+    ";
+    let mut decompiler = Decompiler::new(source).unwrap();
+    decompiler.decompile().unwrap();
+    println!("{}", decompiler.py);
+    assert_eq!(decompiler.py, py_source);
+}
