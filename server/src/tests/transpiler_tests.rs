@@ -315,6 +315,13 @@ define adjoint of m
 let result be list m at 3 0 minus m at 1 0 minus m at 2 m at 0 done 
 return result
 done define
+let d be determinant of m done
+let a be adjoint of m done
+let iterator be range of 4 done
+for i in iterator
+let m at i be 1 over d times a at i
+done for
+return m
 done define";
 
     let py_source = "def inverse(m):
@@ -327,6 +334,13 @@ done define";
         result = [m[3], 0 - m[1], 0 - m[2], m[0]]
         return result
         
+    d = determinant(m)
+    a = adjoint(m)
+    iterator = range(4)
+    for i in iterator:
+        m[i] = 1 / d * a[i]
+        
+    return m
     ";
     let mut decompiler = Decompiler::new(source).unwrap();
     decompiler.decompile().unwrap();
