@@ -245,8 +245,11 @@ function RenderNode(
 
   // If this node is part of a function definition (and is not one itself),
   // it needs to be indented.
-  const indent: boolean =
-    !!parent && !!parent.kind && parent.kind === "FNDEF" && !isBlock(node);
+  const indent =
+    !!parent &&
+    !!parent.kind &&
+    INDENT_NODES.includes(parent.kind) &&
+    !isBlock(node);
   return (
     <div
       id={address}
@@ -297,7 +300,9 @@ function RenderNode(
             }
             indent={indent}
           />
-          {node.pieces.map((piece, index) => RenderPiece(piece, index === 0))}
+          {node.pieces.map((piece, index) =>
+            RenderPiece(node.pieces, piece, index === 0, index),
+          )}
         </div>
       </ArcherElement>
 
