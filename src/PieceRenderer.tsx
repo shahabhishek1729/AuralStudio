@@ -155,7 +155,16 @@ export function RenderOperator({ op_name }) {
 }
 
 export function RenderPending() {
-  return Symbol("pending", "transparent", "  +  ");
+  return (
+    <input
+      type="text"
+      style={{
+        fontFamily: "JetBrains Mono",
+        fontSize: "16px",
+        padding: "0px 0px 0px 10px",
+      }}
+    />
+  );
 }
 
 const TOKEN_MAP: token_metadata = {
