@@ -7,6 +7,7 @@ pub(crate) use crate::prelude::CursorError;
 use crate::Node;
 use anyhow;
 use serde_derive::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// All possible directions of motion within a digraph
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -69,12 +70,13 @@ impl CursorDir {
         Ok(())
     }
 
+    // Retrieves the current node and its index within its parent
     fn _find_parent_child<'a>(
         &self,
         state: &'a CursorState,
         src: &'a Address,
     ) -> Result<(&'a Node, usize), CursorError> {
-        let graph_hash: std::collections::HashMap<Address, &'a Node> = state.graph.get_hash();
+        let graph_hash: HashMap<Address, &'a Node> = state.graph.get_hash();
         let src = src.coerce(&graph_hash)?;
         let Some(&node) = graph_hash.get(&src) else {
             return Err(CursorError::InvalidAddress(src.clone()));
@@ -85,19 +87,17 @@ impl CursorDir {
             return Err(CursorError::InvalidMotion(*self));
         };
 
-        if node.parent_addr.coerce(&graph_hash)? == node.addr {
+        let coerced_parent = node.parent_addr.coerce(&graph_hash)?;
+        if coerced_parent == node.addr {
             // This only allows for DOWN, and is handled separately in that branch.
             return Err(CursorError::InvalidMotion(*self));
         }
-        let Some(&parent) = state
-            .graph
-            .get_hash()
-            .get(&node.parent_addr.coerce(&graph_hash)?)
-        else {
+
+        let Some(parent) = graph_hash.get(&coerced_parent) else {
             return Err(CursorError::InvalidAddress(node.parent_addr.clone()));
         };
 
-        let Some((i, curr_node)): Option<(usize, &Node)> = _filter_children(parent)
+        let Some((i, curr_node)): Option<(usize, &Node)> = _filter_children(*parent)
             .enumerate()
             .find(|(_, n)| n.addr == src)
         else {
@@ -168,9 +168,19 @@ impl CursorDir {
                     return Err(CursorError::InvalidAddress(src.clone()));
                 };
 
+                // We either need to go to a child node or to the following sibling.
                 if N_ROOT_CHILDREN.contains_key(&format!("{:?}", node.kind)[..]) && state._at_node()
                 {
-                    return Ok(node.children[0].addr.clone());
+                    let Some(n_) = node
+                        .children
+                        .iter()
+                        .filter(|c| !GLOBAL_BLOCKS.contains(&c.kind))
+                        .next()
+                    else {
+                        return Err(CursorError::InvalidMotion(CursorDir::DOWN));
+                    };
+
+                    return Ok(n_.addr.clone());
                 }
 
                 let (parent, i) = self._find_parent_child(state, src)?;
