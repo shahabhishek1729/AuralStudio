@@ -198,6 +198,7 @@ function RenderBlock(
             blockAddr,
             selectedAddr,
             subtreeParent,
+            0,
             false,
           )}
         </div>
@@ -212,6 +213,7 @@ function RenderNode(
   address: string, // The address at which to render it (for div IDs)
   selectedAddr: string, // The address with the cursor (is it this one?)
   parent?: RTLNode, // This node's parent
+  parentIndents: number = 0, // How many times the parent node was indented
   check_blocks: boolean = true, // Used on recursive calls
   recursive: boolean = true, // Used on recursive calls
 ) {
@@ -219,7 +221,15 @@ function RenderNode(
     return (
       <div id={address} style={FLEX_COL}>
         <div id={`${address}.0`}>
-          {RenderNode(node, `${address}.0`, selectedAddr, parent, false, false)}
+          {RenderNode(
+            node,
+            `${address}.0`,
+            selectedAddr,
+            parent,
+            parentIndents,
+            false,
+            false,
+          )}
         </div>
         <div style={{ height: "50px" }} />
         <div
@@ -243,13 +253,14 @@ function RenderNode(
     return;
   }
 
-  // If this node is part of a function definition (and is not one itself),
-  // it needs to be indented.
-  const indent =
+  // If this node is part of a block (and is not one itself), indent.
+  const indent = +(
     !!parent &&
     !!parent.kind &&
     INDENT_NODES.includes(parent.kind) &&
-    !isBlock(node);
+    !isBlock(node)
+  );
+
   return (
     <div
       id={address}
@@ -298,7 +309,7 @@ function RenderNode(
               !!parent &&
               excludeBlocks(parent)[0].address === node.address
             }
-            indent={indent}
+            indent={parentIndents + indent}
           />
           {node.pieces.map((piece, index) =>
             RenderPiece(node.pieces, piece, index === 0, index),
@@ -308,7 +319,13 @@ function RenderNode(
 
       {recursive
         ? node.children.map((n, i) =>
-            RenderNode(n, addrStep(`${address}.0`, i + 1), selectedAddr, node),
+            RenderNode(
+              n,
+              addrStep(`${address}.0`, i + 1),
+              selectedAddr,
+              node,
+              parentIndents + indent,
+            ),
           )
         : null}
     </div>

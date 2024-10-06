@@ -389,7 +389,7 @@ export function Symbol(type: string, puzzle_color: string, symbol?: string) {
  *								otherwise any other string (all are equivalent)
  * @param first {boolean} whether the this token is part of the first line of a
  *						  global block (tells us whether to show the arrow)
- * @param indent {boolean} whether to indent or not
+ * @param indent {number} how many indents to apply
  */
 export function Token({ token_type, puzzle_color, first, indent }) {
   return (
@@ -399,16 +399,16 @@ export function Token({ token_type, puzzle_color, first, indent }) {
         flexDirection: "row",
       }}
     >
-      {indent ? (
+      {[...Array(indent)].map((_, i) => (
         <img
           style={{
             height: "24px",
             marginRight: "5px",
-            visibility: first ? "visible" : "hidden",
+            visibility: first && i + 1 === indent ? "visible" : "hidden",
           }}
           src={function_arrow}
         />
-      ) : null}
+      ))}
       <div
         style={{
           backgroundColor: TOKEN_MAP[token_type as keyof token_metadata][0],
