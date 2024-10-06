@@ -318,15 +318,17 @@ function RenderNode(
       </ArcherElement>
 
       {recursive
-        ? node.children.map((n, i) =>
-            RenderNode(
-              n,
-              addrStep(`${address}.0`, i + 1),
-              selectedAddr,
-              node,
-              parentIndents + indent,
-            ),
-          )
+        ? node.children
+            .filter((c) => !GLOBAL_BLOCK_NODES.includes(c.kind))
+            .map((n, i) =>
+              RenderNode(
+                n,
+                addrStep(`${address}.0`, i + 1),
+                selectedAddr,
+                node,
+                parentIndents + indent,
+              ),
+            )
         : null}
     </div>
   );
