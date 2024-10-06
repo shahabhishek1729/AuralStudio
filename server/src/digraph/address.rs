@@ -229,7 +229,7 @@ impl Addressable for &mut [Node] {
                         fn_idx += 1;
                         _inner(n_, fn_idx as isize, &node.addr, true);
                     }
-                    _ => _inner(n_, i_ as isize, &node.addr, true),
+                    _ => _inner(n_, i_ as isize - fn_idx - 1, &node.addr, true),
                 };
             });
         }
