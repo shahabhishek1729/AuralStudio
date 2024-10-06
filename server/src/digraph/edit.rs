@@ -4,6 +4,7 @@ use super::state::{ADMode, CursorState, Expecting};
 use crate::digraph::address::Addressable;
 use crate::digraph::util::*;
 use crate::prelude::CursorError;
+use std::ops::ControlFlow;
 
 impl CursorState {
     /// Transforms a `CursorState` object from viewing to editing mode.
@@ -86,8 +87,10 @@ impl CursorState {
                 let Some(next_addr) = self.block_loc.next() else {
                     return Err(CursorError::EmptyAddr);
                 };
-                // NOTE: Subtraction is safe because this address must be >= 1 (parent is 0)
-                let child_ix = next_addr.last().expect("child address cannot be empty") - 1;
+                let child_ix = *self
+                    .block_loc
+                    .last()
+                    .expect("child address cannot be empty");
                 self._insert_other(&next_addr, parent_addr, child_ix)?;
                 (next_addr, Expecting::AnyPiece) // any possible `Token` could follow
             }
@@ -170,6 +173,23 @@ impl CursorState {
             }
             recomputed_ix += 1;
         }
+
+        let recomputed_ix = match parent_node.children.iter().enumerate().try_fold(
+            (0, index),
+            |(ri, i), (curr_i, child)| {
+                if i == 0 {
+                    return ControlFlow::Break((ri, i));
+                }
+                if GLOBAL_BLOCKS.contains(&child.kind) {
+                    ControlFlow::Continue((curr_i + 1, i))
+                } else {
+                    ControlFlow::Continue((curr_i + 1, i - 1))
+                }
+            },
+        ) {
+            ControlFlow::Continue((ri, _)) => ri,
+            ControlFlow::Break((ri, _)) => ri,
+        };
 
         let new_node = Node {
             line: 0, // TODO: How to increment all subsequent line numbers efficiently?
