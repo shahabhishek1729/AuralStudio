@@ -282,7 +282,7 @@ export const SYMBOL_MAP: symbol_metadata = {
   operator: ["#701490", "#FFFFFF", 20, 25],
   text: ["#374f40", "#FFFFFF", 16, 36],
   ident: ["#333333", "#FFFFFF", 16, 36],
-  call: ["#FFFFFF", "#000000", 16, 36],
+  call: ["#179c8a", "#FFFFFF", 16, 36],
   pending: ["#000000", "#FFFFFF", 16, 36],
 };
 
