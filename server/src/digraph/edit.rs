@@ -95,6 +95,8 @@ impl CursorState {
 
         self.mode = ADMode::EDIT(expecting);
         self.block_loc = insert_loc;
+        // Recompute hash because nodes have changed
+        self.node_loc = self.block_loc.coerce(&self.graph.get_hash())?;
 
         // Re-sync the graph addresses with the new additions of nodes
         (&mut self.graph[..]).fill_addr();
@@ -153,9 +155,22 @@ impl CursorState {
         let Some(parent_node) = hash_.get(&from_addr) else {
             return Err(CursorError::ParentNotFound(from_addr));
         };
+
         // SAFETY: The parent node must be valid because this node is not a root function
         // (which would be in the FNDEF branch) so `parent_addr` must point to a valid node.
         let parent_node = unsafe { &mut **parent_node };
+
+        let (mut recomputed_ix, mut i) = (0, index);
+        for child in parent_node.children.iter() {
+            if i == 0 {
+                break;
+            }
+            if !GLOBAL_BLOCKS.contains(&child.kind) {
+                i -= 1;
+            }
+            recomputed_ix += 1;
+        }
+
         let new_node = Node {
             line: 0, // TODO: How to increment all subsequent line numbers efficiently?
             children: vec![],
@@ -165,7 +180,7 @@ impl CursorState {
             parent_addr: from_addr,
             rtl: Some("pretend".into()),
         };
-        parent_node.children.insert(index, new_node);
+        parent_node.children.insert(recomputed_ix, new_node);
         Ok(())
     }
 }
