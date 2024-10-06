@@ -163,17 +163,6 @@ impl CursorState {
         // (which would be in the FNDEF branch) so `parent_addr` must point to a valid node.
         let parent_node = unsafe { &mut **parent_node };
 
-        let (mut recomputed_ix, mut i) = (0, index);
-        for child in parent_node.children.iter() {
-            if i == 0 {
-                break;
-            }
-            if !GLOBAL_BLOCKS.contains(&child.kind) {
-                i -= 1;
-            }
-            recomputed_ix += 1;
-        }
-
         let recomputed_ix = match parent_node.children.iter().enumerate().try_fold(
             (0, index),
             |(ri, i), (curr_i, child)| {
