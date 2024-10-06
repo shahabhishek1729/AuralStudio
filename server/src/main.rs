@@ -99,8 +99,6 @@ fn handle_event(event: String, mut payload: CursorState) -> CursorState {
     e.parse_command(&mut payload)
         .expect("Parsing command should work");
 
-    dbg!("The new state was");
-    dbg!(&payload);
     payload
 }
 

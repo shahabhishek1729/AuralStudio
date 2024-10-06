@@ -53,6 +53,7 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
   }, []);
 
   const onKeyUp = (e: KeyboardEvent) => {
+    console.log(e.key);
     invoke("handle_event", {
       event: JSON.stringify({ key: e.key }),
       payload: payload,
@@ -68,19 +69,21 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
         const piece = new_payload.mode["EDIT"] as _ExpectingPiece;
         if (piece === "IdentPiece") {
           // TODO: Capture audio and transcribe to get IDENT.
-          speak("Name?");
           setPayload({
             graph: payload.graph,
             block_loc: payload.block_loc,
             node_loc: payload.node_loc,
             mode: "TYPE",
           });
+          document.getElementById("type").focus();
         }
       }
     });
   };
 
   useEffect(() => {
+    console.log("New payload!");
+    console.log(payload);
     if (payload.graph.length > 0) {
       window.addEventListener("keyup", onKeyUp);
       return () => {

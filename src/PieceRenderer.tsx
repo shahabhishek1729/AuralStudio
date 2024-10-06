@@ -250,6 +250,7 @@ export function RenderOperator({ op_name }) {
 export function RenderPending() {
   return (
     <input
+      id="type"
       type="text"
       style={{
         fontFamily: "JetBrains Mono",
