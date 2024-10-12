@@ -68,24 +68,10 @@ export function RenderPiece(
         />
       );
     case "PENDING":
-      return <RenderPending />;
+      return <RenderPending chained={first} />;
     default:
       throw new Error("Invalid piece found!");
   }
-}
-
-export function RenderIndex({ piece }) {
-  return (
-    <p
-      style={{
-        fontFamily: "JetBrains Mono",
-        textAlign: "start",
-        fontSize: `16px`,
-      }}
-    >
-      #3
-    </p>
-  );
 }
 
 export function RenderNumber({ num, chained }) {
@@ -247,18 +233,9 @@ export function RenderOperator({ op_name }) {
   );
 }
 
-export function RenderPending() {
-  return (
-    <input
-      id="type"
-      type="text"
-      style={{
-        fontFamily: "JetBrains Mono",
-        fontSize: "16px",
-        padding: "0px 0px 0px 10px",
-      }}
-    />
-  );
+export function RenderPending({ chained }) {
+  console.log(`Chained? ${chained}`);
+  return Symbol("pending", chained ? "" : "transparent", "...");
 }
 
 const TOKEN_MAP: token_metadata = {
@@ -284,7 +261,7 @@ export const SYMBOL_MAP: symbol_metadata = {
   text: ["#374f40", "#FFFFFF", 16, 36],
   ident: ["#333333", "#FFFFFF", 16, 36],
   call: ["#179c8a", "#FFFFFF", 16, 36],
-  pending: ["#000000", "#FFFFFF", 16, 36],
+  pending: ["#FFFFFF", "#000000", 16, 36],
 };
 
 const OP_TO_NAME: op_kind = {
