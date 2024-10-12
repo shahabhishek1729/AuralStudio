@@ -1,4 +1,4 @@
-use super::parser::NodeKind;
+use super::parser::{NodeKind, Piece};
 use super::state::{ADMode, CursorError};
 use crate::digraph::address::Addressable;
 use crate::digraph::command::Command;
@@ -49,9 +49,14 @@ impl KeyboardEvent {
                 // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
                 // been dropped since its creation (no concurrency), so this is safe.
                 let curr_node = unsafe { &mut **curr_node };
-                dbg!(&curr_node);
                 curr_node.kind = NodeKind::VARDECL;
-                state.mode = ADMode::EDIT(super::state::Expecting::IdentPiece);
+                curr_node.pieces = vec![
+                    Piece::IDENT("".into()),
+                    Piece::OP(super::parser::OpKind::ASSN),
+                    Piece::PENDING,
+                ];
+                state.mode = ADMode::TYPE;
+                state.piece_ix = Some(0);
             }
             Command::Run => todo!(),
             Command::TypeChar(c) => {

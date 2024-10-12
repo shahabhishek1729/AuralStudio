@@ -46,7 +46,7 @@ impl CursorState {
         let parent_addr = curr_node.parent_addr.clone();
         let curr_addr = curr_node.addr.clone();
 
-        let (insert_loc, expecting) = match curr_node.kind {
+        let insert_loc = match curr_node.kind {
             super::parser::NodeKind::CONDTL if self._at_node() => {
                 return Err(CursorError::InsertConditional);
             }
@@ -72,7 +72,9 @@ impl CursorState {
                     next_addr.join(&[num_blocks, 0])
                 };
                 self._insert_fn(&insert_loc_, curr_addr)?;
-                (insert_loc_, Expecting::IdentPiece) // function name must follow
+                self.mode = ADMode::TYPE;
+                self.piece_ix = Some(0);
+                insert_loc_ // function name must follow
             }
             super::parser::NodeKind::FNDEF if self._at_node() => {
                 // If we're on a node, just make a new node below and as the new `insert_loc`
@@ -80,7 +82,8 @@ impl CursorState {
                     return Err(CursorError::EmptyAddr);
                 };
                 self._insert_other(&next_addr, curr_addr, 0)?;
-                (next_addr, Expecting::AnyPiece) // any possible `Token` could follow
+                self.mode = ADMode::EDIT(Expecting::Token);
+                next_addr // any possible `Token` could follow
             }
             _ => {
                 // If we're on a node, just make a new node below and as the new `insert_loc`
@@ -92,11 +95,11 @@ impl CursorState {
                     .last()
                     .expect("child address cannot be empty");
                 self._insert_other(&next_addr, parent_addr, child_ix)?;
-                (next_addr, Expecting::AnyPiece) // any possible `Token` could follow
+                self.mode = ADMode::EDIT(Expecting::Token);
+                next_addr // any possible `Token` could follow
             }
         };
 
-        self.mode = ADMode::EDIT(expecting);
         self.block_loc = insert_loc;
         // Recompute hash because nodes have changed
         self.node_loc = self.block_loc.coerce(&self.graph.get_hash())?;
@@ -137,7 +140,7 @@ impl CursorState {
                 rtl: Some("pretend".into()),
             }],
             kind: NodeKind::FNDEF,
-            pieces: vec![Piece::PENDING],
+            pieces: vec![Piece::IDENT("".into())],
             addr: at_addr.clone(),
             parent_addr: from_addr,
             rtl: Some("define pretend".into()),

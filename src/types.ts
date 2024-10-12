@@ -44,7 +44,7 @@ type ADMode = "VIEW" | "TYPE" | { "EDIT": _ExpectingPiece };
  * IdentPiece: A variable or package name - enforced
  * AnyPiece: We don't know what we're expecting next, so open to any piece
 */
-export type _ExpectingPiece = "IdentPiece" | "ExprPiece" | "AnyPiece";
+export type _ExpectingPiece = "ExprPiece" | "Token";
 
 type Address = string; // Addresses are stored as IPv4-style strings in JSON 
 
