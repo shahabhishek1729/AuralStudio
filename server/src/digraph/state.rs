@@ -248,6 +248,7 @@ pub(crate) struct CursorState {
     pub(crate) node_loc: Address,
     pub(super) mode: ADMode,
     pub(super) graph: Vec<Node>,
+    pub(super) piece_ix: Option<usize>,
 }
 
 impl Default for CursorState {
@@ -257,6 +258,7 @@ impl Default for CursorState {
             node_loc: addr!(0, 0, 0),
             graph: vec![],
             mode: ADMode::VIEW,
+            piece_ix: None,
         }
     }
 }
@@ -307,6 +309,7 @@ mod tests {
                 node_loc: addr!(0, 0).coerce(&nodes.get_hash()).expect("Coercion should work"),
                 mode: ADMode::VIEW,
                 graph: nodes.to_vec(),
+                piece_ix: None,
             };
             let mut failed = false;
             $(
@@ -333,6 +336,7 @@ mod tests {
                 node_loc: addr!(0, 0).coerce(&nodes.get_hash()).expect("Coercion should work"),
                 mode: ADMode::VIEW,
                 graph: nodes.to_vec(),
+                piece_ix: None,
             };
             $(
                 let coerced = state.block_loc.coerce(&(state.graph).get_hash()).expect("Coercion should work");

@@ -20,6 +20,7 @@ function App() {
     blockLoc: "",
     nodeLoc: "",
     mode: "VIEW",
+    pieceIx: null,
   });
 
   let final_source = `define inverse of m
@@ -48,6 +49,7 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
         blockLoc: "0.0",
         nodeLoc: "0.0.0",
         mode: "VIEW",
+        pieceIx: null,
       });
     });
   }, []);

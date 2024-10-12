@@ -31,6 +31,8 @@ export interface CursorState {
 	nodeLoc: Address,
 	// See `ADMode` below
 	mode: ADMode,
+	// The piece we are currently editing (if any)
+	pieceIx: number | null,
 }
 
 // Either we are viewing or editing the digraph; if editing, we might be expecting a certain piece
