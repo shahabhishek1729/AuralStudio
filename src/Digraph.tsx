@@ -56,7 +56,7 @@ function addrStep(addr: string, n: number = 1): string {
 
 // TODO: When editing, we need to render text boxes for strings + identifiers.
 export function DAG(source: RTLNode[], state: CursorState) {
-  const selectedAddr = state.block_loc;
+  const selectedAddr = state.blockLoc;
   const borderRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 

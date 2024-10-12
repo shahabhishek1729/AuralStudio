@@ -17,8 +17,8 @@ function App() {
   let [codeOutput, _] = useState<string>("Code output will appear here...");
   let [payload, setPayload] = useState<CursorState>({
     graph: [],
-    block_loc: "",
-    node_loc: "",
+    blockLoc: "",
+    nodeLoc: "",
     mode: "VIEW",
   });
 
@@ -45,8 +45,8 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
     invoke("parse_file", { source: final_source }).then((o: any) => {
       setPayload({
         graph: o,
-        block_loc: "0.0",
-        node_loc: "0.0.0",
+        blockLoc: "0.0",
+        nodeLoc: "0.0.0",
         mode: "VIEW",
       });
     });
@@ -61,23 +61,6 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
       const new_payload = state_editor as CursorState;
       // Prevent useEffect loops by only setting `payload` on a change
       if (payload !== new_payload) setPayload(new_payload);
-      if (
-        typeof new_payload.mode === "object" &&
-        "EDIT" in new_payload.mode &&
-        new_payload.mode["EDIT"]
-      ) {
-        const piece = new_payload.mode["EDIT"] as _ExpectingPiece;
-        if (piece === "IdentPiece") {
-          // TODO: Capture audio and transcribe to get IDENT.
-          setPayload({
-            graph: payload.graph,
-            block_loc: payload.block_loc,
-            node_loc: payload.node_loc,
-            mode: "TYPE",
-          });
-          document.getElementById("type").focus();
-        }
-      }
     });
   };
 

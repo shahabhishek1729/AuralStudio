@@ -26,9 +26,9 @@ export interface CursorState {
 	// The node graph itself
 	graph: Array<RTLNode>,
 	// The current location (either on an node or a block)
-	block_loc: Address, 
+	blockLoc: Address,
 	// The coerced location (always on an node)
-	node_loc: Address,
+	nodeLoc: Address,
 	// See `ADMode` below
 	mode: ADMode,
 }

@@ -242,6 +242,7 @@ pub(super) enum ADMode {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct CursorState {
     pub(crate) block_loc: Address,
     pub(crate) node_loc: Address,
