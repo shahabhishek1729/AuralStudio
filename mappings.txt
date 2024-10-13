@@ -1,43 +1,43 @@
---------------------------------------------
-KIND  : NAME            | KEY  | SUPPORTED | 
-TOKEN : Function        | AUTO | ✅        |
-TOKEN : Variable		| v    | ✅        |
-TOKEN : If				| i	   | x	       |
-TOKEN : For				| f	   | x   	   |
-TOKEN : While			| w    | x         |
-TOKEN : Return			| r    | x   	   |
-TOKEN : Break		    | b    | x   	   |		
-TOKEN : Continue		| c    | x   	   |			
-TOKEN : Import			| g	   | x   	   |		
-TOKEN : Output			| o	   | x   	   |			
-TOKEN : Pending			| p	   | x   	   |				
----------------------------------------------
-VALUE : Variable names	| v    | x   	   |					
-VALUE : Numbers			| n	   | x   	   |				
-VALUE : Text			| t    | x   	   |						
-VALUE : Booleans		| b	   | x   	   |				
-VALUE : Nothing			|      | x   	   |					
-VALUE : Calls			| c	   | x   	   |				
-VALUE : List			| l	   | x   	   |		
-VALUE : PENDING			| p	   | x   	   |						
----------------------------------------------
-OP    : +				| p	   | x   	   |				
-OP    : -				| m	   | x   	   |				
-OP    : *				| t	   | x   	   |			
-OP    : /				| d	   | x   	   |					
-OP    : %				| r	   | x   	   |						
-OP    : ==				| e	   | x   	   |						
-OP    : >				| g	   | x   	   |				
-OP    : <				| l	   | x   	   |					
-OP    : >=				| x    | x   	   |								
-OP    : <=				| s	   | x   	   |					
-OP    : &&				| a    | x   	   |					
-OP    : ||				| o    | x   	   |							
-OP    : !				| n    | x   	   |						
-OP    : in				| i    | x   	   |					
-OP    : .				| c    | x   	   |						
-OP    : []				| b	   | x   	   |				
-OP    : ->				| AUTO | x   	   |						
----------------------------------------------
+---------------------------------------
+KIND  : NAME            | KEY  | DONE | 
+TOKEN : Function        | AUTO | ✅   |
+TOKEN : Variable		| v    | ✅   |
+TOKEN : If				| i	   | x	  |
+TOKEN : For				| f	   | x    |
+TOKEN : While			| w    | x    |
+TOKEN : Return			| r    | x    |
+TOKEN : Break		    | b    | x    |		
+TOKEN : Continue		| c    | x    |			
+TOKEN : Import			| g	   | x    |		
+TOKEN : Output			| o	   | x    |			
+TOKEN : Pending			| p	   | x    |				
+---------------------------------------
+VALUE : Variable names	| v    | x    |					
+VALUE : Numbers			| n	   | x    |				
+VALUE : Text			| t    | x    |						
+VALUE : Booleans		| b	   | x    |				
+VALUE : Nothing			|      | x    |					
+VALUE : Calls			| c	   | x    |				
+VALUE : List			| l	   | x    |		
+VALUE : PENDING			| p	   | x    |						
+---------------------------------------
+OP    : +				| p	   | x    |				
+OP    : -				| m	   | x    |				
+OP    : *				| t	   | x    |			
+OP    : /				| d	   | x    |					
+OP    : %				| r	   | x    |						
+OP    : ==				| e	   | x    |						
+OP    : >				| g	   | x    |				
+OP    : <				| l	   | x    |					
+OP    : >=				| x    | x    |								
+OP    : <=				| s	   | x    |					
+OP    : &&				| a    | x    |					
+OP    : ||				| o    | x    |							
+OP    : !				| n    | x    |						
+OP    : in				| i    | x    |					
+OP    : .				| c    | x    |						
+OP    : []				| b	   | x    |				
+OP    : ->				| AUTO | x    |						
+---------------------------------------
 
 Currently supported: 11 tokens + 8 values + 17 operators = 36 pieces
