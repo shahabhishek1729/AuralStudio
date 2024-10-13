@@ -238,7 +238,7 @@ mod tests {
     mod insert_loc {
         use super::*;
 
-        macro_rules! insert {
+        macro_rules! ensure_insert {
         // Move sequences that result in an attempted move "off the graph" should return errors
         (@ <$($id:literal),+> _in_ $src:ident -> <$($new_id:literal),+>) => {{
             let mut parser = Parser::new(String::from($src)).unwrap();
@@ -261,16 +261,16 @@ mod tests {
 
         #[test]
         fn insert_block() {
-            insert!(@ <0, 0> _in_ SOURCE -> <0, 1, 2, 0>);
-            insert!(@ <0, 1, 0> _in_ SOURCE -> <0, 1, 0, 1, 0, 0>);
-            insert!(@ <0, 1, 1, 0> _in_ SOURCE -> <0, 1, 1, 1, 2, 0>);
-            insert!(@ <0, 1, 1, 1, 0> _in_ SOURCE -> <0, 1, 1, 1, 0, 1, 0, 0>);
-            insert!(@ <0, 1, 1, 1, 1> _in_ SOURCE -> <0, 1, 1, 1, 1, 1, 0, 0>);
+            ensure_insert!(@ <0, 0> _in_ SOURCE -> <0, 1, 2, 0>);
+            ensure_insert!(@ <0, 1, 0> _in_ SOURCE -> <0, 1, 0, 1, 0, 0>);
+            ensure_insert!(@ <0, 1, 1, 0> _in_ SOURCE -> <0, 1, 1, 1, 2, 0>);
+            ensure_insert!(@ <0, 1, 1, 1, 0> _in_ SOURCE -> <0, 1, 1, 1, 0, 1, 0, 0>);
+            ensure_insert!(@ <0, 1, 1, 1, 1> _in_ SOURCE -> <0, 1, 1, 1, 1, 1, 0, 0>);
         }
 
         #[test]
         fn insert_node() {
-            insert!(@ <1, 0, 1> _in_ SOURCE -> <1, 0, 2>)
+            ensure_insert!(@ <1, 0, 1> _in_ SOURCE -> <1, 0, 2>)
         }
     }
 

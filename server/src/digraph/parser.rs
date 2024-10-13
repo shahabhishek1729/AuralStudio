@@ -6,6 +6,102 @@ use crate::scanner::scanner::{Scanner, Token};
 use serde_derive::{Deserialize, Serialize};
 use thiserror::Error;
 
+#[macro_export]
+macro_rules! piece {
+    (IDENT $e:expr) => {{
+        use crate::digraph::parser::Piece;
+        Piece::IDENT($e.to_string())
+    }};
+    (#$e:expr) => {{
+        use crate::digraph::parser::Piece;
+        Piece::NUMBER($e as f64)
+    }};
+    (TEXT $e:expr) => {{
+        use crate::digraph::parser::Piece;
+        Piece::TEXT($e.to_string())
+    }};
+    (LIST [$($e:expr),*]) => {{
+        use crate::digraph::parser::Piece;
+        Piece::LIST(vec![$($e),*])
+    }};
+    (True) => {{
+        use crate::digraph::parser::Piece;
+        Piece::BOOL(true)
+    }};
+    (False) => {{
+        use crate::digraph::parser::Piece;
+        Piece::BOOL(false)
+    }};
+    () => {{
+        use crate::digraph::parser::Piece;
+        Piece::NOTHING
+    }};
+    (...) => {{
+        use crate::digraph::parser::Piece;
+        Piece::PENDING
+    }};
+}
+
+#[macro_export]
+macro_rules! make_node {
+    (line $line:literal -> $kind:path [$($piece:expr),*]) => {
+        {
+            use $crate::digraph::address::Address;
+            use $crate::digraph::parser::Node;
+            Node {
+                line: $line,
+                children: vec![],
+                kind: $kind,
+                pieces: vec![$($piece),*],
+                addr: Address::new(vec![]),
+                ..Default::default()
+            }
+        }
+    };
+    (line $line:literal -> $kind:path [$($piece:expr),*]; {$($child:expr),*}) => {
+        {
+            use $crate::digraph::address::Address;
+            use $crate::digraph::parser::Node;
+            Node {
+                line: $line,
+                children: vec![$($child),*],
+                kind: $kind,
+                pieces: vec![$($piece),*],
+                addr: Address::new(vec![]),
+                ..Default::default()
+            }
+        }
+    };
+    (L $line:literal @ $($addr:literal),* -> $kind:path [$($piece:expr),*]) => {
+        {
+            use $crate::digraph::address::Address;
+            use $crate::digraph::parser::Node;
+            Node {
+                line: $line,
+                children: vec![],
+                kind: $kind,
+                pieces: vec![$($piece),*],
+                addr: Address::new(vec![$($addr),*]),
+                ..Default::default()
+            }
+        }
+    };
+    (L $line:literal @ $($addr:literal),* -> $kind:path [$($piece:expr),*]; {$($child:expr),*}) => {
+        {
+            use $crate::digraph::address::Address;
+            use $crate::digraph::parser::Node;
+            Node {
+                line: $line,
+                children: vec![$($child),*],
+                kind: $kind,
+                pieces: vec![$($piece),*],
+                addr: Address::new(vec![$($addr),*]),
+                ..Default::default()
+            }
+        }
+    };
+}
+
 /// Represents a single line of code, which is rendered in a digraph as a single node.
 ///
 /// A node consists of several pieces (for instance, an `output` node may consist of a `string`
@@ -156,6 +252,10 @@ pub(crate) enum NodeKind {
     FORLOOP,
     /// While loops
     WHLLOOP,
+    /// Breaking out of loops
+    BREAK,
+    /// Continuing on to the next iteration of loops
+    CONTINUE,
     /// Returns from within functions
     RETURN,
     /// Calling a previously defined function
@@ -711,94 +811,6 @@ impl Parser {
 mod tests {
     use super::*;
     use crate::digraph::parser::Piece;
-
-    #[macro_export]
-    macro_rules! piece {
-        (IDENT $e:expr) => {{
-            use crate::digraph::parser::Piece;
-            Piece::IDENT($e.to_string())
-        }};
-        (#$e:expr) => {{
-            use crate::digraph::parser::Piece;
-            Piece::NUMBER($e as f64)
-        }};
-        (TEXT $e:expr) => {{
-            use crate::digraph::parser::Piece;
-            Piece::TEXT($e.to_string())
-        }};
-        (LIST [$($e:expr),*]) => {{
-            use crate::digraph::parser::Piece;
-            Piece::LIST(vec![$($e),*])
-        }};
-        (True) => {{
-            use crate::digraph::parser::Piece;
-            Piece::BOOL(true)
-        }};
-        (False) => {{
-            use crate::digraph::parser::Piece;
-            Piece::BOOL(false)
-        }};
-        () => {{
-            use crate::digraph::parser::Piece;
-            Piece::NOTHING
-        }};
-    }
-
-    #[macro_export]
-    macro_rules! make_node {
-        (line $line:literal -> $kind:path [$($piece:expr),*]) => {
-            {
-                use $crate::digraph::address::Address;
-                Node {
-                    line: $line,
-                    children: vec![],
-                    kind: $kind,
-                    pieces: vec![$($piece),*],
-                    addr: Address::new(vec![]),
-                    ..Default::default()
-                }
-            }
-        };
-        (line $line:literal -> $kind:path [$($piece:expr),*]; {$($child:expr),*}) => {
-            {
-                use $crate::digraph::address::Address;
-                Node {
-                    line: $line,
-                    children: vec![$($child),*],
-                    kind: $kind,
-                    pieces: vec![$($piece),*],
-                    addr: Address::new(vec![]),
-                    ..Default::default()
-                }
-            }
-        };
-        (L $line:literal @ $($addr:literal),* -> $kind:path [$($piece:expr),*]) => {
-            {
-                use $crate::digraph::address::Address;
-                Node {
-                    line: $line,
-                    children: vec![],
-                    kind: $kind,
-                    pieces: vec![$($piece),*],
-                    addr: Address::new(vec![$($addr),*]),
-                    ..Default::default()
-                }
-            }
-        };
-        (L $line:literal @ $($addr:literal),* -> $kind:path [$($piece:expr),*]; {$($child:expr),*}) => {
-            {
-                use $crate::digraph::address::Address;
-                Node {
-                    line: $line,
-                    children: vec![$($child),*],
-                    kind: $kind,
-                    pieces: vec![$($piece),*],
-                    addr: Address::new(vec![$($addr),*]),
-                    ..Default::default()
-                }
-            }
-        };
-    }
 
     mod macros {
         use super::NodeKind::*;
