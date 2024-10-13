@@ -196,6 +196,7 @@ impl CursorState {
         Ok(())
     }
 
+    /// Updates a specific piece (typicaly an ident or literal) based on keyboard input (`value`).
     pub(crate) fn update_value(&mut self, value: String) -> Result<(), CursorError> {
         let Some(piece_ix) = self.piece_ix else {
             unreachable!("Cannot update a value without editing a piece first");
