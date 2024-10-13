@@ -77,7 +77,8 @@ impl KeyboardEvent {
                             break;
                         }
                     }
-                    state.mode = ADMode::EDIT(super::state::Expecting::ExprPiece);
+                    // Typing always indicates we are working on a value, so next is an operator
+                    state.mode = ADMode::EDIT(super::state::Expecting::Op);
                 }
             }
             _ => {}

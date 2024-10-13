@@ -1,4 +1,4 @@
-use super::state::ADMode;
+use super::state::{ADMode, Expecting};
 use phf::phf_map;
 use std::borrow::Cow;
 
@@ -17,6 +17,39 @@ pub(super) enum Command<'a> {
     NavIn,
     NavOut,
     InsertVar,
+    InsertIf,
+    InsertFor,
+    InsertWhile,
+    InsertReturn,
+    InsertBreak,
+    InsertContinue,
+    InsertImport,
+    InsertOutput,
+    InsertPending,
+    AddVarName,
+    AddNum,
+    AddText,
+    AddBool,
+    AddNothing,
+    AddCall,
+    AddList,
+    AddPending,
+    ChainAdd,
+    ChainSub,
+    ChainMul,
+    ChainDiv,
+    ChainMod,
+    ChainEq,
+    ChainGt,
+    ChainLt,
+    ChainGe,
+    ChainLe,
+    ChainAnd,
+    ChainOr,
+    ChainNot,
+    ChainIn,
+    ChainDot,
+    ChainIdx,
     EditMode,
     ViewMode,
     Run,
@@ -35,16 +68,64 @@ const VIEW_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "r" => Command::Run,
 };
 
-const EDIT_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
-    "Escape" => Command::ViewMode,
+const TOKEN_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "v" => Command::InsertVar,
+    "i" => Command::InsertIf,
+    "f" => Command::InsertFor,
+    "w" => Command::InsertWhile,
+    "r" => Command::InsertReturn,
+    "b" => Command::InsertBreak,
+    "c" => Command::InsertContinue,
+    "g" => Command::InsertImport,
+    "o" => Command::InsertOutput,
+    "p" => Command::InsertPending,
+    "Escape" => Command::ViewMode,
+};
+
+const VAL_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
+    "v" => Command::AddVarName,
+    "n" => Command::AddNum,
+    "t" => Command::AddText,
+    "b" => Command::AddBool,
+    " " => Command::AddNothing,
+    "c" => Command::AddCall,
+    "l" => Command::AddList,
+    "p" => Command::AddPending,
+    "Escape" => Command::ViewMode,
+};
+
+const OP_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
+    "p" => Command::ChainAdd,
+    "m" => Command::ChainSub,
+    "t" => Command::ChainMul,
+    "d" => Command::ChainDiv,
+    "r" => Command::ChainMod,
+    "e" => Command::ChainEq,
+    "g" => Command::ChainGt,
+    "l" => Command::ChainLt,
+    "x" => Command::ChainGe,
+    "s" => Command::ChainLe,
+    "a" => Command::ChainAnd,
+    "o" => Command::ChainOr,
+    "n" => Command::ChainNot,
+    "i" => Command::ChainIn,
+    "c" => Command::ChainDot,
+    "b" => Command::ChainIdx,
+    "Escape" => Command::ViewMode,
 };
 
 impl<'a> Command<'a> {
     pub(super) fn from(key: &'a str, mode: &ADMode) -> Cow<'a, Self> {
         match *mode {
             ADMode::VIEW => Cow::Borrowed(VIEW_KEYMAP.get(key).unwrap_or(&Command::NULL)),
-            ADMode::EDIT(_) => Cow::Borrowed(EDIT_KEYMAP.get(key).unwrap_or(&Command::NULL)),
+            ADMode::EDIT(expecting) => {
+                let keymap = match expecting {
+                    Expecting::Token => TOKEN_KEYMAP,
+                    Expecting::Value => VAL_KEYMAP,
+                    Expecting::Op => OP_KEYMAP,
+                };
+                Cow::Borrowed(keymap.get(key).unwrap_or(&Command::NULL))
+            }
             ADMode::TYPE => Cow::Owned(Command::TypeChar(key)),
         }
     }

@@ -222,8 +222,10 @@ impl CursorDir {
 /// When pieces are pending, there are three possibilities of the next piece we're expecting
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub(super) enum Expecting {
-    /// A piece that would be part of an expression (e.g., literals, operators)
-    ExprPiece,
+    /// Anything that is or simplifies to a boolean, number, string, list, etc.
+    Value,
+    /// An operator (takes in 1-2 values and produces a third value)
+    Op,
     /// A piece that would begin a new line (typically a keyword)
     Token,
 }
