@@ -118,13 +118,14 @@ impl<'a> Command<'a> {
     pub(super) fn from(key: &'a str, mode: &ADMode) -> Cow<'a, Self> {
         match *mode {
             ADMode::VIEW => Cow::Borrowed(VIEW_KEYMAP.get(key).unwrap_or(&Command::NULL)),
-            ADMode::EDIT(expecting) => {
-                let keymap = match expecting {
-                    Expecting::Token => TOKEN_KEYMAP,
-                    Expecting::Value => VAL_KEYMAP,
-                    Expecting::Op => OP_KEYMAP,
-                };
-                Cow::Borrowed(keymap.get(key).unwrap_or(&Command::NULL))
+            ADMode::EDIT(Expecting::Token) => {
+                Cow::Borrowed(TOKEN_KEYMAP.get(key).unwrap_or(&Command::NULL))
+            }
+            ADMode::EDIT(Expecting::Value) => {
+                Cow::Borrowed(VAL_KEYMAP.get(key).unwrap_or(&Command::NULL))
+            }
+            ADMode::EDIT(Expecting::Op) => {
+                Cow::Borrowed(OP_KEYMAP.get(key).unwrap_or(&Command::NULL))
             }
             ADMode::TYPE => Cow::Owned(Command::TypeChar(key)),
         }
