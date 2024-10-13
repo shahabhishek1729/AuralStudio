@@ -62,6 +62,7 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
     invoke("handle_event", {
       event: JSON.stringify({ key: e.key }),
       payload: payload,
+      // (optimization) only send in a value when a value is committed.
       value: e.key === "Enter" ? elem?.value : null,
     }).then((state_editor: unknown) => {
       const new_payload = state_editor as CursorState;
