@@ -55,10 +55,14 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
   }, []);
 
   const onKeyUp = (e: KeyboardEvent) => {
-    console.log(e.key);
+    const elem = document.getElementById(
+      `${payload.blockLoc},${payload.pieceIx}`,
+    );
+
     invoke("handle_event", {
       event: JSON.stringify({ key: e.key }),
       payload: payload,
+      value: e.key === "Enter" ? elem?.value : null,
     }).then((state_editor: unknown) => {
       const new_payload = state_editor as CursorState;
       // Prevent useEffect loops by only setting `payload` on a change
@@ -67,9 +71,12 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
   };
 
   useEffect(() => {
-    console.log("New payload!");
-    console.log(payload);
     if (payload.graph.length > 0) {
+      const elem = document.getElementById(
+        `${payload.blockLoc},${payload.pieceIx}`,
+      );
+      if (elem && payload.mode === "TYPE") elem.focus();
+
       window.addEventListener("keyup", onKeyUp);
       return () => {
         window.removeEventListener("keyup", onKeyUp);

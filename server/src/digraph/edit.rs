@@ -73,7 +73,7 @@ impl CursorState {
                 };
                 self._insert_fn(&insert_loc_, curr_addr)?;
                 self.mode = ADMode::TYPE;
-                self.piece_ix = Some(0);
+                self.piece_ix = Some(0usize);
                 insert_loc_ // function name must follow
             }
             super::parser::NodeKind::FNDEF if self._at_node() => {
@@ -140,7 +140,7 @@ impl CursorState {
                 rtl: Some("pretend".into()),
             }],
             kind: NodeKind::FNDEF,
-            pieces: vec![Piece::IDENT("".into())],
+            pieces: vec![Piece::IDENT("".into()), Piece::IDENT("".into())],
             addr: at_addr.clone(),
             parent_addr: from_addr,
             rtl: Some("define pretend".into()),
@@ -193,6 +193,29 @@ impl CursorState {
             rtl: Some("pretend".into()),
         };
         parent_node.children.insert(recomputed_ix, new_node);
+        Ok(())
+    }
+
+    pub(crate) fn update_value(&mut self, value: String) -> Result<(), CursorError> {
+        let Some(piece_ix) = self.piece_ix else {
+            unreachable!("Cannot update a value without editing a piece first");
+        };
+
+        let hash = self.graph.get_hash_mut();
+        let Some(curr_node) = hash.get(&self.block_loc) else {
+            return Err(CursorError::AddrNotFound(self.block_loc.clone()));
+        };
+
+        // SAFETY: This node must be valid because it comes from the current block_loc of the
+        // PayloadState. block_loc must point to a node since otherwise we would have returned Err.
+        let curr_node = unsafe { &mut **curr_node };
+        let new_piece = match curr_node.pieces[piece_ix] {
+            Piece::IDENT(_) => Piece::IDENT(value),
+            _ => todo!(),
+        };
+        curr_node.pieces[piece_ix] = new_piece;
+        dbg!(curr_node);
+
         Ok(())
     }
 }

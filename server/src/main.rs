@@ -91,10 +91,14 @@ fn parse_file(source: String) -> Vec<Node> {
 }
 
 #[tauri::command]
-fn handle_event(event: String, mut payload: CursorState) -> CursorState {
+fn handle_event(event: String, mut payload: CursorState, value: Option<String>) -> CursorState {
     let Ok(e): Result<KeyboardEvent, _> = serde_json::from_str(&event) else {
         panic!("Failed to parse keyboardEvent");
     };
+
+    if let Some(value) = value {
+        payload.update_value(value).expect("Failed to update value");
+    }
 
     e.parse_command(&mut payload)
         .expect("Parsing command should work");
@@ -108,8 +112,6 @@ fn main() {
             get_file_hierarchy,
             run_code,
             parse_file,
-            //grab_window,
-            //send_true
             handle_event,
         ])
         .run(tauri::generate_context!())

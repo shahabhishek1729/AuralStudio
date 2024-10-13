@@ -121,7 +121,7 @@ export function DAG(source: RTLNode[], state: CursorState) {
           />
           <div style={ROW_STYLE}>
             {source.map((subtree, i) =>
-              RenderSubtree(i.toString(), subtree, selectedAddr),
+              RenderSubtree(i.toString(), subtree, selectedAddr, state.pieceIx),
             )}
           </div>
         </div>
@@ -134,14 +134,16 @@ function RenderSubtree(
   addr: string,
   subtreeRoot: RTLNode,
   selectedAddr: string,
+  pieceIx: number | null,
 ): ReactNode {
   return (
-    <div>
+    <div key={addr}>
       <div style={FLEX_COL}>
         {RenderBlock(
           addr,
           subtreeRoot,
           selectedAddr,
+          pieceIx,
           addr.includes(".") ? subtreeRoot : undefined,
         )}
       </div>
@@ -154,7 +156,7 @@ function RenderSubtree(
           }}
         >
           {getBlocks(subtreeRoot).map((sub, i) =>
-            RenderSubtree(`${addr}.1.${i}`, sub, selectedAddr),
+            RenderSubtree(`${addr}.1.${i}`, sub, selectedAddr, pieceIx),
           )}
         </div>
       ) : null}
@@ -166,12 +168,13 @@ function RenderBlock(
   address: string,
   subtreeRoot: RTLNode,
   selectedAddr: string,
+  pieceIx: number | null,
   subtreeParent?: RTLNode,
 ): ReactNode {
   const blockAddr =
     hasBlocks(subtreeRoot) || !subtreeParent ? `${address}.0` : address;
   return (
-    <>
+    <div key={address}>
       <div style={{ height: "30px" }} />
       <ArcherElement
         id={blockAddr}
@@ -197,6 +200,7 @@ function RenderBlock(
             subtreeRoot,
             blockAddr,
             selectedAddr,
+            pieceIx,
             subtreeParent,
             0,
             false,
@@ -204,7 +208,7 @@ function RenderBlock(
         </div>
       </ArcherElement>
       <div style={{ height: "25px" }} />
-    </>
+    </div>
   );
 }
 
@@ -212,6 +216,7 @@ function RenderNode(
   node: RTLNode, // The current node to be rendered
   address: string, // The address at which to render it (for div IDs)
   selectedAddr: string, // The address with the cursor (is it this one?)
+  pieceIx: number | null, // The piece being edited (not necessarily in `node`)
   parent?: RTLNode, // This node's parent
   parentIndents: number = 0, // How many times the parent node was indented
   check_blocks: boolean = true, // Used on recursive calls
@@ -219,12 +224,13 @@ function RenderNode(
 ) {
   if (LOCAL_BLOCK_NODES.includes(node.kind) && check_blocks) {
     return (
-      <div id={address} style={FLEX_COL}>
+      <div key={address} id={address} style={FLEX_COL}>
         <div id={`${address}.0`}>
           {RenderNode(
             node,
             `${address}.0`,
             selectedAddr,
+            pieceIx,
             parent,
             parentIndents,
             false,
@@ -240,8 +246,8 @@ function RenderNode(
           }}
         >
           {node.children.map((n, i) => (
-            <div id={`${address}.1.${i}`}>
-              {RenderNode(n, `${address}.1.${i}`, selectedAddr, node)}
+            <div key={i} id={`${address}.1.${i}`}>
+              {RenderNode(n, `${address}.1.${i}`, selectedAddr, pieceIx, node)}
             </div>
           ))}
         </div>
@@ -263,6 +269,7 @@ function RenderNode(
 
   return (
     <div
+      key={address}
       id={address}
       style={{
         display: "flex",
@@ -302,7 +309,11 @@ function RenderNode(
           <Token
             token_type={token_type[node.kind as keyof typeof token_type]}
             puzzle_color={
-              node.pieces.length > 0 ? getColor(node.pieces[0]) : "transparent"
+              node.address === selectedAddr && pieceIx === 0
+                ? "white"
+                : node.pieces.length > 0
+                  ? getColor(node.pieces[0])
+                  : "transparent"
             }
             first={
               indent &&
@@ -311,8 +322,13 @@ function RenderNode(
             }
             indent={parentIndents + indent}
           />
-          {node.pieces.map((piece, index) =>
-            RenderPiece(node.pieces, piece, index === 0, index),
+          {node.pieces.map((_, ix) =>
+            RenderPiece(
+              node.pieces,
+              ix,
+              node.address === selectedAddr ? pieceIx ?? -1 : -1,
+              node.address,
+            ),
           )}
         </div>
       </ArcherElement>
@@ -325,6 +341,7 @@ function RenderNode(
                 n,
                 addrStep(`${address}.0`, i + 1),
                 selectedAddr,
+                pieceIx,
                 node,
                 parentIndents + indent,
               ),

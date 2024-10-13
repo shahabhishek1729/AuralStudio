@@ -60,7 +60,25 @@ impl KeyboardEvent {
             }
             Command::Run => todo!(),
             Command::TypeChar(c) => {
-                dbg!(c);
+                if c == "Enter" {
+                    let Some(piece_ix) = state.piece_ix else {
+                        unreachable!("cannot be in TYPE mode without a `piece_ix`");
+                    };
+                    let hash = state.graph.get_hash();
+                    let Some(curr_node) = hash.get(&state.block_loc) else {
+                        return Err(CursorError::AddrNotFound(state.block_loc.clone()));
+                    };
+
+                    for i in piece_ix..curr_node.pieces.len() {
+                        if curr_node.pieces[i] == Piece::PENDING
+                            || curr_node.pieces[i] == Piece::IDENT("".into())
+                        {
+                            state.piece_ix = Some(i);
+                            break;
+                        }
+                    }
+                    state.mode = ADMode::EDIT(super::state::Expecting::ExprPiece);
+                }
             }
             _ => {}
         }

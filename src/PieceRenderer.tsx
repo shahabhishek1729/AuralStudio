@@ -18,93 +18,149 @@ import {
   token_metadata,
   extractPieceValue,
 } from "./types";
+import { useState } from "react";
 
 export function RenderPiece(
   all_pieces: RTLPiece[],
-  piece: RTLPiece,
-  first: boolean,
   i: number,
+  pieceIx: number,
+  parentAddr: string,
 ) {
+  const piece = all_pieces[i];
   const kind = extractPieceType(piece);
+  const first = i === 0;
+  const selected = pieceIx === i;
 
-  // Don't re-render indices that have already been compressed into the ident
-  if (i > 0 && all_pieces[i - 1]["OP"] === "AT") return <></>;
+  // Inner wrapper function allows us to key each piece in a node below
+  function _RenderPiece() {
+    // Don't re-render indices that have already been compressed into the ident
+    if (i > 0 && all_pieces[i - 1]["OP"] === "AT") return <></>;
 
-  switch (kind) {
-    case "IDENT":
-      return (
-        <RenderIdentifier
-          pieces={all_pieces}
-          i={i}
-          id_name={piece["IDENT" as keyof RTLPiece]}
-          chained={first}
-        />
-      );
-    case "NUMBER":
-      return (
-        <RenderNumber num={piece["NUMBER" as keyof RTLPiece]} chained={first} />
-      );
-    case "OP":
-      return <RenderOperator op_name={piece["OP" as keyof RTLPiece]} />;
-    case "TEXT":
-      return (
-        <RenderText text={piece["TEXT" as keyof RTLPiece]} chained={first} />
-      );
-    case "BOOL":
-      return (
-        <RenderBoolean bool={piece["BOOL" as keyof RTLPiece]} chained={first} />
-      );
-    case "NOTHING":
-      return <RenderNothing chained={first} />;
-    case "LIST":
-      return (
-        <RenderList pieces={piece["LIST" as keyof RTLPiece]} chained={first} />
-      );
-    case "FNCALL":
-      return (
-        <RenderCall
-          pieces={piece["FNCALL" as keyof RTLPiece]}
-          chained={first}
-        />
-      );
-    case "PENDING":
-      return <RenderPending chained={first} />;
-    default:
-      throw new Error("Invalid piece found!");
+    switch (kind) {
+      case "IDENT":
+        return (
+          <RenderIdent
+            pieces={all_pieces}
+            i={i}
+            name={piece["IDENT" as keyof RTLPiece]}
+            chained={first}
+            selected={selected}
+            parentAddr={parentAddr}
+          />
+        );
+      case "NUMBER":
+        return (
+          <RenderNumber
+            num={piece["NUMBER" as keyof RTLPiece]}
+            chained={first}
+            selected={selected}
+          />
+        );
+      case "OP":
+        return (
+          <RenderOperator
+            op_name={piece["OP" as keyof RTLPiece]}
+            selected={selected}
+          />
+        );
+      case "TEXT":
+        return (
+          <RenderText
+            text={piece["TEXT" as keyof RTLPiece]}
+            chained={first}
+            selected={selected}
+          />
+        );
+      case "BOOL":
+        return (
+          <RenderBoolean
+            bool={piece["BOOL" as keyof RTLPiece]}
+            chained={first}
+            selected={selected}
+          />
+        );
+      case "NOTHING":
+        return <RenderNothing chained={first} selected={selected} />;
+      case "LIST":
+        return (
+          <RenderList
+            pieces={piece["LIST" as keyof RTLPiece]}
+            chained={first}
+            myIx={i}
+            pieceIx={pieceIx}
+            parentAddr={parentAddr}
+          />
+        );
+      case "FNCALL":
+        return (
+          <RenderCall
+            pieces={piece["FNCALL" as keyof RTLPiece]}
+            chained={first}
+            myIx={i}
+            pieceIx={pieceIx}
+            parentAddr={parentAddr}
+          />
+        );
+      case "PENDING":
+        return <RenderPending chained={first} selected={selected} />;
+      default:
+        throw new Error("Invalid piece found!");
+    }
   }
+
+  return <div key={i}>{_RenderPiece()}</div>;
 }
 
-export function RenderNumber({ num, chained }) {
-  return Symbol("constant", chained ? "" : "transparent", num.toString());
+export function RenderNumber({ num, chained, selected }) {
+  return Symbol(
+    "constant",
+    chained ? "" : "transparent",
+    selected,
+    num.toString(),
+  );
 }
 
-export function RenderBoolean({ bool, chained }) {
-  return Symbol("constant", chained ? "" : "transparent", bool.toString());
+export function RenderBoolean({ bool, chained, selected }) {
+  return Symbol(
+    "constant",
+    chained ? "" : "transparent",
+    selected,
+    bool.toString(),
+  );
 }
 
-export function RenderText({ text, chained }) {
-  return Symbol("text", chained ? "" : "transparent", text);
+export function RenderText({ text, chained, selected }) {
+  return Symbol("text", chained ? "" : "transparent", selected, text);
 }
 
-export function RenderNothing({ chained }) {
-  return Symbol("constant", chained ? "" : "transparent", "nothing");
+export function RenderNothing({ chained, selected }) {
+  return Symbol("constant", chained ? "" : "transparent", selected, "nothing");
 }
 
-export function RenderIdentifier({ pieces, i, id_name, chained }) {
-  const type = "ident";
+export function RenderIdent({
+  pieces,
+  i,
+  name,
+  chained,
+  selected,
+  parentAddr,
+}) {
   const puzzle_color = chained ? "" : "transparent";
-  const symbol = id_name;
   const idxFollows = i < pieces.length - 2 && pieces[i + 1].OP === "AT";
-  let idx = "";
-  if (idxFollows) idx = ` #${extractPieceValue(pieces[i + 2])}`;
+  let idx = idxFollows ? ` #${extractPieceValue(pieces[i + 2])}` : "";
+
+  const background = selected ? "white" : SYMBOL_MAP["ident"][0];
+  const foreground = selected ? "black" : SYMBOL_MAP["ident"][1];
+
+  const [value, setValue] = useState(name);
 
   return (
     <div
       style={{
-        background: SYMBOL_MAP[type as keyof symbol_metadata][0],
-        height: `${SYMBOL_MAP[type as keyof symbol_metadata][3]}px`,
+        background: background,
+        height: `${SYMBOL_MAP["ident"][3]}px`,
         width: "fit-content",
-        minWidth: `${SYMBOL_MAP[type as keyof symbol_metadata][3] - 10}px`,
+        minWidth: `${SYMBOL_MAP["ident"][3] - 10}px`,
         borderRadius:
           puzzle_color === "transparent" ? "10px" : "0px 10px 10px 0px",
         display: "flex",
@@ -115,16 +171,34 @@ export function RenderIdentifier({ pieces, i, id_name, chained }) {
         paddingRight: "5px",
       }}
     >
-      <span
-        style={{
-          fontFamily: "JetBrains Mono",
-          textAlign: "start",
-          color: SYMBOL_MAP[type as keyof symbol_metadata][1],
-          fontSize: `${SYMBOL_MAP[type as keyof symbol_metadata][2]}px`,
-        }}
-      >
-        {symbol}
-      </span>
+      {selected ? (
+        <input
+          id={`${parentAddr},${i}`}
+          style={{
+            fontFamily: "JetBrains Mono",
+            textAlign: "start",
+            color: foreground,
+            background: "white",
+            fontSize: `${SYMBOL_MAP["ident"][2]}px`,
+            padding: "0px",
+            width: `${value.length + 2}ch`,
+            boxShadow: "none",
+          }}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+        />
+      ) : (
+        <span
+          style={{
+            fontFamily: "JetBrains Mono",
+            textAlign: "start",
+            color: foreground,
+            fontSize: `${SYMBOL_MAP["ident"][2]}px`,
+          }}
+        >
+          {value}
+        </span>
+      )}
       {idxFollows ? (
         <span
           style={{
@@ -149,93 +223,80 @@ function elementDone(pieces: RTLPiece[], i: number): boolean {
   return currType !== "OP" && nextType !== "OP";
 }
 
-export function RenderList({ pieces, chained }) {
+export function RenderList({ pieces, chained, myIx, pieceIx, parentAddr }) {
+  return RenderArgs("list", pieces, chained, myIx, pieceIx, parentAddr);
+}
+
+export function RenderCall({ pieces, chained, myIx, pieceIx, parentAddr }) {
+  return RenderArgs("call", pieces, chained, myIx, pieceIx, parentAddr);
+}
+
+export function RenderArgs(
+  kind: string,
+  pieces: RTLPiece[],
+  chained: boolean,
+  myIx: number,
+  pieceIx: number,
+  parentAddr: string,
+) {
+  const colorKind = kind === "list" ? "constant" : kind;
   return (
-    <div style={{ display: "flex", flexDirection: "row" }}>
-      {ChainSymbol("constant", chained, false, "list")}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        border: myIx === pieceIx ? "2px solid white" : "",
+      }}
+    >
+      {ChainSymbol(colorKind, chained, false, kind)}
       <div
         style={{
-          border: `1px solid ${SYMBOL_MAP["constant"][0]}`,
+          border: `1px solid ${SYMBOL_MAP[colorKind as keyof symbol_metadata][0]}`,
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
         }}
       >
-        {pieces.slice(1).map((b: RTLPiece, i: number) => (
-          <>
+        {pieces.slice(1).map((_, i: number) => (
+          <div key={i} style={{ display: "flex" }}>
             <div style={{ transform: "scale(0.9)" }}>
-              {RenderPiece(pieces, b, false, i + 1)}
+              {RenderPiece(pieces, i + 1, pieceIx, parentAddr)}
             </div>
-            {elementDone(pieces, i + 1) ? (
-              <div
-                style={{
-                  height: "36px",
-                  width: "1px",
-                  backgroundColor: SYMBOL_MAP["constant"][0],
-                }}
-              />
-            ) : null}
-          </>
-        ))}
-      </div>
-      {ChainSymbol("constant", chained, true, "done")}
-    </div>
-  );
-}
-
-export function RenderCall({ pieces, chained }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "row" }}>
-      {ChainSymbol("call", chained, false, pieces[0]["IDENT"])}
-      <div
-        style={{
-          border: `1px solid ${SYMBOL_MAP["call"][0]}`,
-          display: "flex",
-          flexDirection: "row",
-        }}
-      >
-        {pieces.slice(1).map((b: RTLPiece, i: number) => (
-          <>
-            <div style={{ transform: "scale(0.9)" }}>
-              {RenderPiece(pieces, b, false, i + 1)}
-            </div>
-            {/* Vertical line separator */}
             {elementDone(pieces, i + 1) ? (
               <div
                 style={{
                   height: "36px",
                   width: "1px",
                   backgroundColor:
-                    SYMBOL_MAP["call" as keyof symbol_metadata][0],
+                    SYMBOL_MAP[colorKind as keyof symbol_metadata][0],
                 }}
               />
             ) : null}
-          </>
+          </div>
         ))}
       </div>
-      {ChainSymbol("call", chained, true, "done")}
+      {ChainSymbol(colorKind, chained, true, "done")}
     </div>
   );
 }
 
-export function RenderOperator({ op_name }) {
+export function RenderOperator({ op_name, selected }) {
   const _type = op_name === "ASSN" ? "arrow" : "operator";
   const _name = OP_TO_NAME[op_name as keyof op_kind];
 
   if (_name === "") return <></>;
 
   return (
-    <>
+    <div style={{ display: "flex" }}>
       <div style={{ width: "6px" }} />
-      {Symbol(_type, "transparent", _name)}
+      {Symbol(_type, "transparent", selected, _name)}
       <div style={{ width: "6px" }} />
-    </>
+    </div>
   );
 }
 
-export function RenderPending({ chained }) {
-  console.log(`Chained? ${chained}`);
-  return Symbol("pending", chained ? "" : "transparent", "...");
+export function RenderPending({ chained, selected }) {
+  return Symbol("pending", chained ? "" : "transparent", selected, "...");
 }
 
 const TOKEN_MAP: token_metadata = {
@@ -261,7 +322,7 @@ export const SYMBOL_MAP: symbol_metadata = {
   text: ["#374f40", "#FFFFFF", 16, 36],
   ident: ["#333333", "#FFFFFF", 16, 36],
   call: ["#179c8a", "#FFFFFF", 16, 36],
-  pending: ["#FFFFFF", "#000000", 16, 36],
+  pending: ["transparent", "#FFFFFF", 16, 36],
 };
 
 const OP_TO_NAME: op_kind = {
@@ -279,7 +340,7 @@ const OP_TO_NAME: op_kind = {
   AND: "and",
   OR: "or",
   NOT: "not",
-  IN: "in",
+  IN: ":",
   DOT: ".",
   ASSN: "->",
   AT: "",
@@ -327,11 +388,23 @@ export function ChainSymbol(
   );
 }
 
-export function Symbol(type: string, puzzle_color: string, symbol?: string) {
+export function Symbol(
+  type: string,
+  puzzle_color: string,
+  selected: boolean,
+  symbol?: string,
+) {
+  const background = selected
+    ? "white"
+    : SYMBOL_MAP[type as keyof symbol_metadata][0];
+  const foreground = selected
+    ? "black"
+    : SYMBOL_MAP[type as keyof symbol_metadata][1];
+
   return (
     <div
       style={{
-        background: SYMBOL_MAP[type as keyof symbol_metadata][0],
+        background: background,
         height: `${SYMBOL_MAP[type as keyof symbol_metadata][3]}px`,
         width: "fit-content",
         minWidth: `${SYMBOL_MAP[type as keyof symbol_metadata][3] - 10}px`,
@@ -349,7 +422,7 @@ export function Symbol(type: string, puzzle_color: string, symbol?: string) {
         style={{
           fontFamily: "JetBrains Mono",
           textAlign: "start",
-          color: SYMBOL_MAP[type as keyof symbol_metadata][1],
+          color: foreground,
           fontSize: `${SYMBOL_MAP[type as keyof symbol_metadata][2]}px`,
         }}
       >
@@ -379,6 +452,7 @@ export function Token({ token_type, puzzle_color, first, indent }) {
     >
       {[...Array(indent)].map((_, i) => (
         <img
+          key={i}
           style={{
             height: "24px",
             marginRight: "5px",
