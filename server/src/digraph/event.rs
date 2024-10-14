@@ -7,7 +7,7 @@ use crate::digraph::state::{CursorDir, CursorState};
 use crate::{make_node, piece};
 use serde_derive::{Deserialize, Serialize};
 
-macro_rules! insert {
+macro_rules! new_token {
     (From $state:ident, $kind:expr => [$($piece:expr),*] $(@ $piece_ix:literal),*) => {{
         let hash = $state.graph.get_hash_mut();
         let Some(curr_node) = hash.get(&$state.block_loc) else {
@@ -50,6 +50,35 @@ macro_rules! insert {
     }};
 }
 
+fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), CursorError> {
+    dbg!(&piece);
+    let hash = state.graph.get_hash_mut();
+    let Some(curr_node) = hash.get(&state.block_loc) else {
+        return Err(CursorError::AddrNotFound(state.block_loc.clone()));
+    };
+
+    let Some(piece_ix) = state.piece_ix else {
+        unreachable!("Cannot add a new piece without editing a piece first");
+    };
+
+    // SAFETY: We know this reference must be valid because we just retrieved the
+    // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
+    // been dropped since its creation (no concurrency), so this is safe.
+    let curr_node = unsafe { &mut **curr_node };
+
+    match piece {
+        Piece::IDENT(_) | Piece::TEXT(_) => state.mode = ADMode::TYPE,
+        _ => {
+            curr_node.pieces.push(piece!(...));
+            state.piece_ix = Some(piece_ix + 1);
+        }
+    }
+
+    curr_node.pieces[piece_ix] = piece;
+
+    Ok(())
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct KeyboardEvent {
     pub key: String,
@@ -85,14 +114,14 @@ impl KeyboardEvent {
             Command::EditMode => state.to_insert()?,
             Command::ViewMode => state.to_view(),
             Command::InsertVar => {
-                insert! {
+                new_token! {
                     From state, NodeKind::VARDECL => [
                         piece!(IDENT ""), Piece::OP(OpKind::ASSN), piece!(...)
                     ] @ 0
                 }
             }
             Command::InsertIf => {
-                insert! { From state, NodeKind::CONDTL => [piece!(...)] @ 0 < {
+                new_token! { From state, NodeKind::CONDTL => [piece!(...)] @ 0 < {
                  make_node!(line 0 -> NodeKind::CONDTLY []; {
                      make_node!(line 0 -> NodeKind::PENDING [piece!(...)])
                  }),
@@ -107,28 +136,41 @@ impl KeyboardEvent {
                     Command::InsertWhile => NodeKind::WHLLOOP,
                     _ => unreachable!(),
                 };
-                insert! { From state, kind => [piece!(...)] @ 0 < {
+                new_token! { From state, kind => [piece!(...)] @ 0 < {
                      make_node!(line 0 -> NodeKind::PENDING [piece!(...)])
                 }}
             }
-            Command::InsertBreak => insert! { From state, NodeKind::BREAK => [] },
-            Command::InsertContinue => insert! { From state, NodeKind::CONTINUE => [] },
-            Command::InsertReturn => insert! { From state, NodeKind::RETURN => [piece!(...)] @ 0 },
-            Command::InsertOutput => insert! { From state, NodeKind::OUTPUT => [piece!(...)] @ 0 },
+            Command::InsertBreak => new_token! { From state, NodeKind::BREAK => [] },
+            Command::InsertContinue => new_token! { From state, NodeKind::CONTINUE => [] },
+            Command::InsertReturn => {
+                new_token! { From state, NodeKind::RETURN => [piece!(...)] @ 0 }
+            }
+            Command::InsertOutput => {
+                new_token! { From state, NodeKind::OUTPUT => [piece!(...)] @ 0 }
+            }
             Command::InsertPending => {
-                insert! { From state, NodeKind::PENDING => [piece!(...)] @ 0 }
+                new_token! { From state, NodeKind::PENDING => [piece!(...)] @ 0 }
             }
             Command::InsertImport => {
-                insert! { From state, NodeKind::GRABPKG => [
+                new_token! { From state, NodeKind::GRABPKG => [
                     piece!(IDENT ""), piece!(...) // TODO: Only "from" and "alias" can go here
                 ] @ 0}
             }
+            Command::AddVarName => new_piece(state, piece!(IDENT ""))?,
             Command::Run => todo!(),
             Command::TypeChar(c) => {
                 if c == "Enter" {
                     let Some(piece_ix) = state.piece_ix else {
                         unreachable!("cannot be in TYPE mode without a `piece_ix`");
                     };
+
+                    if state.piece_ix == Some(0) {
+                        state.mode = ADMode::EDIT(super::state::Expecting::Value);
+                    } else {
+                        // Typing always indicates we are working on a value, so next is an operator
+                        state.mode = ADMode::EDIT(super::state::Expecting::Op);
+                    }
+
                     let hash = state.graph.get_hash();
                     let Some(curr_node) = hash.get(&state.block_loc) else {
                         return Err(CursorError::AddrNotFound(state.block_loc.clone()));
@@ -142,8 +184,6 @@ impl KeyboardEvent {
                             break;
                         }
                     }
-                    // Typing always indicates we are working on a value, so next is an operator
-                    state.mode = ADMode::EDIT(super::state::Expecting::Op);
                 }
             }
             _ => {}
