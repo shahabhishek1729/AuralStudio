@@ -14,8 +14,9 @@ TOKEN : Pending			| p	   | x    |
 ---------------------------------------
 VALUE : Variable names	| v    | x    |					
 VALUE : Numbers			| n	   | x    |				
-VALUE : Text			| t    | x    |						
-VALUE : Booleans		| b	   | x    |				
+VALUE : Text			| s    | x    |						
+VALUE : Bool true		| t	   | x    |				
+VALUE : Bool false		| f	   | x    |				
 VALUE : Nothing			|      | x    |					
 VALUE : Calls			| c	   | x    |				
 VALUE : List			| l	   | x    |		

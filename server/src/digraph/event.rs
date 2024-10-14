@@ -2,82 +2,12 @@ use super::parser::{NodeKind, Piece};
 use super::state::{ADMode, CursorError};
 use crate::digraph::address::Addressable;
 use crate::digraph::command::Command;
+use crate::digraph::edit::new_piece;
 use crate::digraph::parser::OpKind;
 use crate::digraph::state::{CursorDir, CursorState};
+use crate::new_token;
 use crate::{make_node, piece};
 use serde_derive::{Deserialize, Serialize};
-
-macro_rules! new_token {
-    (From $state:ident, $kind:expr => [$($piece:expr),*] $(@ $piece_ix:literal),*) => {{
-        let hash = $state.graph.get_hash_mut();
-        let Some(curr_node) = hash.get(&$state.block_loc) else {
-            return Err(CursorError::AddrNotFound($state.block_loc.clone()));
-        };
-
-        // SAFETY: We know this reference must be valid because we just retrieved the
-        // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
-        // been dropped since its creation (no concurrency), so this is safe.
-        let curr_node = unsafe { &mut **curr_node };
-        curr_node.kind = $kind;
-        curr_node.pieces = vec![$($piece),*];
-
-        $state.mode = ADMode::TYPE;
-        $state.piece_ix = None;
-        $($state.piece_ix = Some($piece_ix)),*
-    }};
-
-    (From $state:ident, $kind:expr => [$($piece:expr),*] $(@ $piece_ix:literal),* < {$($node:expr),+}) => {{
-        let hash = $state.graph.get_hash_mut();
-        let Some(curr_node) = hash.get(&$state.block_loc) else {
-            return Err(CursorError::AddrNotFound($state.block_loc.clone()));
-        };
-
-        // SAFETY: We know this reference must be valid because we just retrieved the
-        // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
-        // been dropped since its creation (no concurrency), so this is safe.
-        let curr_node = unsafe { &mut **curr_node };
-        curr_node.kind = $kind;
-        curr_node.pieces = vec![$($piece),*];
-        curr_node.children = vec![$($node),+];
-
-        (&mut $state.graph[..]).fill_addr();
-        $state.block_loc = curr_node.addr.clone();
-        $state.node_loc = $state.block_loc.coerce(&$state.graph.get_hash()).expect("Coercion failed");
-
-        $state.mode = ADMode::TYPE;
-        $state.piece_ix = None;
-        $($state.piece_ix = Some($piece_ix)),*
-    }};
-}
-
-fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), CursorError> {
-    dbg!(&piece);
-    let hash = state.graph.get_hash_mut();
-    let Some(curr_node) = hash.get(&state.block_loc) else {
-        return Err(CursorError::AddrNotFound(state.block_loc.clone()));
-    };
-
-    let Some(piece_ix) = state.piece_ix else {
-        unreachable!("Cannot add a new piece without editing a piece first");
-    };
-
-    // SAFETY: We know this reference must be valid because we just retrieved the
-    // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
-    // been dropped since its creation (no concurrency), so this is safe.
-    let curr_node = unsafe { &mut **curr_node };
-
-    match piece {
-        Piece::IDENT(_) | Piece::TEXT(_) => state.mode = ADMode::TYPE,
-        _ => {
-            curr_node.pieces.push(piece!(...));
-            state.piece_ix = Some(piece_ix + 1);
-        }
-    }
-
-    curr_node.pieces[piece_ix] = piece;
-
-    Ok(())
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct KeyboardEvent {
@@ -112,7 +42,7 @@ impl KeyboardEvent {
                 }
             }
             Command::EditMode => state.to_insert()?,
-            Command::ViewMode => state.to_view(),
+            Command::ViewMode => state.to_view()?,
             Command::InsertVar => {
                 new_token! {
                     From state, NodeKind::VARDECL => [
@@ -157,6 +87,29 @@ impl KeyboardEvent {
                 ] @ 0}
             }
             Command::AddVarName => new_piece(state, piece!(IDENT ""))?,
+            Command::AddTrue => new_piece(state, piece!(True))?,
+            Command::AddFalse => new_piece(state, piece!(False))?,
+            Command::AddNothing => new_piece(state, piece!())?,
+            Command::AddText => new_piece(state, piece!(TEXT ""))?,
+            Command::AddNum => new_piece(state, piece!(# 0))?,
+            Command::AddList => todo!(),
+            Command::AddCall => todo!(),
+            Command::ChainAdd => new_piece(state, Piece::OP(OpKind::ADD))?,
+            Command::ChainSub => new_piece(state, Piece::OP(OpKind::SUB))?,
+            Command::ChainMul => new_piece(state, Piece::OP(OpKind::MUL))?,
+            Command::ChainDiv => new_piece(state, Piece::OP(OpKind::DIV))?,
+            Command::ChainMod => new_piece(state, Piece::OP(OpKind::MOD))?,
+            Command::ChainGt => new_piece(state, Piece::OP(OpKind::GT))?,
+            Command::ChainLt => new_piece(state, Piece::OP(OpKind::LT))?,
+            Command::ChainGe => new_piece(state, Piece::OP(OpKind::GE))?,
+            Command::ChainLe => new_piece(state, Piece::OP(OpKind::LE))?,
+            Command::ChainEq => new_piece(state, Piece::OP(OpKind::EQ))?,
+            Command::ChainNot => new_piece(state, Piece::OP(OpKind::NOT))?,
+            Command::ChainAnd => new_piece(state, Piece::OP(OpKind::AND))?,
+            Command::ChainOr => new_piece(state, Piece::OP(OpKind::OR))?,
+            Command::ChainIdx => new_piece(state, Piece::OP(OpKind::AT))?,
+            Command::ChainIn => new_piece(state, Piece::OP(OpKind::IN))?,
+            Command::ChainDot => new_piece(state, Piece::OP(OpKind::DOT))?,
             Command::Run => todo!(),
             Command::TypeChar(c) => {
                 if c == "Enter" {
@@ -165,16 +118,28 @@ impl KeyboardEvent {
                     };
 
                     if state.piece_ix == Some(0) {
+                        // This was likely a variable name, so next is another value
+                        // TODO: let x at 3 be 2 -> x[3] = 2: How to allow this?
                         state.mode = ADMode::EDIT(super::state::Expecting::Value);
                     } else {
                         // Typing always indicates we are working on a value, so next is an operator
                         state.mode = ADMode::EDIT(super::state::Expecting::Op);
                     }
 
-                    let hash = state.graph.get_hash();
+                    let hash = state.graph.get_hash_mut();
                     let Some(curr_node) = hash.get(&state.block_loc) else {
                         return Err(CursorError::AddrNotFound(state.block_loc.clone()));
                     };
+
+                    // SAFETY: We know this reference must be valid because we just retrieved the
+                    // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
+                    // been dropped since its creation (no concurrency), so this is safe.
+                    let curr_node = unsafe { &mut **curr_node };
+                    if piece_ix == curr_node.pieces.len() - 1 {
+                        state.piece_ix = Some(curr_node.pieces.len());
+                        curr_node.pieces.push(piece!(...));
+                        return Ok(());
+                    }
 
                     for i in piece_ix..curr_node.pieces.len() {
                         if curr_node.pieces[i] == Piece::PENDING
@@ -186,8 +151,9 @@ impl KeyboardEvent {
                     }
                 }
             }
-            _ => {}
+            Command::NULL => eprintln!("Received a null command"),
         }
+
         return Ok(());
     }
 }

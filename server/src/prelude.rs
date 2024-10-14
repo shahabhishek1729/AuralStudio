@@ -168,6 +168,14 @@ pub(crate) enum CursorError {
     EmptyAddr,
     #[error("cannot add to a conditional that already has a 'yes' and 'no' branch")]
     InsertConditional,
+    #[error("found an invalid number (only 0-9 and a single decimal place can be used)")]
+    InvalidNumber,
+}
+
+impl From<std::num::ParseFloatError> for CursorError {
+    fn from(value: std::num::ParseFloatError) -> Self {
+        return Self::InvalidNumber;
+    }
 }
 
 #[derive(Debug, Error)]

@@ -230,6 +230,16 @@ pub(super) enum Expecting {
     Token,
 }
 
+impl std::ops::Not for Expecting {
+    type Output = Self;
+    fn not(self) -> Self::Output {
+        match self {
+            Self::Value => Self::Op,
+            _ => Self::Value,
+        }
+    }
+}
+
 /// The modes a user can be in when navigating through the digraph
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub(super) enum ADMode {

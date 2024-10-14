@@ -191,8 +191,20 @@ impl CursorState {
 
     /// Toggles `CursorState` back to viewing mode
     #[inline(always)]
-    pub(super) fn to_view(&mut self) {
+    pub(super) fn to_view(&mut self) -> Result<(), CursorError> {
         self.mode = ADMode::VIEW;
+        let hash = self.graph.get_hash_mut();
+        let Some(curr_node) = hash.get(&self.block_loc) else {
+            return Err(CursorError::AddrNotFound(self.block_loc.clone()));
+        };
+
+        // SAFETY: We know this reference must be valid because we just retrieved the
+        // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
+        // been dropped since its creation (no concurrency), so this is safe.
+        let curr_node = unsafe { &mut **curr_node };
+        curr_node.pieces.pop();
+
+        Ok(())
     }
 
     // Update graph with a new function (@ `at_addr`) as a child of the function @ `from_addr`.
@@ -292,6 +304,8 @@ impl CursorState {
         let curr_node = unsafe { &mut **curr_node };
         let new_piece = match curr_node.pieces[piece_ix] {
             Piece::IDENT(_) => Piece::IDENT(value),
+            Piece::NUMBER(_) => Piece::NUMBER(value.parse::<f64>()?),
+            Piece::TEXT(_) => Piece::TEXT(value),
             _ => todo!(),
         };
         curr_node.pieces[piece_ix] = new_piece;

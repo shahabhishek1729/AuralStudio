@@ -52,8 +52,10 @@ export function RenderPiece(
         return (
           <RenderNumber
             num={piece["NUMBER" as keyof RTLPiece]}
+            i={i}
             chained={first}
             selected={selected}
+            parentAddr={parentAddr}
           />
         );
       case "OP":
@@ -67,8 +69,10 @@ export function RenderPiece(
         return (
           <RenderText
             text={piece["TEXT" as keyof RTLPiece]}
+            i={i}
             chained={first}
             selected={selected}
+            parentAddr={parentAddr}
           />
         );
       case "BOOL":
@@ -111,12 +115,14 @@ export function RenderPiece(
   return <div key={i}>{_RenderPiece()}</div>;
 }
 
-export function RenderNumber({ num, chained, selected }) {
+export function RenderNumber({ num, i, chained, selected, parentAddr }) {
   return Symbol(
     "constant",
     chained ? "" : "transparent",
     selected,
     num.toString(),
+    parentAddr,
+    i,
   );
 }
 
@@ -129,8 +135,15 @@ export function RenderBoolean({ bool, chained, selected }) {
   );
 }
 
-export function RenderText({ text, chained, selected }) {
-  return Symbol("text", chained ? "" : "transparent", selected, text);
+export function RenderText({ text, i, chained, selected, parentAddr }) {
+  return Symbol(
+    "text",
+    chained ? "" : "transparent",
+    selected,
+    text,
+    parentAddr,
+    i,
+  );
 }
 
 export function RenderNothing({ chained, selected }) {
@@ -393,6 +406,8 @@ export function Symbol(
   puzzle_color: string,
   selected: boolean,
   symbol?: string,
+  parentAddr?: string,
+  i?: number,
 ) {
   const background = selected
     ? "white"
@@ -400,6 +415,8 @@ export function Symbol(
   const foreground = selected
     ? "black"
     : SYMBOL_MAP[type as keyof symbol_metadata][1];
+
+  const [value, setValue] = useState("");
 
   return (
     <div
@@ -418,16 +435,34 @@ export function Symbol(
         paddingRight: "5px",
       }}
     >
-      <span
-        style={{
-          fontFamily: "JetBrains Mono",
-          textAlign: "start",
-          color: foreground,
-          fontSize: `${SYMBOL_MAP[type as keyof symbol_metadata][2]}px`,
-        }}
-      >
-        {symbol}
-      </span>
+      {selected ? (
+        <input
+          id={`${parentAddr},${i}`}
+          style={{
+            fontFamily: "JetBrains Mono",
+            textAlign: "start",
+            color: foreground,
+            background: "white",
+            fontSize: `${SYMBOL_MAP[type as keyof symbol_metadata][2]}px`,
+            padding: "0px",
+            width: `${value.length + 2}ch`,
+            boxShadow: "none",
+          }}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+        />
+      ) : (
+        <span
+          style={{
+            fontFamily: "JetBrains Mono",
+            textAlign: "start",
+            color: foreground,
+            fontSize: `${SYMBOL_MAP[type as keyof symbol_metadata][2]}px`,
+          }}
+        >
+          {symbol}
+        </span>
+      )}
     </div>
   );
 }
