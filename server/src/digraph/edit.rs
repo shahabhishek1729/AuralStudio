@@ -3,8 +3,88 @@ use super::parser::{Node, NodeKind, Piece};
 use super::state::{ADMode, CursorState, Expecting};
 use crate::digraph::address::Addressable;
 use crate::digraph::util::*;
+use crate::piece;
 use crate::prelude::CursorError;
 use std::ops::ControlFlow;
+
+#[macro_export]
+macro_rules! new_token {
+    (From $state:ident, $kind:expr => [$($piece:expr),*] $(@ $piece_ix:literal),*) => {{
+        let hash = $state.graph.get_hash_mut();
+        let Some(curr_node) = hash.get(&$state.block_loc) else {
+            return Err(CursorError::AddrNotFound($state.block_loc.clone()));
+        };
+
+        // SAFETY: We know this reference must be valid because we just retrieved the
+        // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
+        // been dropped since its creation (no concurrency), so this is safe.
+        let curr_node = unsafe { &mut **curr_node };
+        curr_node.kind = $kind;
+        curr_node.pieces = vec![$($piece),*];
+
+        $state.mode = ADMode::TYPE;
+        $state.piece_ix = None;
+        $($state.piece_ix = Some($piece_ix)),*
+    }};
+
+    (From $state:ident, $kind:expr => [$($piece:expr),*] $(@ $piece_ix:literal),* < {$($node:expr),+}) => {{
+        let hash = $state.graph.get_hash_mut();
+        let Some(curr_node) = hash.get(&$state.block_loc) else {
+            return Err(CursorError::AddrNotFound($state.block_loc.clone()));
+        };
+
+        // SAFETY: We know this reference must be valid because we just retrieved the
+        // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
+        // been dropped since its creation (no concurrency), so this is safe.
+        let curr_node = unsafe { &mut **curr_node };
+        curr_node.kind = $kind;
+        curr_node.pieces = vec![$($piece),*];
+        curr_node.children = vec![$($node),+];
+
+        (&mut $state.graph[..]).fill_addr();
+        $state.block_loc = curr_node.addr.clone();
+        $state.node_loc = $state.block_loc.coerce(&$state.graph.get_hash()).expect("Coercion failed");
+
+        $state.mode = ADMode::TYPE;
+        $state.piece_ix = None;
+        $($state.piece_ix = Some($piece_ix)),*
+    }};
+}
+
+/// Inserts a new piece within a node
+pub(super) fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), CursorError> {
+    let hash = state.graph.get_hash_mut();
+    let Some(curr_node) = hash.get(&state.block_loc) else {
+        return Err(CursorError::AddrNotFound(state.block_loc.clone()));
+    };
+
+    let Some(piece_ix) = state.piece_ix else {
+        unreachable!("Cannot add a new piece without editing a piece first");
+    };
+
+    // SAFETY: We know this reference must be valid because we just retrieved the
+    // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
+    // been dropped since its creation (no concurrency), so this is safe.
+    let curr_node = unsafe { &mut **curr_node };
+
+    match piece {
+        Piece::IDENT(_) | Piece::TEXT(_) | Piece::NUMBER(_) => state.mode = ADMode::TYPE,
+        Piece::BOOL(_) | Piece::NOTHING | Piece::PENDING | Piece::OP(_) => {
+            let ADMode::EDIT(expecting) = state.mode else {
+                unreachable!("Cannot insert a piece without being in EDIT mode");
+            };
+
+            curr_node.pieces.push(piece!(...));
+            state.piece_ix = Some(piece_ix + 1);
+            state.mode = ADMode::EDIT(!expecting);
+        }
+        Piece::FNCALL(_) | Piece::LIST(_) => todo!(),
+    }
+
+    curr_node.pieces[piece_ix] = piece;
+
+    Ok(())
+}
 
 impl CursorState {
     /// Transforms a `CursorState` object from viewing to editing mode.
