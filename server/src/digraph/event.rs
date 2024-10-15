@@ -1,4 +1,4 @@
-use super::parser::{NodeKind, Piece};
+use super::parser::{NodeKind, Piece, PieceIdx};
 use super::state::{ADMode, CursorError};
 use crate::digraph::address::Addressable;
 use crate::digraph::command::Command;
@@ -92,8 +92,8 @@ impl KeyboardEvent {
             Command::AddNothing => new_piece(state, piece!())?,
             Command::AddText => new_piece(state, piece!(TEXT ""))?,
             Command::AddNum => new_piece(state, piece!(# 0))?,
-            Command::AddList => todo!(),
-            Command::AddCall => todo!(),
+            Command::AddList => new_piece(state, piece!(LIST [piece!(IDENT "list"), piece!(...)]))?,
+            Command::AddCall => new_piece(state, Piece::FNCALL(vec![piece!(...)]))?,
             Command::ChainAdd => new_piece(state, Piece::OP(OpKind::ADD))?,
             Command::ChainSub => new_piece(state, Piece::OP(OpKind::SUB))?,
             Command::ChainMul => new_piece(state, Piece::OP(OpKind::MUL))?,
@@ -117,15 +117,6 @@ impl KeyboardEvent {
                         unreachable!("cannot be in TYPE mode without a `piece_ix`");
                     };
 
-                    if state.piece_ix == Some(0) {
-                        // This was likely a variable name, so next is another value
-                        // TODO: let x at 3 be 2 -> x[3] = 2: How to allow this?
-                        state.mode = ADMode::EDIT(super::state::Expecting::Value);
-                    } else {
-                        // Typing always indicates we are working on a value, so next is an operator
-                        state.mode = ADMode::EDIT(super::state::Expecting::Op);
-                    }
-
                     let hash = state.graph.get_hash_mut();
                     let Some(curr_node) = hash.get(&state.block_loc) else {
                         return Err(CursorError::AddrNotFound(state.block_loc.clone()));
@@ -135,15 +126,26 @@ impl KeyboardEvent {
                     // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
                     // been dropped since its creation (no concurrency), so this is safe.
                     let curr_node = unsafe { &mut **curr_node };
+
+                    if state.piece_ix == Some(0) && curr_node.kind == NodeKind::VARDECL {
+                        // This was a variable name, so next is another value
+                        // TODO: let x at 3 be 2 -> x[3] = 2: How do we allow this?
+                        state.mode = ADMode::EDIT(super::state::Expecting::Value);
+                    } else {
+                        // Typing always indicates we are working on a value, so next is an operator
+                        state.mode = ADMode::EDIT(super::state::Expecting::Op);
+                    }
+
                     if piece_ix == curr_node.pieces.len() - 1 {
                         state.piece_ix = Some(curr_node.pieces.len());
                         curr_node.pieces.push(piece!(...));
                         return Ok(());
                     }
 
+                    // NOTE: Can be optimized (we don't need to index recursively into lists)
                     for i in piece_ix..curr_node.pieces.len() {
-                        if curr_node.pieces[i] == Piece::PENDING
-                            || curr_node.pieces[i] == Piece::IDENT("".into())
+                        if curr_node.pieces[PieceIdx(i)] == Piece::PENDING
+                            || curr_node.pieces[PieceIdx(i)] == Piece::IDENT("".into())
                         {
                             state.piece_ix = Some(i);
                             break;

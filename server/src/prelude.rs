@@ -173,7 +173,7 @@ pub(crate) enum CursorError {
 }
 
 impl From<std::num::ParseFloatError> for CursorError {
-    fn from(value: std::num::ParseFloatError) -> Self {
+    fn from(_: std::num::ParseFloatError) -> Self {
         return Self::InvalidNumber;
     }
 }

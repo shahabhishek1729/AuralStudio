@@ -1,5 +1,5 @@
 use super::address::Address;
-use super::parser::{Node, NodeKind, Piece};
+use super::parser::{Node, NodeKind, Piece, PieceIdx};
 use super::state::{ADMode, CursorState, Expecting};
 use crate::digraph::address::Addressable;
 use crate::digraph::util::*;
@@ -45,7 +45,7 @@ macro_rules! new_token {
         $state.block_loc = curr_node.addr.clone();
         $state.node_loc = $state.block_loc.coerce(&$state.graph.get_hash()).expect("Coercion failed");
 
-        $state.mode = ADMode::TYPE;
+        $state.mode = ADMode::EDIT($crate::digraph::state::Expecting::Value);
         $state.piece_ix = None;
         $($state.piece_ix = Some($piece_ix)),*
     }};
@@ -78,10 +78,14 @@ pub(super) fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), Cur
             state.piece_ix = Some(piece_ix + 1);
             state.mode = ADMode::EDIT(!expecting);
         }
-        Piece::FNCALL(_) | Piece::LIST(_) => todo!(),
+        Piece::FNCALL(_) | Piece::LIST(_) => {
+            state.mode = ADMode::EDIT(Expecting::Value);
+            dbg!(&state.piece_ix);
+            state.piece_ix = Some(piece_ix + 1);
+        }
     }
 
-    curr_node.pieces[piece_ix] = piece;
+    curr_node.pieces[PieceIdx(piece_ix)] = piece;
 
     Ok(())
 }
@@ -302,14 +306,13 @@ impl CursorState {
         // SAFETY: This node must be valid because it comes from the current block_loc of the
         // PayloadState. block_loc must point to a node since otherwise we would have returned Err.
         let curr_node = unsafe { &mut **curr_node };
-        let new_piece = match curr_node.pieces[piece_ix] {
+        let new_piece = match curr_node.pieces[PieceIdx(piece_ix)] {
             Piece::IDENT(_) => Piece::IDENT(value),
             Piece::NUMBER(_) => Piece::NUMBER(value.parse::<f64>()?),
             Piece::TEXT(_) => Piece::TEXT(value),
             _ => todo!(),
         };
-        curr_node.pieces[piece_ix] = new_piece;
-        dbg!(curr_node);
+        curr_node.pieces[PieceIdx(piece_ix)] = new_piece;
 
         Ok(())
     }

@@ -292,6 +292,75 @@ pub(crate) enum Piece {
     PENDING,
 }
 
+pub(crate) struct PieceIdx(pub usize);
+impl std::ops::Index<PieceIdx> for Vec<Piece> {
+    type Output = Piece;
+
+    fn index(&self, index: PieceIdx) -> &Self::Output {
+        let mut ix = index.0;
+        let mut stack = vec![self];
+
+        while let Some(current) = stack.pop() {
+            for piece in current.iter() {
+                match piece {
+                    Piece::LIST(inner_pieces) => {
+                        if ix < inner_pieces.len() {
+                            // If we found the ix in the inner list
+                            return &inner_pieces[ix];
+                        } else {
+                            // Continue searching in the inner list
+                            stack.push(inner_pieces);
+                        }
+                    }
+                    _ => {
+                        // Check if the ix matches the current piece's position
+                        if ix == 0 {
+                            return piece;
+                        }
+                        // Decrement ix for the next piece
+                        ix -= 1;
+                    }
+                }
+            }
+        }
+
+        panic!("Index {} out of bounds for piece vector", index.0);
+    }
+}
+
+impl std::ops::IndexMut<PieceIdx> for Vec<Piece> {
+    fn index_mut(&mut self, index: PieceIdx) -> &mut Self::Output {
+        let mut ix = index.0;
+        let mut stack = vec![self];
+
+        while let Some(current) = stack.pop() {
+            for piece in current.iter_mut() {
+                match piece {
+                    Piece::LIST(inner_pieces) => {
+                        if ix < inner_pieces.len() {
+                            // If we found the ix in the inner list
+                            return &mut inner_pieces[ix];
+                        } else {
+                            // Continue searching in the inner list
+                            stack.push(inner_pieces);
+                        }
+                    }
+                    _ => {
+                        // Check if the ix matches the current piece's position
+                        if ix == 0 {
+                            return piece;
+                        }
+                        // Decrement ix for the next piece
+                        ix -= 1;
+                    }
+                }
+            }
+        }
+
+        panic!("Index {} out of bounds for piece vector", index.0);
+    }
+}
+
 /// An enum of every kind of operator supported in Rattle
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub(crate) enum OpKind {
