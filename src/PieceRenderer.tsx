@@ -253,6 +253,7 @@ export function RenderArgs(
   parentAddr: string,
 ) {
   const colorKind = kind === "list" ? "constant" : kind;
+  const name = kind === "call" ? pieces[0].IDENT : "list";
   return (
     <div
       style={{
@@ -261,7 +262,7 @@ export function RenderArgs(
         border: myIx === pieceIx ? "2px solid white" : "",
       }}
     >
-      {ChainSymbol(colorKind, chained, false, kind)}
+      {ChainSymbol(colorKind, chained, false, name)}
       <div
         style={{
           border: `1px solid ${SYMBOL_MAP[colorKind as keyof symbol_metadata][0]}`,
@@ -273,7 +274,12 @@ export function RenderArgs(
         {pieces.slice(1).map((_, i: number) => (
           <div key={i} style={{ display: "flex" }}>
             <div style={{ transform: "scale(0.9)" }}>
-              {RenderPiece(pieces, i + 1, pieceIx, parentAddr)}
+              {RenderPiece(
+                Array(myIx).fill("NOTHING").concat(pieces),
+                myIx + i + 1,
+                pieceIx,
+                parentAddr,
+              )}
             </div>
             {elementDone(pieces, i + 1) ? (
               <div
