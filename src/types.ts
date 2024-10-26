@@ -32,7 +32,7 @@ export interface CursorState {
 	// See `ADMode` below
 	mode: ADMode,
 	// The piece we are currently editing (if any)
-	pieceIx: number | null,
+	pieceIx: number[] | null,
 }
 
 // Either we are viewing or editing the digraph; if editing, we might be expecting a certain piece
@@ -47,6 +47,23 @@ type ADMode = "VIEW" | "TYPE" | { "EDIT": _ExpectingPiece };
 export type _ExpectingPiece = "ExprPiece" | "Token";
 
 type Address = string; // Addresses are stored as IPv4-style strings in JSON 
+
+export function pieceAtIx(pieces: RTLPiece[], index: number[] | null) {
+	for (const i of (index ?? [])) {
+		switch (extractPieceType(pieces[i])) {
+			case "FNCALL":
+				pieces = extractPieceValue(pieces[i]) as RTLPiece[];
+				break;
+			case "LIST":
+				pieces = extractPieceValue(pieces[i]) as RTLPiece[];
+				break;
+			default:
+				return pieces[i]
+		}
+	}
+
+	throw new Error(`Invalid piece address ${index}`);
+}
 
 /**
  * Turns a `RTLPiece` into a `string` concisely describing the kind of piece we 
@@ -63,7 +80,7 @@ export function extractPieceType(piece: RTLPiece): string {
 	throw new Error(`Invalid piece found: ${piece}`);
 }
 
-export function extractPieceValue(piece: RTLPiece): string | undefined {
+export function extractPieceValue(piece: RTLPiece): string | undefined | RTLPiece[] {
 	if (piece === "NOTHING" || piece === "PENDING") return undefined;
 	switch (extractPieceType(piece)) {
 		case "IDENT": return piece.IDENT
@@ -71,6 +88,8 @@ export function extractPieceValue(piece: RTLPiece): string | undefined {
 		case "OP": return piece.OP
 		case "TEXT": return piece.TEXT
 		case "BOOL": return `${piece.BOOL}`
+		case "FNCALL": return piece.FNCALL
+		case "LIST": return piece.LIST
 	}
 	return undefined;
 }

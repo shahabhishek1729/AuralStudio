@@ -292,72 +292,35 @@ pub(crate) enum Piece {
     PENDING,
 }
 
-pub(crate) struct PieceIdx(pub usize);
-impl std::ops::Index<PieceIdx> for Vec<Piece> {
+pub(crate) struct PieceIdx<'a>(pub &'a [usize]);
+impl std::ops::Index<PieceIdx<'_>> for Vec<Piece> {
     type Output = Piece;
 
     fn index(&self, index: PieceIdx) -> &Self::Output {
-        let mut ix = index.0;
-        let mut stack = vec![self];
-
-        while let Some(current) = stack.pop() {
-            for piece in current.iter() {
-                match piece {
-                    Piece::LIST(inner_pieces) => {
-                        if ix < inner_pieces.len() {
-                            // If we found the ix in the inner list
-                            return &inner_pieces[ix];
-                        } else {
-                            // Continue searching in the inner list
-                            stack.push(inner_pieces);
-                        }
-                    }
-                    _ => {
-                        // Check if the ix matches the current piece's position
-                        if ix == 0 {
-                            return piece;
-                        }
-                        // Decrement ix for the next piece
-                        ix -= 1;
-                    }
-                }
+        let mut curr = self;
+        for i in index.0 {
+            match curr[*i] {
+                Piece::LIST(ref args) | Piece::FNCALL(ref args) => curr = args,
+                ref piece => return piece,
             }
         }
-
-        panic!("Index {} out of bounds for piece vector", index.0);
+        unreachable!("Incorrect index address, {:?}, for piece vector", index.0);
     }
 }
 
-impl std::ops::IndexMut<PieceIdx> for Vec<Piece> {
+impl std::ops::IndexMut<PieceIdx<'_>> for Vec<Piece> {
     fn index_mut(&mut self, index: PieceIdx) -> &mut Self::Output {
-        let mut ix = index.0;
-        let mut stack = vec![self];
-
-        while let Some(current) = stack.pop() {
-            for piece in current.iter_mut() {
-                match piece {
-                    Piece::LIST(inner_pieces) => {
-                        if ix < inner_pieces.len() {
-                            // If we found the ix in the inner list
-                            return &mut inner_pieces[ix];
-                        } else {
-                            // Continue searching in the inner list
-                            stack.push(inner_pieces);
-                        }
-                    }
-                    _ => {
-                        // Check if the ix matches the current piece's position
-                        if ix == 0 {
-                            return piece;
-                        }
-                        // Decrement ix for the next piece
-                        ix -= 1;
-                    }
-                }
+        let mut curr = self;
+        for i in index.0 {
+            match curr[*i] {
+                Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => curr = args,
+                ref mut piece => return piece,
             }
         }
-
-        panic!("Index {} out of bounds for piece vector", index.0);
+        unreachable!(
+            "Too many indices {:?} out of bounds for piece vector",
+            index.0
+        );
     }
 }
 

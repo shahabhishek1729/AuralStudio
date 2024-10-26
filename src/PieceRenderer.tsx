@@ -23,13 +23,13 @@ import { useState } from "react";
 export function RenderPiece(
   all_pieces: RTLPiece[],
   i: number,
-  pieceIx: number,
+  pieceIx: number[],
   parentAddr: string,
 ) {
   const piece = all_pieces[i];
   const kind = extractPieceType(piece);
   const first = i === 0;
-  const selected = pieceIx === i;
+  const selected = pieceIx[0] === i;
 
   // Inner wrapper function allows us to key each piece in a node below
   function _RenderPiece() {
@@ -315,7 +315,12 @@ export function RenderOperator({ op_name, selected }) {
 }
 
 export function RenderPending({ chained, selected }) {
-  return Symbol("pending", chained ? "" : "transparent", selected, "...");
+  return (
+    <div style={{ display: "flex", flexDirection: "row" }}>
+      <div style={{ width: "5px" }} />
+      {Symbol("pending", chained ? "" : "transparent", selected, "...")}
+    </div>
+  );
 }
 
 const TOKEN_MAP: token_metadata = {
@@ -341,7 +346,7 @@ export const SYMBOL_MAP: symbol_metadata = {
   text: ["#374f40", "#FFFFFF", 16, 36],
   ident: ["#333333", "#FFFFFF", 16, 36],
   call: ["#179c8a", "#FFFFFF", 16, 36],
-  pending: ["transparent", "#FFFFFF", 16, 36],
+  pending: ["transparent", "#FFFFFF", 16, 25],
 };
 
 const OP_TO_NAME: op_kind = {
@@ -441,7 +446,7 @@ export function Symbol(
         paddingRight: "5px",
       }}
     >
-      {selected ? (
+      {selected && ["text", "constant", "ident", "call"].includes(type) ? (
         <input
           id={`${parentAddr},${i}`}
           style={{

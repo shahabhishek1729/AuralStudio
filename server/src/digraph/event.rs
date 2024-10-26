@@ -47,11 +47,11 @@ impl KeyboardEvent {
                 new_token! {
                     From state, NodeKind::VARDECL => [
                         piece!(IDENT ""), Piece::OP(OpKind::ASSN), piece!(...)
-                    ] @ 0
+                    ] @ vec![0]
                 }
             }
             Command::InsertIf => {
-                new_token! { From state, NodeKind::CONDTL => [piece!(...)] @ 0 < {
+                new_token! { From state, NodeKind::CONDTL => [piece!(...)] @ vec![0] ; {
                  make_node!(line 0 -> NodeKind::CONDTLY []; {
                      make_node!(line 0 -> NodeKind::PENDING [piece!(...)])
                  }),
@@ -66,25 +66,25 @@ impl KeyboardEvent {
                     Command::InsertWhile => NodeKind::WHLLOOP,
                     _ => unreachable!(),
                 };
-                new_token! { From state, kind => [piece!(...)] @ 0 < {
+                new_token! { From state, kind => [piece!(...)] @ vec![0] ; {
                      make_node!(line 0 -> NodeKind::PENDING [piece!(...)])
                 }}
             }
             Command::InsertBreak => new_token! { From state, NodeKind::BREAK => [] },
             Command::InsertContinue => new_token! { From state, NodeKind::CONTINUE => [] },
             Command::InsertReturn => {
-                new_token! { From state, NodeKind::RETURN => [piece!(...)] @ 0 }
+                new_token! { From state, NodeKind::RETURN => [piece!(...)] @ vec![0] }
             }
             Command::InsertOutput => {
-                new_token! { From state, NodeKind::OUTPUT => [piece!(...)] @ 0 }
+                new_token! { From state, NodeKind::OUTPUT => [piece!(...)] @ vec![0] }
             }
             Command::InsertPending => {
-                new_token! { From state, NodeKind::PENDING => [piece!(...)] @ 0 }
+                new_token! { From state, NodeKind::PENDING => [piece!(...)] @ vec![0] }
             }
             Command::InsertImport => {
                 new_token! { From state, NodeKind::GRABPKG => [
                     piece!(IDENT ""), piece!(...) // TODO: Only "from" and "alias" can go here
-                ] @ 0}
+                ] @ vec![0]}
             }
             Command::AddVarName => new_piece(state, piece!(IDENT ""))?,
             Command::AddTrue => new_piece(state, piece!(True))?,
@@ -113,7 +113,7 @@ impl KeyboardEvent {
             Command::Run => todo!(),
             Command::TypeChar(c) => {
                 if c == "Enter" {
-                    let Some(piece_ix) = state.piece_ix else {
+                    let Some(mut piece_ix) = state.piece_ix.clone() else {
                         unreachable!("cannot be in TYPE mode without a `piece_ix`");
                     };
 
@@ -127,7 +127,9 @@ impl KeyboardEvent {
                     // been dropped since its creation (no concurrency), so this is safe.
                     let curr_node = unsafe { &mut **curr_node };
 
-                    if state.piece_ix == Some(0) && curr_node.kind == NodeKind::VARDECL {
+                    if state.piece_ix.as_ref().expect("piece_ix cannot be empty")[0] == 0
+                        && curr_node.kind == NodeKind::VARDECL
+                    {
                         // This was a variable name, so next is another value
                         // TODO: let x at 3 be 2 -> x[3] = 2: How do we allow this?
                         state.mode = ADMode::EDIT(super::state::Expecting::Value);
@@ -136,18 +138,29 @@ impl KeyboardEvent {
                         state.mode = ADMode::EDIT(super::state::Expecting::Op);
                     }
 
-                    if piece_ix == curr_node.pieces.len() - 1 {
-                        state.piece_ix = Some(curr_node.pieces.len());
+                    let piece_ix_len = piece_ix.len() - 1;
+                    if piece_ix[piece_ix_len] == curr_node.pieces.len() - 1 {
+                        // Is valid because we can't be reach this block unless piece_ix.len() == 1
+                        state.piece_ix = Some(vec![curr_node.pieces.len()]);
                         curr_node.pieces.push(piece!(...));
                         return Ok(());
                     }
 
-                    // NOTE: Can be optimized (we don't need to index recursively into lists)
-                    for i in piece_ix..curr_node.pieces.len() {
-                        if curr_node.pieces[PieceIdx(i)] == Piece::PENDING
-                            || curr_node.pieces[PieceIdx(i)] == Piece::IDENT("".into())
+                    let parent_vec = if piece_ix.len() == 1 {
+                        &curr_node.pieces
+                    } else {
+                        match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
+                            Piece::LIST(ref args) | Piece::FNCALL(ref args) => args,
+                            _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
+                        }
+                    };
+
+                    for i in piece_ix[piece_ix_len]..parent_vec.len() {
+                        piece_ix[piece_ix_len] = i;
+                        if curr_node.pieces[PieceIdx(&piece_ix)] == Piece::PENDING
+                            || curr_node.pieces[PieceIdx(&piece_ix)] == Piece::IDENT("".into())
                         {
-                            state.piece_ix = Some(i);
+                            state.piece_ix = Some(piece_ix);
                             break;
                         }
                     }

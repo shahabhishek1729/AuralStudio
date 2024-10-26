@@ -9,7 +9,7 @@ use std::ops::ControlFlow;
 
 #[macro_export]
 macro_rules! new_token {
-    (From $state:ident, $kind:expr => [$($piece:expr),*] $(@ $piece_ix:literal),*) => {{
+    (From $state:ident, $kind:expr => [$($piece:expr),*] $(@ $piece_ix:expr),*) => {{
         let hash = $state.graph.get_hash_mut();
         let Some(curr_node) = hash.get(&$state.block_loc) else {
             return Err(CursorError::AddrNotFound($state.block_loc.clone()));
@@ -24,10 +24,10 @@ macro_rules! new_token {
 
         $state.mode = ADMode::TYPE;
         $state.piece_ix = None;
-        $($state.piece_ix = Some($piece_ix)),*
+        $($state.piece_ix = Some($piece_ix.to_vec())),*
     }};
 
-    (From $state:ident, $kind:expr => [$($piece:expr),*] $(@ $piece_ix:literal),* < {$($node:expr),+}) => {{
+    (From $state:ident, $kind:expr => [$($piece:expr),*] $(@ $piece_ix:expr),* ; {$($node:expr),+}) => {{
         let hash = $state.graph.get_hash_mut();
         let Some(curr_node) = hash.get(&$state.block_loc) else {
             return Err(CursorError::AddrNotFound($state.block_loc.clone()));
@@ -58,7 +58,7 @@ pub(super) fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), Cur
         return Err(CursorError::AddrNotFound(state.block_loc.clone()));
     };
 
-    let Some(piece_ix) = state.piece_ix else {
+    let Some(piece_ix) = state.piece_ix.clone() else {
         unreachable!("Cannot add a new piece without editing a piece first");
     };
 
@@ -74,18 +74,30 @@ pub(super) fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), Cur
                 unreachable!("Cannot insert a piece without being in EDIT mode");
             };
 
-            curr_node.pieces.push(piece!(...));
-            state.piece_ix = Some(piece_ix + 1);
+            // 1. Retrieve parent index
+            // 2. Add a pending node to the parent index
+            // 3. Update index to +1
+            let parent_vec = if piece_ix.len() == 1 {
+                &mut curr_node.pieces
+            } else {
+                match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
+                    Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => args,
+                    _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
+                }
+            };
+
+            let last_piece_ix = piece_ix.len() - 1;
+            state.piece_ix.as_mut().expect("Cannot be empty")[last_piece_ix] =
+                piece_ix[last_piece_ix] + 1;
+            parent_vec.push(piece!(...));
             state.mode = ADMode::EDIT(!expecting);
         }
         Piece::FNCALL(_) | Piece::LIST(_) => {
             state.mode = ADMode::EDIT(Expecting::Value);
-            dbg!(&state.piece_ix);
-            state.piece_ix = Some(piece_ix + 1);
         }
     }
 
-    curr_node.pieces[PieceIdx(piece_ix)] = piece;
+    curr_node.pieces[PieceIdx(&piece_ix)] = piece;
 
     Ok(())
 }
@@ -157,7 +169,7 @@ impl CursorState {
                 };
                 self._insert_fn(&insert_loc_, curr_addr)?;
                 self.mode = ADMode::TYPE;
-                self.piece_ix = Some(0usize);
+                self.piece_ix = Some(vec![0usize]);
                 insert_loc_ // function name must follow
             }
             super::parser::NodeKind::FNDEF if self._at_node() => {
@@ -294,7 +306,7 @@ impl CursorState {
 
     /// Updates a specific piece (typicaly an ident or literal) based on keyboard input (`value`).
     pub(crate) fn update_value(&mut self, value: String) -> Result<(), CursorError> {
-        let Some(piece_ix) = self.piece_ix else {
+        let Some(ref piece_ix) = self.piece_ix else {
             unreachable!("Cannot update a value without editing a piece first");
         };
 
@@ -306,13 +318,13 @@ impl CursorState {
         // SAFETY: This node must be valid because it comes from the current block_loc of the
         // PayloadState. block_loc must point to a node since otherwise we would have returned Err.
         let curr_node = unsafe { &mut **curr_node };
-        let new_piece = match curr_node.pieces[PieceIdx(piece_ix)] {
+        let new_piece = match curr_node.pieces[PieceIdx(&piece_ix)] {
             Piece::IDENT(_) => Piece::IDENT(value),
             Piece::NUMBER(_) => Piece::NUMBER(value.parse::<f64>()?),
             Piece::TEXT(_) => Piece::TEXT(value),
             _ => todo!(),
         };
-        curr_node.pieces[PieceIdx(piece_ix)] = new_piece;
+        curr_node.pieces[PieceIdx(&piece_ix)] = new_piece;
 
         Ok(())
     }

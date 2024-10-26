@@ -162,6 +162,8 @@ pub(crate) enum CursorError {
     InvalidMotion(CursorDir),
     #[error("couldn't find address: {} in the file", .0)]
     AddrNotFound(Address),
+    #[error("found an invalid piece address: {:?}", .0)]
+    PieceAddrNotFound(Vec<usize>),
     #[error("couldn't find parent (whose address should be {}", .0)]
     ParentNotFound(Address),
     #[error("cannot increment an empty address")]

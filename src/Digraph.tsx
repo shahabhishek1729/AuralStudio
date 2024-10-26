@@ -134,7 +134,7 @@ function RenderSubtree(
   addr: string,
   subtreeRoot: RTLNode,
   selectedAddr: string,
-  pieceIx: number | null,
+  pieceIx: number[] | null,
 ): ReactNode {
   return (
     <div key={addr}>
@@ -168,7 +168,7 @@ function RenderBlock(
   address: string,
   subtreeRoot: RTLNode,
   selectedAddr: string,
-  pieceIx: number | null,
+  pieceIx: number[] | null,
   subtreeParent?: RTLNode,
 ): ReactNode {
   const blockAddr =
@@ -216,7 +216,7 @@ function RenderNode(
   node: RTLNode, // The current node to be rendered
   address: string, // The address at which to render it (for div IDs)
   selectedAddr: string, // The address with the cursor (is it this one?)
-  pieceIx: number | null, // The piece being edited (not necessarily in `node`)
+  pieceIx: number[] | null, // The piece being edited (not necessarily in `node`)
   parent?: RTLNode, // This node's parent
   parentIndents: number = 0, // How many times the parent node was indented
   check_blocks: boolean = true, // Used on recursive calls
@@ -309,7 +309,7 @@ function RenderNode(
           <Token
             token_type={token_type[node.kind as keyof typeof token_type]}
             puzzle_color={
-              node.address === selectedAddr && pieceIx === 0
+              node.address === selectedAddr && (pieceIx ?? [1])[0] === 0
                 ? "white"
                 : node.pieces.length > 0
                   ? getColor(node.pieces[0])
@@ -326,7 +326,7 @@ function RenderNode(
             RenderPiece(
               node.pieces,
               ix,
-              node.address === selectedAddr ? pieceIx ?? -1 : -1,
+              node.address === selectedAddr ? pieceIx ?? [-1] : [-1],
               node.address,
             ),
           )}

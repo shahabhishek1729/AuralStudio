@@ -258,7 +258,7 @@ pub(crate) struct CursorState {
     pub(crate) node_loc: Address,
     pub(super) mode: ADMode,
     pub(super) graph: Vec<Node>,
-    pub(super) piece_ix: Option<usize>,
+    pub(super) piece_ix: Option<Vec<usize>>,
 }
 
 impl Default for CursorState {
