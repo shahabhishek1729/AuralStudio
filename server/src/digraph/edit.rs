@@ -77,16 +77,17 @@ pub(super) fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), Cur
             // 1. Retrieve parent index
             // 2. Add a pending node to the parent index
             // 3. Update index to +1
+            let last_piece_ix = piece_ix.len() - 1;
             let parent_vec = if piece_ix.len() == 1 {
                 &mut curr_node.pieces
             } else {
-                match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
+                dbg!(&curr_node.pieces);
+                match curr_node.pieces[PieceIdx(&piece_ix[0..last_piece_ix])] {
                     Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => args,
                     _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
                 }
             };
 
-            let last_piece_ix = piece_ix.len() - 1;
             state.piece_ix.as_mut().expect("Cannot be empty")[last_piece_ix] =
                 piece_ix[last_piece_ix] + 1;
             parent_vec.push(piece!(...));
@@ -94,6 +95,8 @@ pub(super) fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), Cur
         }
         Piece::FNCALL(_) | Piece::LIST(_) => {
             state.mode = ADMode::EDIT(Expecting::Value);
+            // TODO: FNCALL diverges?
+            state.piece_ix.as_mut().expect("Cannot be empty").push(1);
         }
     }
 

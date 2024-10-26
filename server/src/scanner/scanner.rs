@@ -242,7 +242,6 @@ impl Scanner {
 
     fn scan_once_(&mut self, flags: &mut ScannerFlags) -> Result<ScannerFlags, String> {
         let mut next = self.advance_();
-        dbg!(format!("Looking at {next}"));
 
         let ScannerFlags {
             escaped,
@@ -270,7 +269,6 @@ impl Scanner {
         }
 
         while *fn_args > 0usize {
-            dbg!(format!("The current arg was {}", next));
             // while !(n == "" || n == "\n" || n == " ") && !self.end_reached_() {
             if next == "and" {
                 next = self.advance_();

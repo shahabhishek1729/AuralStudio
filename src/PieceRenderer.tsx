@@ -249,17 +249,19 @@ export function RenderArgs(
   pieces: RTLPiece[],
   chained: boolean,
   myIx: number,
-  pieceIx: number,
+  pieceIx: number[],
   parentAddr: string,
 ) {
   const colorKind = kind === "list" ? "constant" : kind;
   const name = kind === "call" ? pieces[0].IDENT : "list";
+
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "row",
-        border: myIx === pieceIx ? "2px solid white" : "",
+        border:
+          myIx === pieceIx[0] && pieceIx.length === 0 ? "2px solid white" : "",
       }}
     >
       {ChainSymbol(colorKind, chained, false, name)}
@@ -274,12 +276,7 @@ export function RenderArgs(
         {pieces.slice(1).map((_, i: number) => (
           <div key={i} style={{ display: "flex" }}>
             <div style={{ transform: "scale(0.9)" }}>
-              {RenderPiece(
-                Array(myIx).fill("NOTHING").concat(pieces),
-                myIx + i + 1,
-                pieceIx,
-                parentAddr,
-              )}
+              {RenderPiece(pieces, i + 1, pieceIx.slice(1), parentAddr)}
             </div>
             {elementDone(pieces, i + 1) ? (
               <div

@@ -298,8 +298,12 @@ impl std::ops::Index<PieceIdx<'_>> for Vec<Piece> {
 
     fn index(&self, index: PieceIdx) -> &Self::Output {
         let mut curr = self;
-        for i in index.0 {
-            match curr[*i] {
+        for (i, curr_ix) in index.0.iter().enumerate() {
+            if i == index.0.len() - 1 {
+                return &curr[*curr_ix];
+            }
+
+            match curr[*curr_ix] {
                 Piece::LIST(ref args) | Piece::FNCALL(ref args) => curr = args,
                 ref piece => return piece,
             }
@@ -311,8 +315,12 @@ impl std::ops::Index<PieceIdx<'_>> for Vec<Piece> {
 impl std::ops::IndexMut<PieceIdx<'_>> for Vec<Piece> {
     fn index_mut(&mut self, index: PieceIdx) -> &mut Self::Output {
         let mut curr = self;
-        for i in index.0 {
-            match curr[*i] {
+        for (i, curr_ix) in index.0.iter().enumerate() {
+            if i == index.0.len() - 1 {
+                return &mut curr[*curr_ix];
+            }
+
+            match curr[*curr_ix] {
                 Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => curr = args,
                 ref mut piece => return piece,
             }
@@ -322,6 +330,20 @@ impl std::ops::IndexMut<PieceIdx<'_>> for Vec<Piece> {
             index.0
         );
     }
+}
+
+#[test]
+fn indices_work() {
+    let piece_vec = vec![
+        piece!(IDENT "hi"),
+        Piece::OP(OpKind::ASSN),
+        piece!(LIST [piece!(IDENT "list"), piece!(...)]),
+    ];
+
+    assert_eq!(
+        piece_vec[PieceIdx(&[2])],
+        piece!(LIST [piece!(IDENT "list"), piece!(...)])
+    )
 }
 
 /// An enum of every kind of operator supported in Rattle
