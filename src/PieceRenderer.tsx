@@ -27,6 +27,7 @@ export function RenderPiece(
   i: number,
   pieceIx: number[],
   parentAddr: string,
+  pieceIxFull?: number[],
 ) {
   const piece = all_pieces[i];
   const kind = extractPieceType(piece);
@@ -48,6 +49,8 @@ export function RenderPiece(
             chained={first}
             selected={selected}
             parentAddr={parentAddr}
+            pieceIx={pieceIx}
+            pieceIxFull={pieceIxFull || pieceIx}
           />
         );
       case "NUMBER":
@@ -159,6 +162,8 @@ export function RenderIdent({
   chained,
   selected,
   parentAddr,
+  pieceIx,
+  pieceIxFull,
 }) {
   const puzzle_color = chained ? "" : "transparent";
   const idxFollows = i < pieces.length - 2 && pieces[i + 1].OP === "AT";
@@ -188,7 +193,7 @@ export function RenderIdent({
     >
       {selected ? (
         <input
-          id={`${parentAddr},${i}`}
+          id={`${parentAddr},${selected ? (pieceIxFull ?? []).join(",") : i}`}
           style={{
             fontFamily: "JetBrains Mono",
             textAlign: "start",
@@ -278,7 +283,13 @@ export function RenderArgs(
         {pieces.slice(1).map((_, i: number) => (
           <div key={i} style={{ display: "flex" }}>
             <div style={{ transform: "scale(0.9)" }}>
-              {RenderPiece(pieces, i + 1, pieceIx.slice(1), parentAddr)}
+              {RenderPiece(
+                pieces,
+                i + 1,
+                pieceIx.slice(1),
+                parentAddr,
+                pieceIx,
+              )}
             </div>
             {elementDone(pieces, i + 1) ? (
               <div
