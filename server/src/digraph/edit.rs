@@ -87,7 +87,6 @@ pub(super) fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), Cur
             let parent_vec = if piece_ix.len() == 1 {
                 &mut curr_node.pieces
             } else {
-                dbg!(&curr_node.pieces);
                 match curr_node.pieces[PieceIdx(&piece_ix[0..last_piece_ix])] {
                     Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => args,
                     _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
@@ -104,10 +103,13 @@ pub(super) fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), Cur
             });
             state.mode = ADMode::EDIT(!expecting);
         }
-        Piece::FNCALL(_) | Piece::LIST(_) => {
+        Piece::LIST(_) => {
             state.mode = ADMode::EDIT(Expecting::Value);
-            // TODO: FNCALL diverges?
             state.piece_ix.as_mut().expect("Cannot be empty").push(1);
+        }
+        Piece::FNCALL(_) => {
+            state.mode = ADMode::TYPE;
+            state.piece_ix.as_mut().expect("Cannot be empty").push(0);
         }
     }
 
@@ -371,6 +373,9 @@ impl CursorState {
             let parent_vec = if piece_ix.len() == 1 {
                 &mut curr_node.pieces
             } else {
+                if parent_vec.len() == 1 {
+                    self.mode = ADMode::EDIT(Expecting::Value)
+                }
                 match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
                     Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => args,
                     _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
@@ -383,7 +388,9 @@ impl CursorState {
                 }
             }
 
-            self.mode = ADMode::EDIT(Expecting::Op); // Must be OP after a value
+            if parent_vec.len() > 1 {
+                self.mode = ADMode::EDIT(Expecting::Op); // Must be OP after a value
+            }
             parent_vec.push(piece!(..+));
             return Ok(());
         }

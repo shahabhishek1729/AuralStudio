@@ -60,7 +60,6 @@ impl KeyboardEvent {
                             _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
                         };
 
-                    dbg!(&parent_vec);
                     if parent_vec.last() == Some(&piece!(..#)) {
                         parent_vec.pop();
                     }
@@ -123,9 +122,7 @@ impl KeyboardEvent {
             Command::AddText => new_piece(state, piece!(TEXT ""))?,
             Command::AddNum => new_piece(state, piece!(# 0))?,
             Command::AddList => new_piece(state, piece!(LIST [piece!(IDENT "list"), piece!(..#)]))?,
-            Command::AddCall => {
-                new_piece(state, Piece::FNCALL(vec![piece!(IDENT ""), piece!(..#)]))?
-            }
+            Command::AddCall => new_piece(state, Piece::FNCALL(vec![piece!(IDENT "")]))?,
             Command::ChainAdd => new_piece(state, Piece::OP(OpKind::ADD))?,
             Command::ChainSub => new_piece(state, Piece::OP(OpKind::SUB))?,
             Command::ChainMul => new_piece(state, Piece::OP(OpKind::MUL))?,

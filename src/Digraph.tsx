@@ -325,7 +325,7 @@ function RenderNode(
           {node.pieces.map((_, ix) =>
             RenderPiece(
               node.pieces,
-              ix,
+              [ix],
               node.address === selectedAddr ? pieceIx ?? [-1] : [-1],
               node.address,
             ),

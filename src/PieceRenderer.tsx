@@ -19,25 +19,27 @@ import {
   extractPieceValue,
 } from "./types";
 import { useState } from "react";
+import { arrayEquals } from "./utils";
 
 const OP_TYPES = ["OP", "PendingOp"];
 
 export function RenderPiece(
   all_pieces: RTLPiece[],
-  i: number,
+  i: number[],
   pieceIx: number[],
   parentAddr: string,
   pieceIxFull?: number[], // Only used in RenderArgs to prevent slicing addrs.
 ) {
-  const piece = all_pieces[i];
+  const piece = all_pieces[i[i.length - 1]];
   const kind = extractPieceType(piece);
-  const first = i === 0;
-  const selected = pieceIx[0] === i;
+  const first = i[0] === 0;
+  const selected = arrayEquals(pieceIx, i);
 
   // Inner wrapper function allows us to key each piece in a node below
   function _RenderPiece() {
     // Don't re-render indices that have already been compressed into the ident
-    if (i > 0 && all_pieces[i - 1]["OP"] === "AT") return <></>;
+    if (i[i.length - 1] > 0 && all_pieces[i[i.length - 1] - 1]["OP"] === "AT")
+      return <></>;
 
     switch (kind) {
       case "IDENT":
@@ -169,9 +171,10 @@ export function RenderIdent({
   parentAddr,
   pieceIx,
 }) {
+  const i_ = i[i.length - 1];
   const puzzle_color = chained ? "" : "transparent";
-  const idxFollows = i < pieces.length - 2 && pieces[i + 1].OP === "AT";
-  let idx = idxFollows ? ` #${extractPieceValue(pieces[i + 2])}` : "";
+  const idxFollows = i_ < pieces.length - 2 && pieces[i_ + 1].OP === "AT";
+  let idx = idxFollows ? ` #${extractPieceValue(pieces[i_ + 2])}` : "";
 
   const background = selected ? "white" : SYMBOL_MAP["ident"][0];
   const foreground = selected ? "black" : SYMBOL_MAP["ident"][1];
@@ -259,7 +262,7 @@ export function RenderArgs(
   kind: string,
   pieces: RTLPiece[],
   chained: boolean,
-  myIx: number,
+  myIx: number[],
   pieceIx: number[],
   parentAddr: string,
 ) {
@@ -271,11 +274,17 @@ export function RenderArgs(
       style={{
         display: "flex",
         flexDirection: "row",
-        border:
-          myIx === pieceIx[0] && pieceIx.length === 0 ? "2px solid white" : "",
+        border: arrayEquals(myIx, pieceIx) ? "2px solid white" : "",
       }}
     >
-      {ChainSymbol(colorKind, chained, false, name)}
+      {ChainSymbol(
+        colorKind,
+        chained,
+        false,
+        parentAddr,
+        arrayEquals(pieceIx.slice(0, myIx.length), myIx) ? pieceIx : [],
+        name,
+      )}
       <div
         style={{
           border: `1px solid ${SYMBOL_MAP[colorKind as keyof symbol_metadata][0]}`,
@@ -289,8 +298,8 @@ export function RenderArgs(
             <div style={{ transform: "scale(0.9)", height: "fit-content" }}>
               {RenderPiece(
                 pieces,
-                i + 1,
-                pieceIx.slice(1),
+                [...myIx, i + 1],
+                pieceIx,
                 parentAddr,
                 pieceIx,
               )}
@@ -308,7 +317,7 @@ export function RenderArgs(
           </div>
         ))}
       </div>
-      {ChainSymbol(colorKind, chained, true, "done")}
+      {ChainSymbol(colorKind, chained, true, parentAddr, [], "done")}
     </div>
   );
 }
@@ -389,16 +398,28 @@ export function ChainSymbol(
   type: string,
   chained: boolean,
   start: boolean,
+  parentAddr: string,
+  pieceIx: number[],
   symbol?: string,
 ) {
   let radii = "10px 0px 0px 10px";
   if (chained && !start) radii = "0px 0px 0px 0px";
   else if (start) radii = "0px 10px 10px 0px";
 
+  const selected = pieceIx[pieceIx.length - 1] === 0;
+  const background = selected
+    ? "white"
+    : SYMBOL_MAP[type as keyof symbol_metadata][0];
+  const foreground = selected
+    ? "black"
+    : SYMBOL_MAP[type as keyof symbol_metadata][1];
+
+  const [value, setValue] = useState("");
+
   return (
     <div
       style={{
-        background: SYMBOL_MAP[type as keyof symbol_metadata][0],
+        background: background,
         height: `${SYMBOL_MAP[type as keyof symbol_metadata][3]}px`,
         width: "fit-content",
         minWidth: `${SYMBOL_MAP[type as keyof symbol_metadata][3] - 10}px`,
@@ -413,16 +434,34 @@ export function ChainSymbol(
         paddingBottom: "1px",
       }}
     >
-      <p
-        style={{
-          fontFamily: "JetBrains Mono",
-          textAlign: "start",
-          color: SYMBOL_MAP[type as keyof symbol_metadata][1],
-          fontSize: `${SYMBOL_MAP[type as keyof symbol_metadata][2]}px`,
-        }}
-      >
-        {symbol}
-      </p>
+      {selected ? (
+        <input
+          id={`${parentAddr},${pieceIx}`}
+          style={{
+            fontFamily: "JetBrains Mono",
+            textAlign: "start",
+            color: foreground,
+            background: "white",
+            fontSize: `${SYMBOL_MAP[type as keyof symbol_metadata][2]}px`,
+            padding: "0px",
+            width: `${value.length + 2}ch`,
+            boxShadow: "none",
+          }}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+        />
+      ) : (
+        <p
+          style={{
+            fontFamily: "JetBrains Mono",
+            textAlign: "start",
+            color: SYMBOL_MAP[type as keyof symbol_metadata][1],
+            fontSize: `${SYMBOL_MAP[type as keyof symbol_metadata][2]}px`,
+          }}
+        >
+          {symbol}
+        </p>
+      )}
     </div>
   );
 }
