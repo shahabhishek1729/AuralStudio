@@ -10,7 +10,11 @@ use crate::new_token;
 use crate::{make_node, piece};
 use serde_derive::{Deserialize, Serialize};
 
-const PENDING_PIECES: &'static [Piece; 2] = &[Piece::PENDING, Piece::IDENT(String::new())];
+const PENDING_PIECES: &'static [Piece; 3] = &[
+    Piece::PendingVal,
+    Piece::PendingOp,
+    Piece::IDENT(String::new()),
+];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct KeyboardEvent {
@@ -49,44 +53,44 @@ impl KeyboardEvent {
             Command::InsertVar => {
                 new_token! {
                     From state, NodeKind::VARDECL => [
-                        piece!(IDENT ""), Piece::OP(OpKind::ASSN), piece!(...)
+                        piece!(IDENT ""), Piece::OP(OpKind::ASSN), piece!(..#)
                     ] @ vec![0]
                 }
             }
             Command::InsertIf => {
-                new_token! { From state, NodeKind::CONDTL => [piece!(...)] @ vec![0] ; {
+                new_token! { From state, NodeKind::CONDTL => [piece!(..#)] @ vec![0] ; {
                  make_node!(line 0 -> NodeKind::CONDTLY []; {
-                     make_node!(line 0 -> NodeKind::PENDING [piece!(...)])
+                     make_node!(line 0 -> NodeKind::PENDING [piece!(..#)])
                  }),
                  make_node!(line 0 -> NodeKind::CONDTLN []; {
-                     make_node!(line 0 -> NodeKind::PENDING [piece!(...)])
+                     make_node!(line 0 -> NodeKind::PENDING [piece!(..#)])
                  })
                 }}
             }
-            Command::InsertFor | Command::InsertWhile => {
-                let kind = match *command {
-                    Command::InsertFor => NodeKind::FORLOOP,
-                    Command::InsertWhile => NodeKind::WHLLOOP,
-                    _ => unreachable!(),
-                };
-                new_token! { From state, kind => [piece!(...)] @ vec![0] ; {
-                     make_node!(line 0 -> NodeKind::PENDING [piece!(...)])
+            Command::InsertFor => {
+                new_token! { From state, NodeKind::FORLOOP => [piece!(..#), Piece::OP(OpKind::IN), piece!(..#)] @ vec![0] ; {
+                     make_node!(line 0 -> NodeKind::PENDING [piece!(..#)])
+                }}
+            }
+            Command::InsertWhile => {
+                new_token! { From state, NodeKind::WHLLOOP => [piece!(..#)] @ vec![0] ; {
+                     make_node!(line 0 -> NodeKind::PENDING [piece!(..#)])
                 }}
             }
             Command::InsertBreak => new_token! { From state, NodeKind::BREAK => [] },
             Command::InsertContinue => new_token! { From state, NodeKind::CONTINUE => [] },
             Command::InsertReturn => {
-                new_token! { From state, NodeKind::RETURN => [piece!(...)] @ vec![0] }
+                new_token! { From state, NodeKind::RETURN => [piece!(..#)] @ vec![0] }
             }
             Command::InsertOutput => {
-                new_token! { From state, NodeKind::OUTPUT => [piece!(...)] @ vec![0] }
+                new_token! { From state, NodeKind::OUTPUT => [piece!(..#)] @ vec![0] }
             }
             Command::InsertPending => {
-                new_token! { From state, NodeKind::PENDING => [piece!(...)] @ vec![0] }
+                new_token! { From state, NodeKind::PENDING => [piece!(..#)] @ vec![0] }
             }
             Command::InsertImport => {
                 new_token! { From state, NodeKind::GRABPKG => [
-                    piece!(IDENT ""), piece!(...) // TODO: Only "from" and "alias" can go here
+                    piece!(IDENT ""), piece!(..#) // TODO: Only "from" and "alias" can go here
                 ] @ vec![0]}
             }
             Command::AddVarName => new_piece(state, piece!(IDENT ""))?,
@@ -95,8 +99,10 @@ impl KeyboardEvent {
             Command::AddNothing => new_piece(state, piece!())?,
             Command::AddText => new_piece(state, piece!(TEXT ""))?,
             Command::AddNum => new_piece(state, piece!(# 0))?,
-            Command::AddList => new_piece(state, piece!(LIST [piece!(IDENT "list"), piece!(...)]))?,
-            Command::AddCall => new_piece(state, Piece::FNCALL(vec![piece!(...)]))?,
+            Command::AddList => new_piece(state, piece!(LIST [piece!(IDENT "list"), piece!(..#)]))?,
+            Command::AddCall => {
+                new_piece(state, Piece::FNCALL(vec![piece!(IDENT ""), piece!(..#)]))?
+            }
             Command::ChainAdd => new_piece(state, Piece::OP(OpKind::ADD))?,
             Command::ChainSub => new_piece(state, Piece::OP(OpKind::SUB))?,
             Command::ChainMul => new_piece(state, Piece::OP(OpKind::MUL))?,
@@ -113,6 +119,7 @@ impl KeyboardEvent {
             Command::ChainIdx => new_piece(state, Piece::OP(OpKind::AT))?,
             Command::ChainIn => new_piece(state, Piece::OP(OpKind::IN))?,
             Command::ChainDot => new_piece(state, Piece::OP(OpKind::DOT))?,
+            Command::CommitChunk => todo!(),
             Command::Run => todo!(),
             Command::TypeChar(c) => {
                 if c == "Enter" {
@@ -159,7 +166,7 @@ impl KeyboardEvent {
                         }
 
                         state.mode = ADMode::EDIT(Expecting::Op); // Must be OP after a value
-                        parent_vec.push(piece!(...));
+                        parent_vec.push(piece!(..+));
                         return Ok(());
                     }
 
@@ -172,10 +179,10 @@ impl KeyboardEvent {
                         if PENDING_PIECES.contains(&curr_node.pieces[PieceIdx(&piece_ix)]) {
                             state.piece_ix = Some(piece_ix);
                             match &parent_vec[i - 1] {
-                                Piece::OP(_) => state.mode = ADMode::EDIT(Expecting::Value),
                                 piece @ _ if PENDING_PIECES.contains(piece) => {
                                     unreachable!("should have reached earlier")
                                 }
+                                Piece::OP(_) => state.mode = ADMode::EDIT(Expecting::Value),
                                 _ => state.mode = ADMode::EDIT(Expecting::Op),
                             }
                             break;

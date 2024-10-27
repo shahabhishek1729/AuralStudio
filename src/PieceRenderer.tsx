@@ -20,7 +20,7 @@ import {
 } from "./types";
 import { useState } from "react";
 
-const OP_TYPES = ["OP"];
+const OP_TYPES = ["OP", "PendingOp"];
 
 export function RenderPiece(
   all_pieces: RTLPiece[],
@@ -109,8 +109,14 @@ export function RenderPiece(
             parentAddr={parentAddr}
           />
         );
-      case "PENDING":
-        return <RenderPending chained={first} selected={selected} />;
+      case "PendingVal":
+        return (
+          <RenderPending chained={first} selected={selected} kind={kind} />
+        );
+      case "PendingOp":
+        return (
+          <RenderPending chained={first} selected={selected} kind={kind} />
+        );
       default:
         throw new Error("Invalid piece found!");
     }
@@ -292,7 +298,7 @@ export function RenderArgs(
             {elementDone(pieces, i + 1) ? (
               <div
                 style={{
-                  height: piece === "PENDING" ? "25px" : "36px",
+                  height: piece === "PendingOp" ? "25px" : "36px",
                   width: "1px",
                   backgroundColor:
                     SYMBOL_MAP[colorKind as keyof symbol_metadata][0],
@@ -322,11 +328,11 @@ export function RenderOperator({ op_name, selected }) {
   );
 }
 
-export function RenderPending({ chained, selected }) {
+export function RenderPending({ chained, selected, kind }) {
   return (
     <div style={{ display: "flex", flexDirection: "row" }}>
       <div style={{ width: "5px" }} />
-      {Symbol("pending", chained ? "" : "transparent", selected, "...")}
+      {Symbol(kind, chained ? "" : "transparent", selected, "...")}
     </div>
   );
 }
@@ -354,7 +360,8 @@ export const SYMBOL_MAP: symbol_metadata = {
   text: ["#374f40", "#FFFFFF", 16, 36],
   ident: ["#333333", "#FFFFFF", 16, 36],
   call: ["#179c8a", "#FFFFFF", 16, 36],
-  pending: ["transparent", "#FFFFFF", 16, 25],
+  PendingVal: ["transparent", "#FFFFFF", 16, 36],
+  PendingOp: ["transparent", "#FFFFFF", 16, 25],
 };
 
 const OP_TO_NAME: op_kind = {

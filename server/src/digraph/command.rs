@@ -52,6 +52,7 @@ pub(super) enum Command<'a> {
     ChainIdx,
     EditMode,
     ViewMode,
+    CommitChunk,
     Run,
     NULL,
     TypeChar(&'a str),
@@ -112,6 +113,7 @@ const OP_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "c" => Command::ChainDot,
     "b" => Command::ChainIdx,
     "Escape" => Command::ViewMode,
+    "Enter" => Command::CommitChunk,
 };
 
 impl<'a> Command<'a> {

@@ -9,8 +9,8 @@ export interface RTLNode {
 }
 
 // There are several kinds of pieces in a digraph, as seen below.
-// All but "NOTHING" and "PENDING" store internal data.
-export type RTLPiece = "NOTHING" | "PENDING" | _PieceInterface;
+// All but "NOTHING" and Pending* store internal data.
+export type RTLPiece = "NOTHING" | "PendingVal" | "PendingOp" | _PieceInterface;
 interface _PieceInterface {
 	IDENT?: string,
 	NUMBER?: number,
@@ -72,7 +72,8 @@ export function pieceAtIx(pieces: RTLPiece[], index: number[] | null) {
  * @returns {string} A string-ified form of the piece
  */
 export function extractPieceType(piece: RTLPiece): string {
-	if (piece === "NOTHING" || piece === "PENDING") return piece;
+	if (piece === "NOTHING" || piece === "PendingVal" || piece === "PendingOp") return piece;
+
 	const types = ["IDENT", "NUMBER", "OP", "TEXT", "BOOL", "FNCALL", "LIST"];
 	for (const type_ of types) {
 		if (type_ in piece) return type_;
@@ -81,7 +82,7 @@ export function extractPieceType(piece: RTLPiece): string {
 }
 
 export function extractPieceValue(piece: RTLPiece): string | undefined | RTLPiece[] {
-	if (piece === "NOTHING" || piece === "PENDING") return undefined;
+	if (piece === "NOTHING" || piece === "PendingOp" || piece === "PendingVal") return undefined;
 	switch (extractPieceType(piece)) {
 		case "IDENT": return piece.IDENT
 		case "NUMBER": return `${piece.NUMBER}`
@@ -101,7 +102,8 @@ export interface symbol_metadata {
   text: [string, string, number, number];
   ident: [string, string, number, number];
   call: [string, string, number, number];
-  pending: [string, string, number, number];
+  PendingVal: [string, string, number, number];
+  PendingOp: [string, string, number, number];
 }
 
 export interface token_metadata {

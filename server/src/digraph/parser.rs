@@ -36,9 +36,13 @@ macro_rules! piece {
         use crate::digraph::parser::Piece;
         Piece::NOTHING
     }};
-    (...) => {{
+    (..#) => {{
         use crate::digraph::parser::Piece;
-        Piece::PENDING
+        Piece::PendingVal
+    }};
+    (..+) => {{
+        use crate::digraph::parser::Piece;
+        Piece::PendingOp
     }};
 }
 
@@ -288,8 +292,10 @@ pub(crate) enum Piece {
     FNCALL(Vec<Piece>),
     /// A list
     LIST(Vec<Piece>),
-    /// Being edited
-    PENDING,
+    /// Being edited (value)
+    PendingVal,
+    /// Being edited (operator)
+    PendingOp,
 }
 
 pub(crate) struct PieceIdx<'a>(pub &'a [usize]);
@@ -337,14 +343,14 @@ fn indices_work() {
     let piece_vec = vec![
         piece!(IDENT "hi"),
         Piece::OP(OpKind::ASSN),
-        piece!(LIST [piece!(IDENT "list"), piece!(...)]),
+        piece!(LIST [piece!(IDENT "list"), piece!(..#)]),
     ];
 
     assert_eq!(piece_vec[PieceIdx(&[2, 0])], piece!(IDENT "list"));
-    assert_eq!(piece_vec[PieceIdx(&[2, 1])], piece!(...));
+    assert_eq!(piece_vec[PieceIdx(&[2, 1])], piece!(..#));
     assert_eq!(
         piece_vec[PieceIdx(&[2])],
-        piece!(LIST [piece!(IDENT "list"), piece!(...)])
+        piece!(LIST [piece!(IDENT "list"), piece!(..#)])
     )
 }
 
@@ -676,7 +682,7 @@ impl Parser {
                         kind: NodeKind::PENDING,
                         line,
                         children: vec![],
-                        pieces: vec![Piece::PENDING],
+                        pieces: vec![Piece::PendingVal],
                         addr: Address::new(vec![]),
                         rtl: Some("pretend".into()),
                         ..Default::default()

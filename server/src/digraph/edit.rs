@@ -69,7 +69,7 @@ pub(super) fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), Cur
 
     match piece {
         Piece::IDENT(_) | Piece::TEXT(_) | Piece::NUMBER(_) => state.mode = ADMode::TYPE,
-        Piece::BOOL(_) | Piece::NOTHING | Piece::PENDING | Piece::OP(_) => {
+        Piece::BOOL(_) | Piece::NOTHING | Piece::PendingVal | Piece::PendingOp | Piece::OP(_) => {
             let ADMode::EDIT(expecting) = state.mode else {
                 unreachable!("Cannot insert a piece without being in EDIT mode");
             };
@@ -90,7 +90,12 @@ pub(super) fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), Cur
 
             state.piece_ix.as_mut().expect("Cannot be empty")[last_piece_ix] =
                 piece_ix[last_piece_ix] + 1;
-            parent_vec.push(piece!(...));
+
+            parent_vec.push(match expecting {
+                Expecting::Op => piece!(..#),
+                Expecting::Value => piece!(..+),
+                Expecting::Token => unreachable!("cannot manually add a token piece"),
+            });
             state.mode = ADMode::EDIT(!expecting);
         }
         Piece::FNCALL(_) | Piece::LIST(_) => {
@@ -298,7 +303,7 @@ impl CursorState {
             line: 0, // TODO: How to increment all subsequent line numbers efficiently?
             children: vec![],
             kind: NodeKind::PENDING,
-            pieces: vec![Piece::PENDING],
+            pieces: vec![Piece::PendingVal],
             addr: at_addr.clone(),
             parent_addr: from_addr,
             rtl: Some("pretend".into()),
