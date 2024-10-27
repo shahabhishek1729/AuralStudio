@@ -20,14 +20,14 @@ import {
 } from "./types";
 import { useState } from "react";
 
-const OP_TYPES = ["OP", "PENDING"];
+const OP_TYPES = ["OP"];
 
 export function RenderPiece(
   all_pieces: RTLPiece[],
   i: number,
   pieceIx: number[],
   parentAddr: string,
-  pieceIxFull?: number[],
+  pieceIxFull?: number[], // Only used in RenderArgs to prevent slicing addrs.
 ) {
   const piece = all_pieces[i];
   const kind = extractPieceType(piece);
@@ -49,15 +49,14 @@ export function RenderPiece(
             chained={first}
             selected={selected}
             parentAddr={parentAddr}
-            pieceIx={pieceIx}
-            pieceIxFull={pieceIxFull || pieceIx}
+            pieceIx={pieceIxFull || pieceIx}
           />
         );
       case "NUMBER":
         return (
           <RenderNumber
             num={piece["NUMBER" as keyof RTLPiece]}
-            i={i}
+            pieceIx={pieceIxFull || pieceIx}
             chained={first}
             selected={selected}
             parentAddr={parentAddr}
@@ -74,7 +73,7 @@ export function RenderPiece(
         return (
           <RenderText
             text={piece["TEXT" as keyof RTLPiece]}
-            i={i}
+            pieceIx={pieceIxFull || pieceIx}
             chained={first}
             selected={selected}
             parentAddr={parentAddr}
@@ -120,14 +119,14 @@ export function RenderPiece(
   return <div key={i}>{_RenderPiece()}</div>;
 }
 
-export function RenderNumber({ num, i, chained, selected, parentAddr }) {
+export function RenderNumber({ num, pieceIx, chained, selected, parentAddr }) {
   return Symbol(
     "constant",
     chained ? "" : "transparent",
     selected,
     num.toString(),
     parentAddr,
-    i,
+    pieceIx,
   );
 }
 
@@ -140,14 +139,14 @@ export function RenderBoolean({ bool, chained, selected }) {
   );
 }
 
-export function RenderText({ text, i, chained, selected, parentAddr }) {
+export function RenderText({ text, pieceIx, chained, selected, parentAddr }) {
   return Symbol(
     "text",
     chained ? "" : "transparent",
     selected,
     text,
     parentAddr,
-    i,
+    pieceIx,
   );
 }
 
@@ -163,7 +162,6 @@ export function RenderIdent({
   selected,
   parentAddr,
   pieceIx,
-  pieceIxFull,
 }) {
   const puzzle_color = chained ? "" : "transparent";
   const idxFollows = i < pieces.length - 2 && pieces[i + 1].OP === "AT";
@@ -193,7 +191,7 @@ export function RenderIdent({
     >
       {selected ? (
         <input
-          id={`${parentAddr},${selected ? (pieceIxFull ?? []).join(",") : i}`}
+          id={`${parentAddr},${selected ? (pieceIx ?? []).join(",") : i}`}
           style={{
             fontFamily: "JetBrains Mono",
             textAlign: "start",
@@ -280,9 +278,9 @@ export function RenderArgs(
           alignItems: "center",
         }}
       >
-        {pieces.slice(1).map((_, i: number) => (
+        {pieces.slice(1).map((piece, i: number) => (
           <div key={i} style={{ display: "flex" }}>
-            <div style={{ transform: "scale(0.9)" }}>
+            <div style={{ transform: "scale(0.9)", height: "fit-content" }}>
               {RenderPiece(
                 pieces,
                 i + 1,
@@ -294,7 +292,7 @@ export function RenderArgs(
             {elementDone(pieces, i + 1) ? (
               <div
                 style={{
-                  height: "36px",
+                  height: piece === "PENDING" ? "25px" : "36px",
                   width: "1px",
                   backgroundColor:
                     SYMBOL_MAP[colorKind as keyof symbol_metadata][0],
@@ -428,7 +426,7 @@ export function Symbol(
   selected: boolean,
   symbol?: string,
   parentAddr?: string,
-  i?: number,
+  pieceIx?: number[],
 ) {
   const background = selected
     ? "white"
@@ -458,7 +456,7 @@ export function Symbol(
     >
       {selected && ["text", "constant", "ident", "call"].includes(type) ? (
         <input
-          id={`${parentAddr},${i}`}
+          id={`${parentAddr},${pieceIx}`}
           style={{
             fontFamily: "JetBrains Mono",
             textAlign: "start",
