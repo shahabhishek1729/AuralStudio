@@ -306,7 +306,6 @@ impl Scanner {
         }
 
         while next_eq!(self, "of") {
-            dbg!(format!("The next after {} is an of", next));
             let is_def = self.tokens.len() >= 1
                 && self.tokens[self.tokens.len() - 1].rtl_token == RTLToken::FunctionIdentifier;
 
@@ -420,7 +419,6 @@ impl Scanner {
                 );
             } else {
                 for _ in 0..final_is[0] - 1 {
-                    dbg!("One iter");
                     self.advance_();
                 }
                 self.add_token_(tokens[0]);

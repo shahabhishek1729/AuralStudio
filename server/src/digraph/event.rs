@@ -1,4 +1,5 @@
 use super::parser::{NodeKind, Piece, PieceIdx};
+use super::state::Expecting;
 use super::state::{ADMode, CursorError};
 use crate::digraph::address::Addressable;
 use crate::digraph::command::Command;
@@ -8,6 +9,8 @@ use crate::digraph::state::{CursorDir, CursorState};
 use crate::new_token;
 use crate::{make_node, piece};
 use serde_derive::{Deserialize, Serialize};
+
+const PENDING_PIECES: &'static [Piece; 2] = &[Piece::PENDING, Piece::IDENT(String::new())];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct KeyboardEvent {
@@ -127,24 +130,7 @@ impl KeyboardEvent {
                     // been dropped since its creation (no concurrency), so this is safe.
                     let curr_node = unsafe { &mut **curr_node };
 
-                    if state.piece_ix.as_ref().expect("piece_ix cannot be empty")[0] == 0
-                        && curr_node.kind == NodeKind::VARDECL
-                    {
-                        // This was a variable name, so next is another value
-                        // TODO: let x at 3 be 2 -> x[3] = 2: How do we allow this?
-                        state.mode = ADMode::EDIT(super::state::Expecting::Value);
-                    } else {
-                        // Typing always indicates we are working on a value, so next is an operator
-                        state.mode = ADMode::EDIT(super::state::Expecting::Op);
-                    }
-
-                    let piece_ix_len = piece_ix.len() - 1;
-                    if piece_ix[piece_ix_len] == curr_node.pieces.len() - 1 {
-                        // Is valid because we can't be reach this block unless piece_ix.len() == 1
-                        state.piece_ix = Some(vec![curr_node.pieces.len()]);
-                        curr_node.pieces.push(piece!(...));
-                        return Ok(());
-                    }
+                    // TODO: let x at 3 be 2 -> x[3] = 2: How do we allow this?
 
                     let parent_vec = if piece_ix.len() == 1 {
                         &curr_node.pieces
@@ -155,12 +141,43 @@ impl KeyboardEvent {
                         }
                     };
 
-                    for i in piece_ix[piece_ix_len]..parent_vec.len() {
+                    // If we are at the end of our local piece[], we add a new one
+                    if piece_ix.last() == Some(&(parent_vec.len() - 1)) {
+                        let parent_vec = if piece_ix.len() == 1 {
+                            &mut curr_node.pieces
+                        } else {
+                            match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
+                                Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => args,
+                                _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
+                            }
+                        };
+
+                        if let Some(spi) = state.piece_ix.as_mut() {
+                            if let Some(last) = spi.last_mut() {
+                                *last = parent_vec.len();
+                            }
+                        }
+
+                        state.mode = ADMode::EDIT(Expecting::Op); // Must be OP after a value
+                        parent_vec.push(piece!(...));
+                        return Ok(());
+                    }
+
+                    // Find the next pending piece in the local piece[]
+                    // A pending piece is either an unnamed identifier, or an explicit pending
+                    let piece_ix_len = piece_ix.len() - 1;
+                    let start_i = piece_ix[piece_ix_len] + 1;
+                    for i in start_i..parent_vec.len() {
                         piece_ix[piece_ix_len] = i;
-                        if curr_node.pieces[PieceIdx(&piece_ix)] == Piece::PENDING
-                            || curr_node.pieces[PieceIdx(&piece_ix)] == Piece::IDENT("".into())
-                        {
+                        if PENDING_PIECES.contains(&curr_node.pieces[PieceIdx(&piece_ix)]) {
                             state.piece_ix = Some(piece_ix);
+                            match &parent_vec[i - 1] {
+                                Piece::OP(_) => state.mode = ADMode::EDIT(Expecting::Value),
+                                piece @ _ if PENDING_PIECES.contains(piece) => {
+                                    unreachable!("should have reached earlier")
+                                }
+                                _ => state.mode = ADMode::EDIT(Expecting::Op),
+                            }
                             break;
                         }
                     }
