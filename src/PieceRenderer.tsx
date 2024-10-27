@@ -20,6 +20,8 @@ import {
 } from "./types";
 import { useState } from "react";
 
+const OP_TYPES = ["OP", "PENDING"];
+
 export function RenderPiece(
   all_pieces: RTLPiece[],
   i: number,
@@ -233,7 +235,7 @@ function elementDone(pieces: RTLPiece[], i: number): boolean {
   if (i === pieces.length - 1) return true;
   const currType = extractPieceType(pieces[i]);
   const nextType = extractPieceType(pieces[i + 1]);
-  return currType !== "OP" && nextType !== "OP";
+  return OP_TYPES.includes(currType) && OP_TYPES.includes(nextType);
 }
 
 export function RenderList({ pieces, chained, myIx, pieceIx, parentAddr }) {

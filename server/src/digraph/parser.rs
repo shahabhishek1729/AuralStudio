@@ -340,6 +340,8 @@ fn indices_work() {
         piece!(LIST [piece!(IDENT "list"), piece!(...)]),
     ];
 
+    assert_eq!(piece_vec[PieceIdx(&[2, 0])], piece!(IDENT "list"));
+    assert_eq!(piece_vec[PieceIdx(&[2, 1])], piece!(...));
     assert_eq!(
         piece_vec[PieceIdx(&[2])],
         piece!(LIST [piece!(IDENT "list"), piece!(...)])
