@@ -52,6 +52,7 @@ pub(super) enum Command<'a> {
     ChainIdx,
     EditMode,
     ViewMode,
+    Escape,
     CommitChunk,
     Run,
     NULL,
@@ -92,7 +93,7 @@ const VAL_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     " " => Command::AddNothing,
     "c" => Command::AddCall,
     "l" => Command::AddList,
-    "Escape" => Command::ViewMode,
+    "Escape" => Command::Escape,
 };
 
 const OP_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
@@ -112,7 +113,7 @@ const OP_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "i" => Command::ChainIn,
     "c" => Command::ChainDot,
     "b" => Command::ChainIdx,
-    "Escape" => Command::ViewMode,
+    "Escape" => Command::Escape,
     "Enter" => Command::CommitChunk,
 };
 

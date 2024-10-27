@@ -244,7 +244,7 @@ function elementDone(pieces: RTLPiece[], i: number): boolean {
   if (i === pieces.length - 1) return true;
   const currType = extractPieceType(pieces[i]);
   const nextType = extractPieceType(pieces[i + 1]);
-  return OP_TYPES.includes(currType) && OP_TYPES.includes(nextType);
+  return !OP_TYPES.includes(currType) && !OP_TYPES.includes(nextType);
 }
 
 export function RenderList({ pieces, chained, myIx, pieceIx, parentAddr }) {

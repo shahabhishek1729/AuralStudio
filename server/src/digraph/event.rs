@@ -10,12 +10,6 @@ use crate::new_token;
 use crate::{make_node, piece};
 use serde_derive::{Deserialize, Serialize};
 
-const PENDING_PIECES: &'static [Piece; 3] = &[
-    Piece::PendingVal,
-    Piece::PendingOp,
-    Piece::IDENT(String::new()),
-];
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct KeyboardEvent {
     pub key: String,
@@ -50,6 +44,35 @@ impl KeyboardEvent {
             }
             Command::EditMode => state.to_insert()?,
             Command::ViewMode => state.to_view()?,
+            Command::Escape => {
+                let piece_ix = &state.piece_ix.clone().unwrap_or(vec![]);
+                if piece_ix.len() > 1 {
+                    let hash = state.graph.get_hash_mut();
+                    let Some(curr_node) = hash.get(&state.block_loc) else {
+                        return Err(CursorError::AddrNotFound(state.block_loc.clone()));
+                    };
+
+                    let curr_node = unsafe { &mut **curr_node };
+
+                    let parent_vec =
+                        match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
+                            Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => args,
+                            _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
+                        };
+
+                    dbg!(&parent_vec);
+                    if parent_vec.last() == Some(&piece!(..#)) {
+                        parent_vec.pop();
+                    }
+
+                    if let Some(ref mut pix) = state.piece_ix {
+                        pix.pop();
+                    }
+                    state._move_to_next(curr_node, None)?;
+                } else {
+                    state.to_view()?;
+                }
+            }
             Command::InsertVar => {
                 new_token! {
                     From state, NodeKind::VARDECL => [
@@ -119,11 +142,33 @@ impl KeyboardEvent {
             Command::ChainIdx => new_piece(state, Piece::OP(OpKind::AT))?,
             Command::ChainIn => new_piece(state, Piece::OP(OpKind::IN))?,
             Command::ChainDot => new_piece(state, Piece::OP(OpKind::DOT))?,
-            Command::CommitChunk => todo!(),
+            Command::CommitChunk => {
+                // If we are within args, move on to the next element
+                let piece_ix = &state.piece_ix.clone().unwrap_or(vec![]);
+                if piece_ix.len() > 1 {
+                    let hash = state.graph.get_hash_mut();
+                    let Some(curr_node) = hash.get(&state.block_loc) else {
+                        return Err(CursorError::AddrNotFound(state.block_loc.clone()));
+                    };
+
+                    let curr_node = unsafe { &mut **curr_node };
+
+                    let parent_vec =
+                        match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
+                            Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => args,
+                            _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
+                        };
+
+                    assert_eq!(parent_vec.last(), Some(&piece!(..+)));
+                    let last_ix = parent_vec.len() - 1;
+                    parent_vec[last_ix] = piece!(..#);
+                    state.mode = ADMode::EDIT(Expecting::Value);
+                }
+            }
             Command::Run => todo!(),
             Command::TypeChar(c) => {
                 if c == "Enter" {
-                    let Some(mut piece_ix) = state.piece_ix.clone() else {
+                    let Some(ref mut piece_ix) = state.piece_ix.clone() else {
                         unreachable!("cannot be in TYPE mode without a `piece_ix`");
                     };
 
@@ -132,62 +177,10 @@ impl KeyboardEvent {
                         return Err(CursorError::AddrNotFound(state.block_loc.clone()));
                     };
 
-                    // SAFETY: We know this reference must be valid because we just retrieved the
-                    // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
-                    // been dropped since its creation (no concurrency), so this is safe.
                     let curr_node = unsafe { &mut **curr_node };
 
                     // TODO: let x at 3 be 2 -> x[3] = 2: How do we allow this?
-
-                    let parent_vec = if piece_ix.len() == 1 {
-                        &curr_node.pieces
-                    } else {
-                        match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
-                            Piece::LIST(ref args) | Piece::FNCALL(ref args) => args,
-                            _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
-                        }
-                    };
-
-                    // If we are at the end of our local piece[], we add a new one
-                    if piece_ix.last() == Some(&(parent_vec.len() - 1)) {
-                        let parent_vec = if piece_ix.len() == 1 {
-                            &mut curr_node.pieces
-                        } else {
-                            match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
-                                Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => args,
-                                _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
-                            }
-                        };
-
-                        if let Some(spi) = state.piece_ix.as_mut() {
-                            if let Some(last) = spi.last_mut() {
-                                *last = parent_vec.len();
-                            }
-                        }
-
-                        state.mode = ADMode::EDIT(Expecting::Op); // Must be OP after a value
-                        parent_vec.push(piece!(..+));
-                        return Ok(());
-                    }
-
-                    // Find the next pending piece in the local piece[]
-                    // A pending piece is either an unnamed identifier, or an explicit pending
-                    let piece_ix_len = piece_ix.len() - 1;
-                    let start_i = piece_ix[piece_ix_len] + 1;
-                    for i in start_i..parent_vec.len() {
-                        piece_ix[piece_ix_len] = i;
-                        if PENDING_PIECES.contains(&curr_node.pieces[PieceIdx(&piece_ix)]) {
-                            state.piece_ix = Some(piece_ix);
-                            match &parent_vec[i - 1] {
-                                piece @ _ if PENDING_PIECES.contains(piece) => {
-                                    unreachable!("should have reached earlier")
-                                }
-                                Piece::OP(_) => state.mode = ADMode::EDIT(Expecting::Value),
-                                _ => state.mode = ADMode::EDIT(Expecting::Op),
-                            }
-                            break;
-                        }
-                    }
+                    state._move_to_next(curr_node, Some(piece_ix))?;
                 }
             }
             Command::NULL => eprintln!("Received a null command"),

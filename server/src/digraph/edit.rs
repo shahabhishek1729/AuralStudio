@@ -7,6 +7,12 @@ use crate::piece;
 use crate::prelude::CursorError;
 use std::ops::ControlFlow;
 
+const PENDING_PIECES: &'static [Piece; 3] = &[
+    Piece::PendingVal,
+    Piece::PendingOp,
+    Piece::IDENT(String::new()),
+];
+
 #[macro_export]
 macro_rules! new_token {
     (From $state:ident, $kind:expr => [$($piece:expr),*] $(@ $piece_ix:expr),*) => {{
@@ -226,7 +232,11 @@ impl CursorState {
         // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
         // been dropped since its creation (no concurrency), so this is safe.
         let curr_node = unsafe { &mut **curr_node };
-        curr_node.pieces.pop();
+
+        let len = curr_node.pieces.len();
+        if len > 2 && curr_node.pieces[len - 1] == piece!(..+) {
+            curr_node.pieces.pop();
+        }
 
         Ok(())
     }
@@ -330,9 +340,72 @@ impl CursorState {
             Piece::IDENT(_) => Piece::IDENT(value),
             Piece::NUMBER(_) => Piece::NUMBER(value.parse::<f64>()?),
             Piece::TEXT(_) => Piece::TEXT(value),
-            _ => todo!(),
+            _ => unreachable!("cannot update value for non-typed pieces"),
         };
         curr_node.pieces[PieceIdx(&piece_ix)] = new_piece;
+
+        Ok(())
+    }
+
+    pub(crate) fn _move_to_next(
+        &mut self,
+        curr_node: &mut Node,
+        piece_ix: Option<&mut Vec<usize>>,
+    ) -> Result<(), CursorError> {
+        let mut piece_ix = if piece_ix.is_none() {
+            self.piece_ix.clone().expect("Can never be None")
+        } else {
+            piece_ix.unwrap().to_vec()
+        };
+
+        let parent_vec = if piece_ix.len() == 1 {
+            &curr_node.pieces
+        } else {
+            match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
+                Piece::LIST(ref args) | Piece::FNCALL(ref args) => args,
+                _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
+            }
+        };
+        // If we are at the end of our local piece[], we add a new one
+        if piece_ix.last() == Some(&(parent_vec.len() - 1)) {
+            let parent_vec = if piece_ix.len() == 1 {
+                &mut curr_node.pieces
+            } else {
+                match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
+                    Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => args,
+                    _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
+                }
+            };
+
+            if let Some(spi) = self.piece_ix.as_mut() {
+                if let Some(last) = spi.last_mut() {
+                    *last = parent_vec.len();
+                }
+            }
+
+            self.mode = ADMode::EDIT(Expecting::Op); // Must be OP after a value
+            parent_vec.push(piece!(..+));
+            return Ok(());
+        }
+
+        // Find the next pending piece in the local piece[]
+        // A pending piece is either an unnamed identifier, or an explicit pending
+        let piece_ix_len = piece_ix.len() - 1;
+        let start_i = piece_ix[piece_ix_len] + 1;
+        for i in start_i..parent_vec.len() {
+            piece_ix[piece_ix_len] = i;
+            if PENDING_PIECES.contains(&curr_node.pieces[PieceIdx(&piece_ix)]) {
+                self.piece_ix = Some(piece_ix.to_vec());
+                match &parent_vec[i - 1] {
+                    piece @ _ if PENDING_PIECES.contains(piece) => {
+                        unreachable!("should have reached earlier")
+                    }
+                    Piece::OP(_) => self.mode = ADMode::EDIT(Expecting::Value),
+                    _ => self.mode = ADMode::EDIT(Expecting::Op),
+                }
+                break;
+            }
+        }
 
         Ok(())
     }
