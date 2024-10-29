@@ -43,6 +43,23 @@ impl KeyboardEvent {
                 }
             }
             Command::EditMode => state.to_insert()?,
+            Command::InplaceEditMode => {
+                if !state._at_node() {
+                    return Err(CursorError::AmbiguousEdit);
+                }
+                let hash = state.graph.get_hash_mut();
+                let Some(curr_node) = hash.get(&state.block_loc) else {
+                    return Err(CursorError::AddrNotFound(state.block_loc.clone()));
+                };
+                let curr_node = unsafe { &mut **curr_node };
+
+                if curr_node.kind == NodeKind::PENDING {
+                    state.piece_ix = None;
+                    state.mode = ADMode::EDIT(Expecting::Token);
+                } else {
+                    state._move_to_next(curr_node, Some(&mut vec![0usize]))?;
+                }
+            }
             Command::ViewMode => state.to_view()?,
             Command::Escape => {
                 let piece_ix = &state.piece_ix.clone().unwrap_or(vec![]);

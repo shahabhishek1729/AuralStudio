@@ -172,6 +172,8 @@ pub(crate) enum CursorError {
     InsertConditional,
     #[error("found an invalid number (only 0-9 and a single decimal place can be used)")]
     InvalidNumber,
+    #[error("cannot edit inplace unless a node is currently selected")]
+    AmbiguousEdit,
 }
 
 impl From<std::num::ParseFloatError> for CursorError {

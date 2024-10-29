@@ -51,6 +51,7 @@ pub(super) enum Command<'a> {
     ChainDot,
     ChainIdx,
     EditMode,
+    InplaceEditMode,
     ViewMode,
     Escape,
     CommitChunk,
@@ -68,6 +69,7 @@ const VIEW_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "Backspace" => Command::NavOut,
     "Enter" => Command::EditMode,
     "r" => Command::Run,
+    "i" => Command::InplaceEditMode,
 };
 
 const TOKEN_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
