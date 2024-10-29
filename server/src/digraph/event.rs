@@ -77,7 +77,7 @@ impl KeyboardEvent {
                             _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
                         };
 
-                    if parent_vec.last() == Some(&piece!(..#)) {
+                    if [Some(&piece!(..#)), Some(&piece!(IDENT ""))].contains(&parent_vec.last()) {
                         parent_vec.pop();
                     }
 

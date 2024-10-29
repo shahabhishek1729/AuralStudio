@@ -241,7 +241,11 @@ impl CursorState {
         let curr_node = unsafe { &mut **curr_node };
 
         let len = curr_node.pieces.len();
-        if len > 2 && curr_node.pieces[len - 1] == piece!(..+) {
+        let last_pending_op = curr_node.pieces[len - 1] == piece!(..+);
+        let last_pending_param = curr_node.pieces[len - 1] == piece!(IDENT "")
+            && matches!(curr_node.pieces[len - 2], Piece::IDENT(_));
+
+        if len > 1 && (last_pending_op || last_pending_param) {
             curr_node.pieces.pop();
         }
 
