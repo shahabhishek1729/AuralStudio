@@ -174,7 +174,12 @@ impl CursorState {
                 let insert_loc_ = if num_blocks == 0 {
                     // No global children, append:
                     // <1 (new level), 0 (first child in that level), 0 (root of the block)>
-                    self.block_loc.join(&[1, 0, 0])
+                    let last_ix = self.block_loc.len() - 1;
+                    if curr_node.parent_addr.coerce(&hash)? == self.node_loc {
+                        Address::new(self.block_loc[0..last_ix].to_vec()).join(&[1, 0, 0])
+                    } else {
+                        self.block_loc.join(&[1, 0, 0])
+                    }
                 } else {
                     // There are global children -> precondition: curr_addr.len() % 2 == 0
                     let Some(next_addr) = self.block_loc.next() else {
