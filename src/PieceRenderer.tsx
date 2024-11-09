@@ -38,7 +38,14 @@ export function RenderPiece(
   // Inner wrapper function allows us to key each piece in a node below
   function _RenderPiece() {
     // Don't re-render indices that have already been compressed into the ident
-    if (i[i.length - 1] > 0 && all_pieces[i[i.length - 1] - 1]["OP"] === "AT")
+    if (
+      i[i.length - 1] > 0 &&
+      all_pieces[i[i.length - 1] - 1]["OP"] === "AT" &&
+      all_pieces[i[i.length - 1]] !== "PendingVal" &&
+      (!!all_pieces[i[i.length - 1]]["IDENT"] ||
+        !!all_pieces[i[i.length - 1]]["NUMBER"] ||
+        !!all_pieces[i[i.length - 1]]["TEXT"])
+    )
       return <></>;
 
     switch (kind) {
@@ -174,7 +181,7 @@ export function RenderIdent({
   const i_ = i[i.length - 1];
   const puzzle_color = chained ? "" : "transparent";
   const idxFollows = i_ < pieces.length - 2 && pieces[i_ + 1].OP === "AT";
-  let idx = idxFollows ? ` #${extractPieceValue(pieces[i_ + 2])}` : "";
+  let idx = idxFollows ? ` #${extractPieceValue(pieces[i_ + 2]) ?? ""}` : "";
 
   const background = selected ? "white" : SYMBOL_MAP["ident"][0];
   const foreground = selected ? "black" : SYMBOL_MAP["ident"][1];
