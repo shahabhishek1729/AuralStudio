@@ -28,7 +28,7 @@ macro_rules! new_token {
         curr_node.kind = $kind;
         curr_node.pieces = vec![$($piece),*];
 
-        $state.mode = ADMode::TYPE;
+        $state.mode = ADMode::EDIT(Expecting::Value);
         $state.piece_ix = None;
         $($state.piece_ix = Some($piece_ix.to_vec())),*
     }};

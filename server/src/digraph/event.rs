@@ -99,7 +99,8 @@ impl KeyboardEvent {
                     From state, NodeKind::VARDECL => [
                         piece!(IDENT ""), Piece::OP(OpKind::ASSN), piece!(..#)
                     ] @ vec![0]
-                }
+                };
+                state.mode = ADMode::TYPE;
             }
             Command::InsertIf => {
                 new_token! { From state, NodeKind::CONDTL => [piece!(..#)] @ vec![0] ; {
@@ -109,33 +110,34 @@ impl KeyboardEvent {
                  make_node!(line 0 -> NodeKind::CONDTLN []; {
                      make_node!(line 0 -> NodeKind::PENDING [piece!(..#)])
                  })
-                }}
+                }};
             }
             Command::InsertFor => {
                 new_token! { From state, NodeKind::FORLOOP => [piece!(..#), Piece::OP(OpKind::IN), piece!(..#)] @ vec![0] ; {
                      make_node!(line 0 -> NodeKind::PENDING [piece!(..#)])
-                }}
+                }};
             }
             Command::InsertWhile => {
                 new_token! { From state, NodeKind::WHLLOOP => [piece!(..#)] @ vec![0] ; {
                      make_node!(line 0 -> NodeKind::PENDING [piece!(..#)])
-                }}
+                }};
             }
             Command::InsertBreak => new_token! { From state, NodeKind::BREAK => [] },
             Command::InsertContinue => new_token! { From state, NodeKind::CONTINUE => [] },
             Command::InsertReturn => {
-                new_token! { From state, NodeKind::RETURN => [piece!(..#)] @ vec![0] }
+                new_token! { From state, NodeKind::RETURN => [piece!(..#)] @ vec![0] };
             }
             Command::InsertOutput => {
-                new_token! { From state, NodeKind::OUTPUT => [piece!(..#)] @ vec![0] }
+                new_token! { From state, NodeKind::OUTPUT => [piece!(..#)] @ vec![0] };
             }
             Command::InsertPending => {
-                new_token! { From state, NodeKind::PENDING => [piece!(..#)] @ vec![0] }
+                new_token! { From state, NodeKind::PENDING => [piece!(..#)] @ vec![0] };
             }
             Command::InsertImport => {
                 new_token! { From state, NodeKind::GRABPKG => [
                     piece!(IDENT ""), piece!(..#) // TODO: Only "from" and "alias" can go here
-                ] @ vec![0]}
+                ] @ vec![0]};
+                state.mode = ADMode::TYPE;
             }
             Command::AddVarName => new_piece(state, piece!(IDENT ""))?,
             Command::AddTrue => new_piece(state, piece!(True))?,
