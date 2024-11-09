@@ -132,7 +132,11 @@ impl<'a> Command<'a> {
             ADMode::EDIT(Expecting::Op) => {
                 Cow::Borrowed(OP_KEYMAP.get(key).unwrap_or(&Command::NULL))
             }
-            ADMode::TYPE => Cow::Owned(Command::TypeChar(key)),
+            ADMode::TYPE => Cow::Owned(if key == "Escape" {
+                Command::Escape
+            } else {
+                Command::TypeChar(key)
+            }),
         }
     }
 }

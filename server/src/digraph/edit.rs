@@ -277,7 +277,7 @@ impl CursorState {
                 rtl: Some("pretend".into()),
             }],
             kind: NodeKind::FNDEF,
-            pieces: vec![Piece::IDENT("".into()), Piece::IDENT("".into())],
+            pieces: vec![Piece::IDENT("".into())],
             addr: at_addr.clone(),
             parent_addr: from_addr,
             rtl: Some("define pretend".into()),
@@ -362,6 +362,7 @@ impl CursorState {
         &mut self,
         curr_node: &mut Node,
         piece_ix: Option<&mut Vec<usize>>,
+        next_ident: bool, // In a function definition, all pieces must be IDENTs
     ) -> Result<(), CursorError> {
         let mut piece_ix = if piece_ix.is_none() {
             self.piece_ix.clone().expect("Can never be None")
@@ -397,10 +398,14 @@ impl CursorState {
                 }
             }
 
-            if parent_vec.len() > 1 {
-                self.mode = ADMode::EDIT(Expecting::Op); // Must be OP after a value
-            }
-            parent_vec.push(piece!(..+));
+            parent_vec.push(if next_ident {
+                self.mode = ADMode::TYPE; // Next parameter must be an IDENT as well.
+                piece!(IDENT "")
+            } else {
+                self.mode = ADMode::EDIT(Expecting::Op); // Must be OP after a value.
+                piece!(..+)
+            });
+
             return Ok(());
         }
 

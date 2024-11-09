@@ -57,7 +57,11 @@ impl KeyboardEvent {
                     state.piece_ix = None;
                     state.mode = ADMode::EDIT(Expecting::Token);
                 } else {
-                    state._move_to_next(curr_node, Some(&mut vec![0usize]))?;
+                    state._move_to_next(
+                        curr_node,
+                        Some(&mut vec![0usize]),
+                        curr_node.kind == NodeKind::FNDEF,
+                    )?;
                 }
             }
             Command::ViewMode => state.to_view()?,
@@ -84,7 +88,8 @@ impl KeyboardEvent {
                     if let Some(ref mut pix) = state.piece_ix {
                         pix.pop();
                     }
-                    state._move_to_next(curr_node, None)?;
+                    // Cannot be in an FNDEF if we're within a set of args (list/call)
+                    state._move_to_next(curr_node, None, false)?;
                 } else {
                     state.to_view()?;
                 }
@@ -192,9 +197,17 @@ impl KeyboardEvent {
                     };
 
                     let curr_node = unsafe { &mut **curr_node };
+                    match &curr_node.pieces[PieceIdx(piece_ix)] {
+                        Piece::IDENT(s) if !s.is_empty() => {}
+                        _ => return Err(CursorError::EmptyIdent),
+                    };
 
                     // TODO: let x at 3 be 2 -> x[3] = 2: How do we allow this?
-                    state._move_to_next(curr_node, Some(piece_ix))?;
+                    state._move_to_next(
+                        curr_node,
+                        Some(piece_ix),
+                        curr_node.kind == NodeKind::FNDEF,
+                    )?;
                 }
             }
             Command::NULL => eprintln!("Received a null command"),

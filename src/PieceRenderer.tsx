@@ -219,7 +219,7 @@ export function RenderIdent({
             boxShadow: "none",
           }}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => setValue(e.target.value.replace(" ", "_"))}
         />
       ) : (
         <span
@@ -347,7 +347,7 @@ export function RenderOperator({ op_name, selected }) {
 export function RenderPending({ chained, selected, kind }) {
   return (
     <div style={{ display: "flex", flexDirection: "row" }}>
-      <div style={{ width: "5px" }} />
+      {!chained ? <div style={{ width: "5px" }} /> : null}
       {Symbol(kind, chained ? "" : "transparent", selected, "...")}
     </div>
   );
@@ -455,7 +455,7 @@ export function ChainSymbol(
             boxShadow: "none",
           }}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => setValue(e.target.value.replace(" ", "_"))}
         />
       ) : (
         <p

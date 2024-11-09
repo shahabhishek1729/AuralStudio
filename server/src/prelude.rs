@@ -174,6 +174,8 @@ pub(crate) enum CursorError {
     InvalidNumber,
     #[error("cannot edit inplace unless a node is currently selected")]
     AmbiguousEdit,
+    #[error("you cannot proceed without filling in this identifier first")]
+    EmptyIdent,
 }
 
 impl From<std::num::ParseFloatError> for CursorError {
