@@ -42,7 +42,8 @@ export function RenderPiece(
       i[i.length - 1] > 0 &&
       all_pieces[i[i.length - 1] - 1]["OP"] === "AT" &&
       all_pieces[i[i.length - 1]] !== "PendingVal" &&
-      (!!all_pieces[i[i.length - 1]]["IDENT"] ||
+      (!selected ||
+        !!all_pieces[i[i.length - 1]]["IDENT"] ||
         !!all_pieces[i[i.length - 1]]["NUMBER"] ||
         !!all_pieces[i[i.length - 1]]["TEXT"])
     )
