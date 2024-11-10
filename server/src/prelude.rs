@@ -176,8 +176,6 @@ pub(crate) enum CursorError {
     AmbiguousEdit,
     #[error("you cannot proceed without filling in this name first")]
     EmptyIdent,
-    #[error("you cannot proceed without filling in this number first")]
-    EmptyNumber,
 }
 
 impl From<std::num::ParseFloatError> for CursorError {

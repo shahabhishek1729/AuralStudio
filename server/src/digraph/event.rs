@@ -200,9 +200,8 @@ impl KeyboardEvent {
 
                     let curr_node = unsafe { &mut **curr_node };
                     match &curr_node.pieces[PieceIdx(piece_ix)] {
-                        Piece::IDENT(s) if !s.is_empty() => {}
-                        Piece::NUMBER(_) => {}
-                        _ => return Err(CursorError::EmptyIdent),
+                        Piece::IDENT(s) if s.is_empty() => return Err(CursorError::EmptyIdent),
+                        _ => {}
                     };
 
                     // TODO: let x at 3 be 2 -> x[3] = 2: How do we allow this?
