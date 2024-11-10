@@ -68,6 +68,7 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
       const new_payload = state_editor as CursorState;
       // Prevent useEffect loops by only setting `payload` on a change
       if (payload !== new_payload) setPayload(new_payload);
+      console.log(new_payload);
     });
   };
 

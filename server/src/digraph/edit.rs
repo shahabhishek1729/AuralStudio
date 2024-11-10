@@ -383,9 +383,6 @@ impl CursorState {
             let parent_vec = if piece_ix.len() == 1 {
                 &mut curr_node.pieces
             } else {
-                if parent_vec.len() == 1 {
-                    self.mode = ADMode::EDIT(Expecting::Value)
-                }
                 match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
                     Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => args,
                     _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
@@ -398,13 +395,16 @@ impl CursorState {
                 }
             }
 
-            parent_vec.push(if next_ident {
+            if next_ident {
                 self.mode = ADMode::TYPE; // Next parameter must be an IDENT as well.
-                piece!(IDENT "")
+                parent_vec.push(piece!(IDENT ""));
+            } else if piece_ix.len() > 1 && parent_vec.len() == 1 {
+                self.mode = ADMode::EDIT(Expecting::Value);
+                parent_vec.push(piece!(..#));
             } else {
                 self.mode = ADMode::EDIT(Expecting::Op); // Must be OP after a value.
-                piece!(..+)
-            });
+                parent_vec.push(piece!(..+));
+            }
 
             return Ok(());
         }
