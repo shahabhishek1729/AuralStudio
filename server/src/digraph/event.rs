@@ -201,6 +201,7 @@ impl KeyboardEvent {
                     let curr_node = unsafe { &mut **curr_node };
                     match &curr_node.pieces[PieceIdx(piece_ix)] {
                         Piece::IDENT(s) if !s.is_empty() => {}
+                        Piece::NUMBER(_) => {}
                         _ => return Err(CursorError::EmptyIdent),
                     };
 
