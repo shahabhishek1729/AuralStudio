@@ -71,11 +71,11 @@ export function DAG(source: RTLNode[], state: CursorState) {
         const activeRect = activeElement.getBoundingClientRect();
         const containerRect = containerElement.getBoundingClientRect();
 
-        const top = activeRect.top - containerRect.top - 5;
-        const left = activeRect.left - containerRect.left - 5;
+        const top = activeRect.top - containerRect.top;
+        const left = activeRect.left - containerRect.left;
 
-        const width = activeRect.width + 10;
-        const height = activeRect.height + 10;
+        const width = activeRect.width - 5;
+        const height = activeRect.height - 5;
 
         borderRef.current.style.transform = `translate(${left}px, ${top}px)`;
         borderRef.current.style.width = `${width}px`;
@@ -275,6 +275,9 @@ function RenderNode(
         display: "flex",
         flexDirection: "column",
         gap: "10px",
+        padding: node.kind === "FNDEF" ? "10px" : "",
+        border: node.kind === "FNDEF" ? "2px solid #484848" : "",
+        borderRadius: "10px",
         alignItems: ARROW_NODES.includes(
           token_type[node.kind as keyof typeof token_type],
         )
