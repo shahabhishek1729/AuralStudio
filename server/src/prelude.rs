@@ -176,6 +176,8 @@ pub(crate) enum CursorError {
     AmbiguousEdit,
     #[error("you cannot proceed without filling in this name first")]
     EmptyIdent,
+    #[error("cannot add bracket while expecting a value")]
+    MisplacedBracket,
 }
 
 impl From<std::num::ParseFloatError> for CursorError {

@@ -57,6 +57,7 @@ pub(super) enum Command<'a> {
     CommitChunk,
     Run,
     NULL,
+    TryBracket,
     TypeChar(&'a str),
 }
 
@@ -96,6 +97,7 @@ const VAL_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "c" => Command::AddCall,
     "l" => Command::AddList,
     "Escape" => Command::Escape,
+    "b" => Command::TryBracket,
 };
 
 const OP_KEYMAP: phf::Map<&'static str, Command> = phf_map! {

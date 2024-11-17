@@ -163,6 +163,27 @@ impl KeyboardEvent {
             Command::ChainIdx => new_piece(state, Piece::OP(OpKind::AT))?,
             Command::ChainIn => new_piece(state, Piece::OP(OpKind::IN))?,
             Command::ChainDot => new_piece(state, Piece::OP(OpKind::DOT))?,
+            Command::TryBracket => {
+                let hash = state.graph.get_hash_mut();
+                let Some(curr_node) = hash.get(&state.block_loc) else {
+                    return Err(CursorError::AddrNotFound(state.block_loc.clone()));
+                };
+
+                let Some(ref piece_ix) = state.piece_ix.clone() else {
+                    unreachable!("Cannot add a new piece without editing a piece first");
+                };
+
+                // SAFETY: We know this reference must be valid because we just retrieved the
+                // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
+                // been dropped since its creation (no concurrency), so this is safe.
+                let curr_node = unsafe { &mut **curr_node };
+                if curr_node.kind != NodeKind::VARDECL || piece_ix != &[2] {
+                    // piece_ix must equal 2 since "let name -> _bracket_"
+                    return Err(CursorError::MisplacedBracket);
+                }
+                curr_node.pieces.insert(1, piece!(..#));
+                curr_node.pieces.insert(1, Piece::OP(OpKind::AT));
+            }
             Command::CommitChunk => {
                 // If we are within args, move on to the next element
                 let piece_ix = &state.piece_ix.clone().unwrap_or(vec![]);
