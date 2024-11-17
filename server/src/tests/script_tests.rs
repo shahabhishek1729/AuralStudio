@@ -22,7 +22,6 @@ fn test_script_basic() {
     f3.write(&decompiler.py);
 
     // If something goes wrong, print out what transpiled program
-    dbg!("{}", &decompiler.py);
     assert_eq!(f3, f2)
 }
 
@@ -47,7 +46,6 @@ fn test_script_advanced() {
     f3.write(&decompiler.py);
 
     // If something goes wrong, print out what transpiled program
-    dbg!("{}", &decompiler.py);
     assert_eq!(f3, f2)
 }
 
@@ -72,7 +70,6 @@ fn test_script_password() {
     f3.write(&decompiler.py);
 
     // If something goes wrong, print out what transpiled program
-    dbg!("{}", &decompiler.py);
     assert_eq!(f3, f2)
 }
 
@@ -97,6 +94,5 @@ fn test_script_parity() {
     f3.write(&decompiler.py);
 
     // If something goes wrong, print out what transpiled program
-    dbg!("{}", &decompiler.py);
     assert_eq!(f3, f2)
 }

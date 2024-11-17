@@ -138,10 +138,8 @@ impl File {
         // Convenience function to quickly cast files into the std::fs
         // File type.
         if write {
-            dbg!("CREATING");
             fs::File::create(&self.full_name).expect("Failed to open file")
         } else {
-            dbg!("READING");
             fs::File::open(&self.full_name).expect("Failed to open file")
         }
     }
@@ -173,10 +171,6 @@ impl PartialEq for File {
             &*leading_newline_re.replace_all(&oth_replaced1, |_: &Captures<'_>| String::from(""));
         let oth_replaced =
             &*trailing_newline_re.replace_all(&oth_replaced2, |_: &Captures<'_>| String::from(""));
-
-        dbg!("replaced, we have:");
-        dbg!(&orig_replaced);
-        dbg!(&oth_replaced);
 
         orig_replaced == oth_replaced
     }

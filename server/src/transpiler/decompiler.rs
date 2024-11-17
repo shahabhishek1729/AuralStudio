@@ -70,27 +70,22 @@ macro_rules! lookahead_ {
 #[macro_export]
 macro_rules! token_eq {
     ($self: expr, $a:expr, $b:expr, $c:expr) => {
-        // println!("The token here was {:?}", $self.tokens[$self.curr - 1]);
         // Lookahead by `a` tokens
         if $self.tokens.len() <= $self.curr + $a - 1 {
-            println!("Case 1");
             RESULT::from(Err(Box::new(TokenOutOfBoundsSE::new(
                 $self.tokens[$self.curr - 1].clone(),
                 $b,
                 $a,
             ))))
         } else if $self.tokens[$self.curr - 1].line != $self.tokens[$self.curr + $a - 1].line {
-            println!("Case 2");
             RESULT::from(Err(Box::new(TokenOutOfLineSE::new(
                 $self.tokens[$self.curr - 1].clone(),
                 $b,
                 $a,
             ))))
         } else if (&[$b, $c]).contains(&$self.tokens[$self.curr + $a - 1].rtl_token) {
-            println!("Case 3");
             RESULT::from(Ok(()))
         } else {
-            println!("Case 4");
             RESULT::from(Err(Box::new(UnexpectedTokenSE::new(
                 $self.tokens[$self.curr + $a - 1].clone(),
                 $b,
@@ -100,24 +95,20 @@ macro_rules! token_eq {
     ($self: expr, $a:expr, $b:expr) => {
         // Lookahead by `a` tokens
         if $self.tokens.len() <= $self.curr + $a - 1 {
-            println!("Case 1");
             RESULT::from(Err(Box::new(TokenOutOfBoundsSE::new(
                 $self.tokens[$self.curr - 1].clone(),
                 $b,
                 $a,
             ))))
         } else if $self.tokens[$self.curr].line != $self.tokens[$self.curr + $a - 1].line {
-            println!("Case 2");
             RESULT::from(Err(Box::new(TokenOutOfLineSE::new(
                 $self.tokens[$self.curr - 1].clone(),
                 $b,
                 $a,
             ))))
         } else if $self.tokens[$self.curr + $a - 1].rtl_token == $b {
-            println!("Case 3");
             RESULT::from(Ok(()))
         } else {
-            println!("Case 4");
             RESULT::from(Err(Box::new(UnexpectedTokenSE::new(
                 $self.tokens[$self.curr + $a - 1].clone(),
                 $b,
@@ -190,7 +181,6 @@ impl Decompiler {
     pub fn new(source: &str) -> Result<Self, String> {
         let mut scanner = Scanner::new(source);
         let tokens = scanner.scan()?;
-        dbg!(&tokens);
 
         Ok(Self {
             tokens,
@@ -820,7 +810,6 @@ impl Decompiler {
             next = self.tokens[self.curr].to_owned();
         }
 
-        dbg!(&args);
         Ok(args.join(", "))
     }
 
@@ -870,7 +859,6 @@ impl Decompiler {
         let mut prev = prev.unwrap();
 
         if !(Self::resolves_to_val_(&prev) || self.is_unary_()) {
-            dbg!(&prev);
             return Err(Box::new(PoorlyFormattedSE::new(
                 String::from("expression"),
                 None,
@@ -879,7 +867,6 @@ impl Decompiler {
         }
 
         let mut expr = String::new();
-        dbg!("expression begins with ''");
 
         expr.push_str(&&match prev.rtl_token {
             RTLToken::NotLogical => String::from("not "),
@@ -896,7 +883,6 @@ impl Decompiler {
             RTLToken::ExprEnd => "".to_string(),
             _ => return Err(Box::new(MiscellaneousSE::new(String::from(""), prev.line))),
         });
-        dbg!(&expr);
 
         let mut broken = false;
 
@@ -915,7 +901,6 @@ impl Decompiler {
                 break;
             }
 
-            dbg!(&prev);
             if Self::resolves_to_val_(&prev) {
                 match curr.rtl_token {
                     RTLToken::AddOperation => {
@@ -977,7 +962,6 @@ impl Decompiler {
                         break;
                     }
                     _ => {
-                        dbg!(&prev);
                         broken = true;
                         break;
                     }

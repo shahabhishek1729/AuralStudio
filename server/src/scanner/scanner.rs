@@ -284,25 +284,6 @@ impl Scanner {
             } else {
                 break;
             }
-            //
-            //     dbg!(&n);
-            //     self.add_token_with_val_(
-            //         RTLToken::ObjIdentifier,
-            //         Some(Literal::RTLIdentifier(n.clone())),
-            //     );
-            //
-            //     if self.end_reached_() {
-            //         break;
-            //     }
-            //     n = self.advance_();
-            //     self.start = self.curr;
-            // }
-            //
-            // return Ok(ScannerFlags {
-            //     escaped: *escaped,
-            //     force_ident: *force_ident,
-            //     fn_args: false,
-            // });
         }
 
         while next_eq!(self, "of") {
@@ -333,10 +314,7 @@ impl Scanner {
 
         match &next.replace("\r", "")[..] {
             "escape" => *escaped = true,
-            "string" => {
-                dbg!("Parsing a string");
-                self.string_()?;
-            }
+            "string" => self.string_()?,
             "true" | "false" => self.boolean_(&next),
             "equal" => {
                 if next_eq!(self, "to") {
@@ -456,7 +434,6 @@ impl Scanner {
         // TODO: Check for escapes
 
         let mut s = val.clone();
-        dbg!(&RTL_SYMBOLS.len());
         for i in 0..RTL_SYMBOLS.len() {
             let rtl_re = Regex::new(RTL_SYMBOLS[i]).unwrap();
             s = rtl_re
@@ -464,7 +441,6 @@ impl Scanner {
                 .to_string();
         }
 
-        dbg!(&s);
         self.add_token_with_val_(RTLToken::StringVal, Some(Literal::RTLString(s)));
         Ok(())
     }

@@ -38,7 +38,6 @@ pub fn parse_floats(input: &str) -> Option<f64> {
 
 ///
 pub fn parse_numeric_(input: &str) -> Option<i64> {
-    dbg!("NO I AM HERE");
     // Takes colloquially-worded string, e.g. "one thousand and sixty four", and trasnforms
     // it into its i32 equivalent (in this case, 1064).
     let words: Vec<&str> = input.split_whitespace().collect();
@@ -149,7 +148,6 @@ pub fn parse_numeric_(input: &str) -> Option<i64> {
 }
 
 fn parse_digit_seq_(input: &str) -> Option<i64> {
-    dbg!("I AM HERE");
     let mut ans = String::new();
     for w in input.split_whitespace() {
         let num_word = match w {

@@ -159,7 +159,6 @@ mod tests {
             Err(msg) => assert!(false, "{}", msg),
         }
 
-        dbg!(&scanner.tokens);
         assert_eq!(scanner.tokens.len(), 20);
         assert_eq!(scanner.tokens[0].rtl_token, RTLToken::FunctionIdentifier);
         assert_eq!(scanner.tokens[1].rtl_token, RTLToken::ObjIdentifier);
@@ -208,33 +207,4 @@ mod tests {
         );
         assert_eq!(scanner.tokens[19].rtl_token, RTLToken::EOF);
     }
-
-    // #[test]
-    // fn test_file() {
-    //     let source = "function snake sum list over list snake list two over open\nvariable l equals call len list over\nif l equal to numeric zero over open\nstring your list was empty over";
-    //
-    //     let mut scanner = Scanner::new(source);
-    //     scanner.scan();
-    //     dbg!(scanner.tokens);
-    //
-    //     let mut decompiler = Decompiler::new(source).unwrap();
-    //     let c = decompiler.decompile();
-    //     match c {
-    //         Ok(_) => {}
-    //         Err(_) => {}
-    //     };
-    //
-    //     assert!(false);
-    // }
-    //
-    // use crate::decompiler::Decompiler;
-    // #[test]
-    // fn full() {
-    //     let source = "variable x equals numeric three over\nif x modulo numeric to over equal to numeric zero over open\ncall print string even over over\nif over\nelse open\ncall print string odd over over\nelse over";
-    //     let mut decompiler = Decompiler::new(source).unwrap();
-    //     decompiler.decompile().unwrap();
-    //     dbg!("PREPARE");
-    //     dbg!(decompiler.py);
-    //     assert!(false);
-    // }
 }

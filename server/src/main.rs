@@ -78,7 +78,6 @@ fn run_code(code: &str, path: &str) -> String {
         .output()
         .expect("failed to run")
         .stdout;
-    dbg!(&output1);
     format!("{}: {}", part1, std::str::from_utf8(&output1).unwrap())
 }
 

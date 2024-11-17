@@ -20,7 +20,6 @@ use std::path;
 
 /// Compiles a set of Rattle code into a Python script.
 pub fn compile(code: String, path: String) -> Result<String, ()> {
-    dbg!(format!("The code i got was {}", code));
     let compiler = Decompiler::new(&code);
     match compiler {
         Ok(mut compiler_) => {
