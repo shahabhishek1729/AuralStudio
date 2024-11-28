@@ -298,6 +298,15 @@ pub(crate) enum Piece {
     PendingOp,
 }
 
+impl Piece {
+    pub(crate) fn resolves_to_val(&self) -> bool {
+        match self {
+            Piece::OP(_) | Piece::PendingOp => false,
+            _ => true,
+        }
+    }
+}
+
 pub(crate) struct PieceIdx<'a>(pub &'a [usize]);
 impl std::ops::Index<PieceIdx<'_>> for Vec<Piece> {
     type Output = Piece;
@@ -1145,6 +1154,30 @@ mod tests {
                     }),
                 ]
             );
+        }
+
+        #[test]
+        fn linalg() {
+            let source = "define inverse of m
+define determinant of m
+let x be m at 0 times m at 3
+let y be m at 1 times m at 2
+return x minus y
+done define
+define adjoint of m 
+let result be list m at 3 0 minus m at 1 0 minus m at 2 m at 0 done 
+return result
+done define
+let d be determinant of m done
+let a be adjoint of m done
+let iterator be range of 4 done
+for i in iterator
+let m at i be 1 over d times a at i
+return m
+done for
+done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define\ndefine start of args\nlet matrix be list 1 2 3 4 done\ndone define";
+            let mut parser = Parser::new(String::from(source)).unwrap();
+            let tokens = parser.parse().unwrap();
         }
     }
 }

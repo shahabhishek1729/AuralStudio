@@ -19,7 +19,7 @@ use std::io::prelude::*;
 use std::path;
 
 /// Compiles a set of Rattle code into a Python script.
-pub fn compile(code: String, path: String) -> Result<String, ()> {
+pub(crate) fn compile(code: String, path: String) -> Result<String, ()> {
     let compiler = Decompiler::new(&code);
     match compiler {
         Ok(mut compiler_) => {

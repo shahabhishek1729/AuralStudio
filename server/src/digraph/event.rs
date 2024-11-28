@@ -260,7 +260,14 @@ impl KeyboardEvent {
                     }
                 }
             }
-            Command::Run => todo!(),
+            Command::Run => {
+                let rtl = state.to_rtl();
+                let s = crate::runner::compile(rtl, "auralstudio_la.rattle".into());
+                dbg!(std::process::Command::new("python")
+                    .arg("../auralstudio_la.py")
+                    .output()
+                    .unwrap());
+            }
             Command::TypeChar(c) => {
                 if c == "Enter" {
                     let Some(ref mut piece_ix) = state.piece_ix.clone() else {

@@ -2,6 +2,7 @@ use crate::addr;
 use crate::check;
 use crate::digraph::address::{Address, Addressable};
 use crate::digraph::parser::NodeKind;
+use crate::digraph::parser::Piece;
 use crate::digraph::util::*;
 pub(crate) use crate::prelude::CursorError;
 use crate::Node;
@@ -297,6 +298,104 @@ impl CursorState {
 
     pub fn _at_node(&self) -> bool {
         self.block_loc == self.node_loc
+    }
+
+    pub fn to_rtl(&self) -> String {
+        let mut rtl = String::new();
+        fn _inner(_node: &Node, _rtl: &mut String) {
+            let starter = match _node.kind {
+                NodeKind::FNDEF => "define",
+                NodeKind::VARDECL => "let",
+                NodeKind::OUTPUT => "output",
+                NodeKind::CONDTL => "if",
+                NodeKind::CONDTLY => "if",
+                NodeKind::CONDTLN => "otherwise",
+                NodeKind::FORLOOP => "for",
+                NodeKind::WHLLOOP => "while",
+                NodeKind::BREAK => "break",
+                NodeKind::CONTINUE => "continue",
+                NodeKind::RETURN => "return",
+                NodeKind::FNCALL => "call",
+                NodeKind::GRABPKG => "grab",
+                NodeKind::PENDING => "pretend",
+            };
+
+            if _node.kind != NodeKind::CONDTLY {
+                _rtl.push_str(&format!(
+                    "{starter}{}\n",
+                    _node
+                        .pieces
+                        .iter()
+                        .map(|p| piece_to_str(p))
+                        .fold(String::new(), |curr, next| format!("{} {}", curr, next)),
+                ));
+            }
+
+            for _child in &_node.children {
+                _inner(_child, _rtl);
+            }
+
+            if _node.children.len() > 0 && _node.kind != NodeKind::CONDTL {
+                _rtl.push_str(&format!("done {starter}\n"));
+            }
+
+            fn piece_to_str(piece: &Piece) -> String {
+                match piece {
+                    crate::digraph::parser::Piece::IDENT(s) => s.into(),
+                    crate::digraph::parser::Piece::NUMBER(n) => n.to_string(),
+                    crate::digraph::parser::Piece::TEXT(s) => format!("text {} done", s),
+                    crate::digraph::parser::Piece::BOOL(b) => b.to_string(),
+                    crate::digraph::parser::Piece::NOTHING => "nothing".into(),
+                    crate::digraph::parser::Piece::OP(op) => match op {
+                        crate::digraph::parser::OpKind::ADD => "plus".into(),
+                        crate::digraph::parser::OpKind::SUB => "minus".into(),
+                        crate::digraph::parser::OpKind::MUL => "times".into(),
+                        crate::digraph::parser::OpKind::DIV => "over".into(),
+                        crate::digraph::parser::OpKind::MOD => "modulo".into(),
+                        crate::digraph::parser::OpKind::EQ => "equals".into(),
+                        crate::digraph::parser::OpKind::NE => "not equals".into(),
+                        crate::digraph::parser::OpKind::GT => "greater than".into(),
+                        crate::digraph::parser::OpKind::LT => "less than".into(),
+                        crate::digraph::parser::OpKind::GE => "greater than equals".into(),
+                        crate::digraph::parser::OpKind::LE => "less than equals".into(),
+                        crate::digraph::parser::OpKind::ASSN => "be".into(),
+                        crate::digraph::parser::OpKind::AND => "and".into(),
+                        crate::digraph::parser::OpKind::OR => "or".into(),
+                        crate::digraph::parser::OpKind::NOT => "not".into(),
+                        crate::digraph::parser::OpKind::IN => "in".into(),
+                        crate::digraph::parser::OpKind::DOT => "dot".into(),
+                        crate::digraph::parser::OpKind::AT => "at".into(),
+                    },
+                    crate::digraph::parser::Piece::FNCALL(internals) => {
+                        let fn_name = piece_to_str(&internals[0]);
+                        let mut args = String::new();
+                        for (i, arg) in internals.iter().skip(1).enumerate() {
+                            if i > 0 && internals[i].resolves_to_val() && arg.resolves_to_val() {
+                                args.push_str("and ");
+                            }
+                            args.push_str(&piece_to_str(&arg));
+                            args.push(' ')
+                        }
+                        format!("{} of {} done", fn_name, args)
+                    }
+                    crate::digraph::parser::Piece::LIST(internals) => {
+                        let mut args = String::new();
+                        for arg in internals.iter().skip(1) {
+                            args.push_str(&piece_to_str(&arg));
+                            args.push(' ');
+                        }
+                        format!("list {} done", args)
+                    }
+                    crate::digraph::parser::Piece::PendingVal => "pretend".into(),
+                    crate::digraph::parser::Piece::PendingOp => "pretend".into(),
+                }
+            }
+        }
+
+        for node in &self.graph {
+            _inner(node, &mut rtl);
+        }
+        rtl
     }
 }
 

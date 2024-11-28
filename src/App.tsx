@@ -23,7 +23,7 @@ function App() {
     pieceIx: null,
   });
 
-  let final_source = `define inverse of m
+  let final_source = `define invert of m
 define determinant of m
 let x be m at 0 times m at 3
 let y be m at 1 times m at 2
@@ -40,7 +40,7 @@ for i in iterator
 let m at i be 1 over d times a at i
 return m
 done for
-done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define`;
+done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define\ndefine start of args\nlet matrix be list 1 2 3 4 done\nlet result be invert of matrix done\noutput result\ndone define`;
 
   useEffect(() => {
     invoke("parse_file", { source: final_source }).then((o: any) => {
