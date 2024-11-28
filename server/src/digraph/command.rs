@@ -55,6 +55,7 @@ pub(super) enum Command<'a> {
     ViewMode,
     Escape,
     CommitChunk,
+    DeleteNode,
     Run,
     NULL,
     TryBracket,
@@ -71,6 +72,7 @@ const VIEW_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "Enter" => Command::EditMode,
     "r" => Command::Run,
     "i" => Command::InplaceEditMode,
+    "d" => Command::DeleteNode,
 };
 
 const TOKEN_KEYMAP: phf::Map<&'static str, Command> = phf_map! {

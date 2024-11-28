@@ -207,6 +207,59 @@ impl KeyboardEvent {
                     state.mode = ADMode::EDIT(Expecting::Value);
                 }
             }
+            Command::DeleteNode => {
+                let hash_ref = state.graph.get_hash();
+                let Some(curr_node) = hash_ref.get(&state.node_loc) else {
+                    return Err(CursorError::AddrNotFound(state.block_loc.clone()));
+                };
+
+                let curr_addr = curr_node.addr.clone();
+                let parent_addr = curr_node.parent_addr.clone();
+
+                let hash = state.graph.get_hash_mut();
+                let Some(parent_node) = hash.get(&parent_addr) else {
+                    return Err(CursorError::AddrNotFound(state.block_loc.clone()));
+                };
+
+                let parent_node = unsafe { &mut **parent_node };
+                let parent_len = parent_node.children.len();
+                let num_fn = parent_node
+                    .children
+                    .iter()
+                    .filter(|c| c.kind == NodeKind::FNDEF)
+                    .collect::<Vec<_>>()
+                    .len();
+                for (i, child) in parent_node.children.iter().enumerate() {
+                    if child.addr == curr_addr {
+                        parent_node.children.remove(i);
+                        (&mut state.graph[..]).fill_addr();
+
+                        // Handle deletions of the last node in a parent's children
+                        if i == parent_len - 1 {
+                            if i == 0 {
+                                parent_node
+                                    .children
+                                    .push(make_node!(line 0 -> NodeKind::PENDING [piece!(..#)]))
+                            } else {
+                                state.block_loc = parent_node.children[i - 1].addr.clone();
+                                state.coerce()?;
+                            }
+                        } else if i == num_fn - 1 {
+                            // If deleting the only sub-function there is, go back to the parent.
+                            // Otherwise, go to the last function.
+                            state.block_loc = if i == 0 {
+                                parent_addr
+                            } else {
+                                parent_node.children[i - 1].addr.clone()
+                            };
+                            state.coerce()?;
+                            state.block_loc = state.navigate(CursorDir::OUT)?;
+                            state.coerce()?;
+                        }
+                        break;
+                    }
+                }
+            }
             Command::Run => todo!(),
             Command::TypeChar(c) => {
                 if c == "Enter" {
