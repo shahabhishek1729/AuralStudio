@@ -130,6 +130,7 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
 
         <div
           style={{
+            overflow: "scroll",
             backgroundColor: "#0F0F0F",
             flexGrow: 5,
             height: "100vh",
@@ -137,29 +138,30 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
             flexDirection: "column",
           }}
         >
-          <TabsComponent />
+          <div style={{ overflow: "hidden" }}>
+            <TabsComponent />
 
-          <div style={{ height: "20px" }} />
+            <div style={{ height: "20px" }} />
 
-          {DAG(payload.graph, payload)}
-
-          <div
-            style={{
-              display: "flex",
-              backgroundColor: "#282828",
-              flexGrow: 1,
-              height: "60%",
-            }}
-          >
-            <pre
+            {DAG(payload.graph, payload)}
+            <div
               style={{
-                paddingLeft: "20px",
-                fontFamily: "Andale Mono",
-                fontSize: "20px",
+                display: "flex",
+                backgroundColor: "#282828",
+                flexGrow: 1,
+                height: "60%",
               }}
             >
-              {codeOutput}
-            </pre>
+              <pre
+                style={{
+                  paddingLeft: "20px",
+                  fontFamily: "Andale Mono",
+                  fontSize: "20px",
+                }}
+              >
+                {codeOutput}
+              </pre>
+            </div>
           </div>
         </div>
       </div>
