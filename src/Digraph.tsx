@@ -85,7 +85,7 @@ export function DAG(source: RTLNode[], state: CursorState) {
   }, [source, selectedAddr]);
 
   return (
-    <div style={{ overflowX: "auto" }}>
+    <div>
       <ArcherContainer
         strokeColor="white"
         lineStyle="curve"

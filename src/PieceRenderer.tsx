@@ -231,7 +231,7 @@ export function RenderIdent({
             fontSize: `${SYMBOL_MAP["ident"][2]}px`,
           }}
         >
-          {value}
+          {name}
         </span>
       )}
       {idxFollows ? (
