@@ -96,3 +96,27 @@ fn test_script_parity() {
     // If something goes wrong, print out what transpiled program
     assert_eq!(f3, f2)
 }
+
+#[test]
+fn test_script_linalg() {
+    let file_path = "src/tests/scripts/linalg.rattle";
+    let mut f = file_utils::File::new(file_path);
+    f.parse();
+
+    let rtl_source = f.read();
+
+    let gt_path = "src/tests/scripts/linalg.py";
+    let mut f2 = file_utils::File::new(gt_path);
+    // Stores tone contents of the file inside the `contents` attribute
+    let _ = f2.read();
+
+    let mut decompiler = Decompiler::new(&rtl_source).unwrap();
+    decompiler.decompile().unwrap();
+
+    let gen_path = "src/tests/scripts/linalg_gen.py";
+    let mut f3 = file_utils::File::new(gen_path);
+    f3.write(&decompiler.py);
+
+    // If something goes wrong, print out what transpiled program
+    assert_eq!(f3, f2)
+}

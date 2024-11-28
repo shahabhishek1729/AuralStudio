@@ -1,0 +1,27 @@
+define inverse of m
+define determinant of m
+let x be m at 0 times m at 3
+let y be m at 1 times m at 2
+return x minus y
+done define
+define adjoint of m
+let result be list
+return result
+done define
+let d be determinant
+let a be adjoint
+let iterator be range
+for i in iterator
+let m at i be 1 over d times a at i
+return m
+done for
+done define
+define g of x
+output x plus 1
+if x equals 3
+output x
+done if
+otherwise
+output y
+done otherwise
+done define
