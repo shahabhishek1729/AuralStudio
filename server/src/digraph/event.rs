@@ -244,7 +244,8 @@ impl KeyboardEvent {
                                 state.block_loc = parent_node.children[i - 1].addr.clone();
                                 state.coerce()?;
                             }
-                        } else if i == num_fn - 1 {
+                            (&mut state.graph[..]).fill_addr();
+                        } else if num_fn > 0 && i == num_fn - 1 {
                             // If deleting the only sub-function there is, go back to the parent.
                             // Otherwise, go to the last function.
                             state.block_loc = if i == 0 {
@@ -254,6 +255,9 @@ impl KeyboardEvent {
                             };
                             state.coerce()?;
                             state.block_loc = state.navigate(CursorDir::OUT)?;
+                            state.coerce()?;
+                            (&mut state.graph[..]).fill_addr();
+                        } else {
                             state.coerce()?;
                         }
                         break;
