@@ -33,6 +33,8 @@ export interface CursorState {
 	mode: ADMode,
 	// The piece we are currently editing (if any)
 	pieceIx: number[] | null,
+	// The output to be displayed in the output panel
+	output: string | null,
 }
 
 // Either we are viewing or editing the digraph; if editing, we might be expecting a certain piece

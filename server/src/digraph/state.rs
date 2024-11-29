@@ -260,6 +260,7 @@ pub(crate) struct CursorState {
     pub(super) mode: ADMode,
     pub(super) graph: Vec<Node>,
     pub(super) piece_ix: Option<Vec<usize>>,
+    pub(super) output: Option<String>,
 }
 
 impl Default for CursorState {
@@ -270,6 +271,7 @@ impl Default for CursorState {
             graph: vec![],
             mode: ADMode::VIEW,
             piece_ix: None,
+            output: None,
         }
     }
 }

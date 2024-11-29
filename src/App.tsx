@@ -14,13 +14,13 @@ import { DAG } from "./Digraph.tsx";
 import { CursorState, _ExpectingPiece } from "./types.ts";
 
 function App() {
-  let [codeOutput, _] = useState<string>("Code output will appear here...");
   let [payload, setPayload] = useState<CursorState>({
     graph: [],
     blockLoc: "",
     nodeLoc: "",
     mode: "VIEW",
     pieceIx: null,
+    output: null,
   });
 
   let final_source = `define invert of m
@@ -50,6 +50,7 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
         nodeLoc: "0.0.0",
         mode: "VIEW",
         pieceIx: null,
+        output: null,
       });
     });
   }, []);
@@ -159,7 +160,7 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
                   fontSize: "20px",
                 }}
               >
-                {codeOutput}
+                {payload.output ?? "Code output will appear here..."}
               </pre>
             </div>
           </div>

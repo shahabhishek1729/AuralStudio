@@ -263,10 +263,17 @@ impl KeyboardEvent {
             Command::Run => {
                 let rtl = state.to_rtl();
                 let s = crate::runner::compile(rtl, "auralstudio_la.rattle".into());
-                dbg!(std::process::Command::new("python")
-                    .arg("../auralstudio_la.py")
-                    .output()
-                    .unwrap());
+                // TODO: Clean up
+                state.output = Some(
+                    String::from_utf8(
+                        std::process::Command::new("python")
+                            .arg("../auralstudio_la.py")
+                            .output()
+                            .unwrap()
+                            .stdout,
+                    )
+                    .unwrap(),
+                );
             }
             Command::TypeChar(c) => {
                 if c == "Enter" {
