@@ -421,6 +421,7 @@ mod tests {
                 mode: ADMode::VIEW,
                 graph: nodes.to_vec(),
                 piece_ix: None,
+                output: None,
             };
             let mut failed = false;
             $(
@@ -448,6 +449,7 @@ mod tests {
                 mode: ADMode::VIEW,
                 graph: nodes.to_vec(),
                 piece_ix: None,
+                output: None,
             };
             $(
                 let coerced = state.block_loc.coerce(&(state.graph).get_hash()).expect("Coercion should work");

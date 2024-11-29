@@ -266,7 +266,7 @@ impl KeyboardEvent {
             }
             Command::Run => {
                 let rtl = state.to_rtl();
-                let s = crate::runner::compile(rtl, "auralstudio_la.rattle".into());
+                let _ = crate::runner::compile(rtl, "auralstudio_la.rattle".into());
                 // TODO: Clean up
                 state.output = Some(
                     String::from_utf8(
