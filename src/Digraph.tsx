@@ -4,7 +4,11 @@
  */
 
 import { useEffect, useRef } from "react";
-import { ArcherContainer, ArcherElement } from "react-archer";
+import {
+  ArcherContainer,
+  ArcherContainerRef,
+  ArcherElement,
+} from "react-archer";
 import { ReactNode } from "react";
 import { CursorState, RTLNode } from "./types";
 import { ROW_STYLE, FLEX_COL, FLEX_ROW, BORDER_ANIMATION } from "./styles";
@@ -59,6 +63,8 @@ export function DAG(source: RTLNode[], state: CursorState) {
   const selectedAddr = state.blockLoc;
   const borderRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const containerRef2 = useRef<HTMLDivElement | null>(null);
+  const archerRef = useRef<ArcherContainerRef | null>(null);
 
   // Builds a sliding border around selected nodes within the graph
   // TODO: Scale when resizing windows (moving border when selecting groups)
@@ -80,52 +86,85 @@ export function DAG(source: RTLNode[], state: CursorState) {
         borderRef.current.style.transform = `translate(${left}px, ${top}px)`;
         borderRef.current.style.width = `${width}px`;
         borderRef.current.style.height = `${height}px`;
+
+        borderRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       }
     }
   }, [source, selectedAddr]);
 
+  const onScroll = () => {
+    if (archerRef.current) archerRef.current.refreshScreen();
+  };
+
+  useEffect(() => {
+    containerRef.current?.addEventListener("scroll", onScroll);
+    return () => containerRef.current?.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    containerRef2.current?.addEventListener("scroll", onScroll);
+    return () => containerRef2.current?.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div>
-      <ArcherContainer
-        strokeColor="white"
-        lineStyle="curve"
-        endShape={{ arrow: { arrowLength: 6, arrowThickness: 5 } }}
-        endMarker={true}
-        offset={5}
-      >
-        <div
-          style={{
-            justifyContent: "center",
-            ...FLEX_ROW,
-          }}
+      <div>
+        <ArcherContainer
+          ref={archerRef}
+          strokeColor="white"
+          lineStyle="curve"
+          endShape={{ arrow: { arrowLength: 6, arrowThickness: 5 } }}
+          endMarker={true}
+          offset={5}
         >
-          <ArcherElement
-            id="root"
-            relations={source.map((d) => {
-              return {
-                targetId: d.address,
-                targetAnchor: "top",
-                sourceAnchor: "bottom",
-              };
-            })}
-          >
-            {FileNode("linalg.rattle") /* TODO: Remove hardcoded file name */}
-          </ArcherElement>
-        </div>
-
-        <div ref={containerRef} style={{ position: "relative" }}>
           <div
-            id={`selected_${selectedAddr}`}
-            ref={borderRef}
-            style={BORDER_ANIMATION}
-          />
-          <div style={ROW_STYLE}>
-            {source.map((subtree, i) =>
-              RenderSubtree(i.toString(), subtree, selectedAddr, state.pieceIx),
-            )}
+            style={{
+              justifyContent: "center",
+              ...FLEX_ROW,
+            }}
+          >
+            <ArcherElement
+              id="root"
+              relations={source.map((d) => {
+                return {
+                  targetId: d.address,
+                  targetAnchor: "top",
+                  sourceAnchor: "bottom",
+                };
+              })}
+            >
+              {FileNode("linalg.rattle") /* TODO: Remove hardcoded file name */}
+            </ArcherElement>
           </div>
-        </div>
-      </ArcherContainer>
+
+          <div
+            ref={containerRef}
+            style={{ position: "relative", overflow: "scroll" }}
+          >
+            <div
+              id={`selected_${selectedAddr}`}
+              ref={borderRef}
+              style={BORDER_ANIMATION}
+            />
+            <div
+              ref={containerRef2}
+              style={{ ...ROW_STYLE, overflow: "scroll" }}
+            >
+              {source.map((subtree, i) =>
+                RenderSubtree(
+                  i.toString(),
+                  subtree,
+                  selectedAddr,
+                  state.pieceIx,
+                ),
+              )}
+            </div>
+          </div>
+        </ArcherContainer>
+      </div>
     </div>
   );
 }
