@@ -1,13 +1,5 @@
 import "./App.css";
 
-import add_folder from "./assets/add_folder.png";
-import add_file from "./assets/add_file.png";
-import open_terminal from "./assets/open_terminal.png";
-import refresh_files from "./assets/refresh_files.png";
-
-import TabsComponent from "./TabsComponent";
-
-import { FileTree } from "./FileTree.tsx";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { DAG } from "./Digraph.tsx";
@@ -100,7 +92,7 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
       />
 
       <div style={{ display: "flex", flexDirection: "row" }}>
-        <div style={{ flexGrow: 3, flexDirection: "column", height: "100vh" }}>
+        {/* <div style={{ flexGrow: 3, flexDirection: "column", height: "100vh" }}>
           <div
             style={{ display: "flex", flexDirection: "row", marginTop: "50px" }}
           >
@@ -127,21 +119,18 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
           </div>
 
           <FileTree />
-        </div>
+        </div> */}
 
         <div
           style={{
             overflow: "scroll",
             backgroundColor: "#0F0F0F",
-            flexGrow: 5,
             height: "100vh",
             resize: "horizontal",
             flexDirection: "column",
           }}
         >
           <div style={{ overflow: "hidden" }}>
-            <TabsComponent />
-
             <div style={{ height: "20px" }} />
 
             {DAG(payload.graph, payload)}
