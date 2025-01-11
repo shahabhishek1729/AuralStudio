@@ -13,8 +13,8 @@ def invert(m):
     iterator = range(4)
     for i in iterator:
         m[i] = 1 / d * a[i]
+        return m
         
-    return m
     
 def g(x):
     print(x + 1)
