@@ -40,6 +40,7 @@ impl KeyboardEvent {
                 if let Ok(new_addr) = state.navigate(dir_map(*command)) {
                     state.block_loc = new_addr;
                     let _ = state.coerce();
+                    state.piece_ix = None;
                 }
             }
             Command::EditMode => state.to_insert()?,

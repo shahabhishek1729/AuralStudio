@@ -409,6 +409,28 @@ impl CursorState {
             return Ok(());
         }
 
+        if piece_ix == vec![0usize] && curr_node.pieces[PieceIdx(&piece_ix)] == piece!(..#) {
+            self.piece_ix = Some(piece_ix);
+            self.mode = ADMode::EDIT(Expecting::Value);
+            return Ok(());
+        }
+
+        let piece_ix_len = piece_ix.len() - 1;
+        let start_i = piece_ix[piece_ix_len] + 1;
+        for i in start_i..parent_vec.len() {
+            piece_ix[piece_ix_len] = i;
+            if PENDING_PIECES.contains(&curr_node.pieces[PieceIdx(&piece_ix)]) {
+                self.piece_ix = Some(piece_ix.to_vec());
+                match &parent_vec[i - 1] {
+                    piece @ _ if PENDING_PIECES.contains(piece) => {
+                        unreachable!("should have reached earlier")
+                    }
+                    Piece::OP(_) => self.mode = ADMode::EDIT(Expecting::Value),
+                    _ => self.mode = ADMode::EDIT(Expecting::Op),
+                }
+                break;
+            }
+        }
         // Find the next pending piece in the local piece[]
         // A pending piece is either an unnamed identifier, or an explicit pending
         let piece_ix_len = piece_ix.len() - 1;
