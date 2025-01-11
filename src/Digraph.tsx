@@ -324,6 +324,7 @@ function RenderNode(
               excludeBlocks(parent)[0].address === node.address
             }
             indent={parentIndents + indent}
+            addr={address}
           />
           {node.pieces.map((_, ix) =>
             RenderPiece(

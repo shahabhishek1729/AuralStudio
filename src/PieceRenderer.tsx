@@ -20,6 +20,7 @@ import {
 } from "./types";
 import { useState } from "react";
 import { arrayEquals } from "./utils";
+import { TokenMenu } from "./MenuTemplates";
 
 const OP_TYPES = ["OP", "PendingOp"];
 
@@ -364,7 +365,7 @@ const TOKEN_MAP: token_metadata = {
   for: ["#06975A", question],
   while: ["#06975A", question],
   library: ["#B140B4", book],
-  output: ["#BC272a", output],
+  output: ["#FF7A00", output],
   return: ["#B140B4", book],
   list: ["#06975A", question],
   pending: ["transparent", ""],
@@ -550,14 +551,11 @@ export function Symbol(
  *						  global block (tells us whether to show the arrow)
  * @param indent {number} how many indents to apply
  */
-export function Token({ token_type, puzzle_color, first, indent }) {
+export function Token({ token_type, puzzle_color, first, indent, addr }) {
+  const [clicked, setClicked] = useState(false);
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-      }}
-    >
+    <div style={{ display: "flex", flexDirection: "row" }}>
       {[...Array(indent)].map((_, i) => (
         <img
           key={i}
@@ -569,50 +567,67 @@ export function Token({ token_type, puzzle_color, first, indent }) {
           src={function_arrow}
         />
       ))}
-      <div
-        style={{
-          backgroundColor: TOKEN_MAP[token_type as keyof token_metadata][0],
-          height: "36px",
-          width: "fit-content",
-          borderRadius:
-            puzzle_color === "transparent" ? "10px" : "10px 0px 0px 10px",
-          border: token_type === "pending" ? "1px dashed white" : "",
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "center", //Centered vertically
-          alignItems: "center", //Centered horizontally
-          paddingLeft: "8px",
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "JetBrains Mono",
-            fontWeight: token_type === "pending" ? "" : "bold",
-            paddingRight: puzzle_color === "transparent" ? "8px" : "5px",
-            whiteSpace: "pre-wrap",
-            cursor: token_type === "pending" ? "pointer" : "default",
-            fontSize: token_type === "pending" ? "28px" : "",
-          }}
-        >
-          {token_type === "conditional"
-            ? "is"
-            : token_type === "pending"
-              ? "    +    "
-              : token_type}
-        </span>
-        {puzzle_color !== "transparent" ? (
-          <svg
-            width="20"
-            height="23"
-            viewBox="0 0 20 23"
-            style={{ marginRight: "-1px" }}
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        {clicked ? (
+          <TokenMenu
+            onClick={() => {
+              setClicked(false);
+              document.getElementById(`selected_${addr}`).style.visibility =
+                "visible";
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              backgroundColor: TOKEN_MAP[token_type as keyof token_metadata][0],
+              height: "36px",
+              width: token_type === "pending" ? "100%" : "fit-content",
+              borderRadius:
+                puzzle_color === "transparent" ? "10px" : "10px 0px 0px 10px",
+              border: token_type === "pending" ? "1px dashed white" : "",
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "center", //Centered vertically
+              alignItems: "center", //Centered horizontally
+              paddingLeft: token_type === "pending" ? "0px" : "8px",
+            }}
+            onClick={() => {
+              setClicked(true);
+              document.getElementById(`selected_${addr}`).style.visibility =
+                "hidden";
+            }}
           >
-            <path
-              d="M-5.40914e-07 10.6253C-3.974e-06 6.30178 20 -8.74228e-07 20 -8.74228e-07L20 23C20 23 2.89217e-06 14.9489 -5.40914e-07 10.6253Z"
-              fill={puzzle_color}
-            />
-          </svg>
-        ) : null}
+            <span
+              style={{
+                fontFamily: "JetBrains Mono",
+                fontWeight: token_type === "pending" ? "" : "bold",
+                paddingRight: puzzle_color === "transparent" ? "8px" : "5px",
+                whiteSpace: "pre-wrap",
+                cursor: token_type === "pending" ? "pointer" : "",
+                fontSize: token_type === "pending" ? "28px" : "",
+              }}
+            >
+              {token_type === "conditional"
+                ? "is"
+                : token_type === "pending"
+                  ? "    +    "
+                  : token_type}
+            </span>
+            {puzzle_color !== "transparent" ? (
+              <svg
+                width="20"
+                height="23"
+                viewBox="0 0 20 23"
+                style={{ marginRight: "-1px" }}
+              >
+                <path
+                  d="M-5.40914e-07 10.6253C-3.974e-06 6.30178 20 -8.74228e-07 20 -8.74228e-07L20 23C20 23 2.89217e-06 14.9489 -5.40914e-07 10.6253Z"
+                  fill={puzzle_color}
+                />
+              </svg>
+            ) : null}
+          </div>
+        )}
       </div>
     </div>
   );
