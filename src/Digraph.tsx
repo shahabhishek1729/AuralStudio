@@ -3,7 +3,7 @@
  * individual pieces, nodes, blocks and subtrees.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArcherContainer,
   ArcherContainerRef,
@@ -61,6 +61,7 @@ function addrStep(addr: string, n: number = 1): string {
 // TODO: When editing, we need to render text boxes for strings + identifiers.
 export function DAG(source: RTLNode[], state: CursorState) {
   const selectedAddr = state.blockLoc || "filenode";
+  const [renderedAddr, setRenderedAddr] = useState("");
   const borderRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const containerRef2 = useRef<HTMLDivElement | null>(null);
@@ -69,7 +70,13 @@ export function DAG(source: RTLNode[], state: CursorState) {
   // Builds a sliding border around selected nodes within the graph
   // TODO: Scale when resizing windows (moving border when selecting groups)
   useEffect(() => {
+    const removeBorder = () => {
+      setRenderedAddr(selectedAddr);
+      // if (borderRef.current) borderRef.current.style.visibility = "hidden";
+    };
+
     if (selectedAddr !== null && borderRef.current && containerRef.current) {
+      setRenderedAddr("");
       const activeElement = document.getElementById(selectedAddr);
       const containerElement = containerRef.current;
 
@@ -86,14 +93,31 @@ export function DAG(source: RTLNode[], state: CursorState) {
         borderRef.current.style.transform = `translate(${left}px, ${top}px)`;
         borderRef.current.style.width = `${width}px`;
         borderRef.current.style.height = `${height}px`;
+        borderRef.current.style.visibility = "visible";
 
-        borderRef.current.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
+        borderRef.current.addEventListener("transitionend", removeBorder);
+
+        // borderRef.current.scrollIntoView({
+        //   behavior: "smooth",
+        //   block: "center",
+        // });
+        let selectedId = `${selectedAddr === "filenode" ? "" : "selected_"}${selectedAddr}`;
+        document.getElementById(selectedId)?.focus();
+        document.getElementById(selectedAddr)?.focus();
       }
     }
+    return () => {
+      if (borderRef.current)
+        borderRef.current.removeEventListener("transitionend", removeBorder);
+    };
   }, [source, selectedAddr]);
+
+  useEffect(() => {
+    if (borderRef.current) {
+      if (renderedAddr === "") borderRef.current.style.visibility = "visible";
+      else borderRef.current.style.visibility = "hidden";
+    }
+  }, [renderedAddr]);
 
   const onScroll = () => {
     if (archerRef.current) archerRef.current.refreshScreen();
@@ -160,6 +184,7 @@ export function DAG(source: RTLNode[], state: CursorState) {
                   i.toString(),
                   subtree,
                   selectedAddr,
+                  renderedAddr,
                   state.pieceIx,
                 ),
               )}
@@ -175,6 +200,7 @@ function RenderSubtree(
   addr: string,
   subtreeRoot: RTLNode,
   selectedAddr: string,
+  renderedAddr: string,
   pieceIx: number[] | null,
 ): ReactNode {
   return (
@@ -197,7 +223,13 @@ function RenderSubtree(
           }}
         >
           {getBlocks(subtreeRoot).map((sub, i) =>
-            RenderSubtree(`${addr}.1.${i}`, sub, selectedAddr, pieceIx),
+            RenderSubtree(
+              `${addr}.1.${i}`,
+              sub,
+              selectedAddr,
+              renderedAddr,
+              pieceIx,
+            ),
           )}
         </div>
       ) : null}
@@ -317,7 +349,12 @@ function RenderNode(
         flexDirection: "column",
         gap: "10px",
         padding: node.kind === "FNDEF" ? "10px" : "",
-        border: node.kind === "FNDEF" ? "2px solid #484848" : "",
+        border:
+          selectedAddr === address
+            ? "2px solid #f7dc28"
+            : node.kind === "FNDEF"
+              ? "2px solid #484848"
+              : "",
         borderRadius: "10px",
         alignItems: ARROW_NODES.includes(
           token_type[node.kind as keyof typeof token_type],
@@ -348,6 +385,8 @@ function RenderNode(
             width: "fit-content",
             justifyContent: "center",
             alignItems: "center",
+            border: node.address === selectedAddr ? "2px solid #f7dc28" : "",
+            borderRadius: "10px",
           }}
         >
           <Token
