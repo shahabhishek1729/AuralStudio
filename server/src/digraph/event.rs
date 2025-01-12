@@ -6,7 +6,7 @@ use crate::digraph::command::Command;
 use crate::digraph::edit::new_piece;
 use crate::digraph::parser::OpKind;
 use crate::digraph::state::{CursorDir, CursorState};
-use crate::new_token;
+use crate::{addr, new_token};
 use crate::{make_node, piece};
 use serde_derive::{Deserialize, Serialize};
 
@@ -37,13 +37,37 @@ impl KeyboardEvent {
             | Command::NavIn
             | Command::NavOut => {
                 // This is a navigation command, move in the correct direction
-                if let Ok(new_addr) = state.navigate(dir_map(*command)) {
-                    state.block_loc = new_addr;
-                    let _ = state.coerce();
-                    state.piece_ix = None;
+                match state.navigate(dir_map(*command)) {
+                    Ok(new_addr) => {
+                        state.block_loc = new_addr;
+                        let _ = state.coerce();
+                        state.piece_ix = None;
+                    }
+                    Err(CursorError::InvalidMotion(CursorDir::UP))
+                        if state.block_loc.len() == 2 =>
+                    {
+                        // Going up from a global block goes up to the root
+                        state.block_loc = addr!();
+                    }
+                    _ => {}
                 }
             }
-            Command::EditMode => state.to_insert()?,
+            Command::EditMode => {
+                if state.block_loc == addr!() {
+                    state
+                        .graph
+                        .push(make_node!(line 0 -> NodeKind::FNDEF [piece!(IDENT "")]; {
+                            make_node!(line 0 -> NodeKind::PENDING [piece!(..#)])
+                        }));
+                    (&mut state.graph[..]).fill_addr();
+                    state.block_loc = state.graph.last().expect("cannot be empty").addr.clone();
+                    state.coerce()?;
+                    state.piece_ix = Some(vec![0]);
+                    state.mode = ADMode::TYPE;
+                } else {
+                    state.to_insert()?;
+                }
+            }
             Command::InplaceEditMode => {
                 if !state._at_node() {
                     return Err(CursorError::AmbiguousEdit);
