@@ -280,6 +280,13 @@ impl CursorState {
     pub fn navigate(&self, dir: CursorDir) -> Result<Address, CursorError> {
         let graph_hash = self.graph.get_hash();
 
+        if self.block_loc == addr!() {
+            match dir {
+                CursorDir::DOWN => return Ok(addr!(0, 0)),
+                _ => return Err(CursorError::InvalidMotion(dir)),
+            }
+        }
+
         let Some(coerced_node) = graph_hash.get(&self.node_loc) else {
             return Err(CursorError::AddrNotFound(self.node_loc.clone()));
         };

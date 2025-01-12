@@ -129,6 +129,9 @@ impl<'de> serde::de::Deserialize<'de> for Address {
         D: serde::Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
+        if s.is_empty() {
+            return Ok(Self::new(vec![]));
+        }
         let addr = s
             .split('.')
             .map(|s| {
