@@ -60,7 +60,7 @@ function addrStep(addr: string, n: number = 1): string {
 
 // TODO: When editing, we need to render text boxes for strings + identifiers.
 export function DAG(source: RTLNode[], state: CursorState) {
-  const selectedAddr = state.blockLoc;
+  const selectedAddr = state.blockLoc || "filenode";
   const borderRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const containerRef2 = useRef<HTMLDivElement | null>(null);
@@ -136,7 +136,9 @@ export function DAG(source: RTLNode[], state: CursorState) {
                 };
               })}
             >
-              {FileNode("linalg.rattle") /* TODO: Remove hardcoded file name */}
+              {
+                FileNode("linalg.rattle", selectedAddr === "filenode") // TODO: Remove hardcoded file name
+              }
             </ArcherElement>
           </div>
 
@@ -394,13 +396,15 @@ function RenderNode(
   );
 }
 
-function FileNode(fname: string) {
+function FileNode(fname: string, includeBorder: boolean) {
   return (
     <div
+      id="filenode"
       style={{
         background: `linear-gradient(45deg, #5C89FD, #00D1FF)`,
         height: "40px",
         width: "fit-content",
+        border: includeBorder ? "2px solid #f7dc28" : "",
         borderRadius: "10px",
         justifyContent: "center", //Centered vertically
         alignItems: "center", //Centered horizontally
