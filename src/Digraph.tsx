@@ -97,10 +97,11 @@ export function DAG(source: RTLNode[], state: CursorState) {
 
         borderRef.current.addEventListener("transitionend", removeBorder);
 
-        // borderRef.current.scrollIntoView({
-        //   behavior: "smooth",
-        //   block: "center",
-        // });
+        document.getElementById(selectedAddr)?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+
         let selectedId = `${selectedAddr === "filenode" ? "" : "selected_"}${selectedAddr}`;
         document.getElementById(selectedId)?.focus();
         document.getElementById(selectedAddr)?.focus();
