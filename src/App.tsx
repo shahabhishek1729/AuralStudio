@@ -92,35 +92,6 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
       />
 
       <div style={{ display: "flex", flexDirection: "row" }}>
-        {/* <div style={{ flexGrow: 3, flexDirection: "column", height: "100vh" }}>
-          <div
-            style={{ display: "flex", flexDirection: "row", marginTop: "50px" }}
-          >
-            <img
-              src={add_folder}
-              style={{
-                height: "20px",
-                marginLeft: "10px",
-                marginRight: "15px",
-              }}
-            />
-            <img
-              src={add_file}
-              style={{ height: "20px", marginRight: "15px" }}
-            />
-            <img
-              src={open_terminal}
-              style={{ height: "20px", marginRight: "15px" }}
-            />
-            <img
-              src={refresh_files}
-              style={{ height: "20px", marginRight: "15px" }}
-            />
-          </div>
-
-          <FileTree />
-        </div> */}
-
         <div
           style={{
             overflow: "scroll",
@@ -133,7 +104,7 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
           <div style={{ overflow: "hidden" }}>
             <div style={{ height: "20px" }} />
 
-            {DAG(payload.graph, payload)}
+            {DAG(payload)}
             <div
               style={{
                 display: "flex",
