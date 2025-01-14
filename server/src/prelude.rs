@@ -178,6 +178,8 @@ pub(crate) enum CursorError {
     EmptyIdent,
     #[error("cannot add bracket while expecting a value")]
     MisplacedBracket,
+    #[error("cannot delete the `start` function in a Rattle program")]
+    DeleteStartFn,
 }
 
 impl From<std::num::ParseFloatError> for CursorError {

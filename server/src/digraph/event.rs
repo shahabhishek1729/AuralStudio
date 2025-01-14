@@ -237,55 +237,88 @@ impl KeyboardEvent {
                 let Some(curr_node) = hash_ref.get(&state.node_loc) else {
                     return Err(CursorError::AddrNotFound(state.block_loc.clone()));
                 };
+                let curr_kind = curr_node.kind.clone();
 
                 let curr_addr = curr_node.addr.clone();
                 let parent_addr = curr_node.parent_addr.clone();
 
                 let hash = state.graph.get_hash_mut();
-                let Some(parent_node) = hash.get(&parent_addr) else {
-                    return Err(CursorError::AddrNotFound(state.block_loc.clone()));
-                };
 
-                let parent_node = unsafe { &mut **parent_node };
-                let parent_len = parent_node.children.len();
-                let num_fn = parent_node
-                    .children
-                    .iter()
-                    .filter(|c| c.kind == NodeKind::FNDEF)
-                    .collect::<Vec<_>>()
-                    .len();
-                for (i, child) in parent_node.children.iter().enumerate() {
-                    if child.addr == curr_addr {
-                        parent_node.children.remove(i);
-                        (&mut state.graph[..]).fill_addr();
-
-                        // Handle deletions of the last node in a parent's children
-                        if i == parent_len - 1 {
+                if curr_kind == NodeKind::FNDEF && hash.get(&parent_addr).is_none() {
+                    // Deleting root functions is handled separately, although logic is similar.
+                    let ref mut parent_children = state.graph;
+                    let parent_len = parent_children.len();
+                    for (i, child) in parent_children.iter().enumerate() {
+                        if child.addr == curr_addr {
                             if i == 0 {
-                                parent_node
-                                    .children
-                                    .push(make_node!(line 0 -> NodeKind::PENDING [piece!(..#)]))
+                                return Err(CursorError::DeleteStartFn);
+                            }
+                            parent_children.remove(i);
+                            let prev_addr = parent_children[i - 1].addr.clone();
+
+                            (&mut state.graph[..]).fill_addr();
+
+                            // Handle deletions of the last node in a parent's children
+                            if i == parent_len - 1 {
+                                state.block_loc = prev_addr;
+                                state.coerce()?;
+                                state.block_loc = state.navigate(CursorDir::OUT)?;
                             } else {
-                                state.block_loc = parent_node.children[i - 1].addr.clone();
                                 state.coerce()?;
                             }
-                            (&mut state.graph[..]).fill_addr();
-                        } else if num_fn > 0 && i == num_fn - 1 {
-                            // If deleting the only sub-function there is, go back to the parent.
-                            // Otherwise, go to the last function.
-                            state.block_loc = if i == 0 {
-                                parent_addr
-                            } else {
-                                parent_node.children[i - 1].addr.clone()
-                            };
-                            state.coerce()?;
-                            state.block_loc = state.navigate(CursorDir::OUT)?;
-                            state.coerce()?;
-                            (&mut state.graph[..]).fill_addr();
-                        } else {
-                            state.coerce()?;
+                            break;
                         }
-                        break;
+                    }
+                } else {
+                    // If we're deleting subfunctions, local blocks or individual nodes, the
+                    // process is slightly more complicated.
+                    let parent_children = match hash.get(&parent_addr) {
+                        Some(_parent_node) => {
+                            let parent_node = unsafe { &mut **_parent_node };
+                            &mut parent_node.children
+                        }
+                        _ => return Err(CursorError::AddrNotFound(state.block_loc.clone())),
+                    };
+
+                    let parent_len = parent_children.len();
+                    let num_fn = parent_children
+                        .iter()
+                        .filter(|c| c.kind == NodeKind::FNDEF)
+                        .collect::<Vec<_>>()
+                        .len();
+
+                    for (i, child) in parent_children.iter().enumerate() {
+                        if child.addr == curr_addr {
+                            parent_children.remove(i);
+                            (&mut state.graph[..]).fill_addr();
+
+                            // Handle deletions of the last node in a parent's children
+                            if i == parent_len - 1 {
+                                if i == 0 {
+                                    parent_children
+                                        .push(make_node!(line 0 -> NodeKind::PENDING [piece!(..#)]))
+                                } else {
+                                    state.block_loc = parent_children[i - 1].addr.clone();
+                                    state.coerce()?;
+                                }
+                                (&mut state.graph[..]).fill_addr();
+                            } else if num_fn > 0 && i == num_fn - 1 {
+                                // If deleting the only sub-function there is, go back to the parent.
+                                // Otherwise, go to the last function.
+                                state.block_loc = if i == 0 {
+                                    parent_addr
+                                } else {
+                                    parent_children[i - 1].addr.clone()
+                                };
+                                state.coerce()?;
+                                state.block_loc = state.navigate(CursorDir::OUT)?;
+                                state.coerce()?;
+                                (&mut state.graph[..]).fill_addr();
+                            } else {
+                                state.coerce()?;
+                            }
+                            break;
+                        }
                     }
                 }
             }
