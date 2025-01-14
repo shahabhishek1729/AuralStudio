@@ -296,7 +296,15 @@ function RenderNode(
 ) {
   if (LOCAL_BLOCK_NODES.includes(node.kind) && check_blocks) {
     return (
-      <div key={address} id={address} style={FLEX_COL}>
+      <div
+        key={address}
+        id={address}
+        style={{
+          ...FLEX_COL,
+          border: renderedAddr === address ? "2px solid #f7dc28" : "",
+          borderRadius: "10px",
+        }}
+      >
         <div id={`${address}.0`}>
           {RenderNode(
             node,
@@ -392,6 +400,8 @@ function RenderNode(
             width: "fit-content",
             justifyContent: "center",
             alignItems: "center",
+            border: renderedAddr === `${address}.0` ? "2px solid #f7dc28" : "",
+            borderRadius: "10px",
           }}
         >
           <Token
