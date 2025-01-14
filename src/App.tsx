@@ -58,6 +58,9 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
       // (optimization) only send in a value when a value is committed.
       value: e.key === "Enter" ? elem?.value : null,
     }).then((state_editor: unknown) => {
+      const elem = document.getElementById(`menu_${payload.blockLoc}`);
+      if (elem) elem.style.display = "none";
+
       const new_payload = state_editor as CursorState;
       // Prevent useEffect loops by only setting `payload` on a change
       if (payload !== new_payload) setPayload(new_payload);

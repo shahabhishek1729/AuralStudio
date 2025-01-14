@@ -572,8 +572,8 @@ export function Token({ token_type, puzzle_color, first, indent, addr }) {
           <TokenMenu
             onClick={() => {
               setClicked(false);
-              document.getElementById(`selected_${addr}`).style.visibility =
-                "visible";
+              const border = document.getElementById(`selected_${addr}`);
+              if (border) border.style.visibility = "visible";
             }}
           />
         ) : (
