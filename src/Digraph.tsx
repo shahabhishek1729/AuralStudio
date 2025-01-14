@@ -64,7 +64,7 @@ export function DAG(source: RTLNode[], state: CursorState) {
   const [renderedAddr, setRenderedAddr] = useState("");
   const borderRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const containerRef2 = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const archerRef = useRef<ArcherContainerRef | null>(null);
 
   // Builds a sliding border around selected nodes within the graph
@@ -72,7 +72,6 @@ export function DAG(source: RTLNode[], state: CursorState) {
   useEffect(() => {
     const removeBorder = () => {
       setRenderedAddr(selectedAddr);
-      // if (borderRef.current) borderRef.current.style.visibility = "hidden";
     };
 
     if (selectedAddr !== null && borderRef.current && containerRef.current) {
@@ -115,6 +114,8 @@ export function DAG(source: RTLNode[], state: CursorState) {
 
   useEffect(() => {
     if (borderRef.current) {
+      // Show the border only as it transitions, and hide it once done
+      // (so that static border can take over).
       if (renderedAddr === "") borderRef.current.style.visibility = "visible";
       else borderRef.current.style.visibility = "hidden";
     }
@@ -125,13 +126,8 @@ export function DAG(source: RTLNode[], state: CursorState) {
   };
 
   useEffect(() => {
-    containerRef.current?.addEventListener("scroll", onScroll);
-    return () => containerRef.current?.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    containerRef2.current?.addEventListener("scroll", onScroll);
-    return () => containerRef2.current?.removeEventListener("scroll", onScroll);
+    scrollRef.current?.addEventListener("scroll", onScroll);
+    return () => scrollRef.current?.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
@@ -176,10 +172,7 @@ export function DAG(source: RTLNode[], state: CursorState) {
               ref={borderRef}
               style={BORDER_ANIMATION}
             />
-            <div
-              ref={containerRef2}
-              style={{ ...ROW_STYLE, overflow: "scroll" }}
-            >
+            <div ref={scrollRef} style={{ ...ROW_STYLE, overflow: "scroll" }}>
               {source.map((subtree, i) =>
                 RenderSubtree(
                   i.toString(),
@@ -211,6 +204,7 @@ function RenderSubtree(
           addr,
           subtreeRoot,
           selectedAddr,
+          renderedAddr,
           pieceIx,
           addr.includes(".") ? subtreeRoot : undefined,
         )}
@@ -242,6 +236,7 @@ function RenderBlock(
   address: string,
   subtreeRoot: RTLNode,
   selectedAddr: string,
+  renderedAddr: string,
   pieceIx: number[] | null,
   subtreeParent?: RTLNode,
 ): ReactNode {
@@ -274,6 +269,7 @@ function RenderBlock(
             subtreeRoot,
             blockAddr,
             selectedAddr,
+            renderedAddr,
             pieceIx,
             subtreeParent,
             0,
@@ -290,6 +286,7 @@ function RenderNode(
   node: RTLNode, // The current node to be rendered
   address: string, // The address at which to render it (for div IDs)
   selectedAddr: string, // The address with the cursor (is it this one?)
+  renderedAddr: string, // Address state that only updates after border moves
   pieceIx: number[] | null, // The piece being edited (not necessarily in `node`)
   parent?: RTLNode, // This node's parent
   parentIndents: number = 0, // How many times the parent node was indented
@@ -304,6 +301,7 @@ function RenderNode(
             node,
             `${address}.0`,
             selectedAddr,
+            renderedAddr,
             pieceIx,
             parent,
             parentIndents,
@@ -321,7 +319,14 @@ function RenderNode(
         >
           {node.children.map((n, i) => (
             <div key={i} id={`${address}.1.${i}`}>
-              {RenderNode(n, `${address}.1.${i}`, selectedAddr, pieceIx, node)}
+              {RenderNode(
+                n,
+                `${address}.1.${i}`,
+                selectedAddr,
+                renderedAddr,
+                pieceIx,
+                node,
+              )}
             </div>
           ))}
         </div>
@@ -351,7 +356,7 @@ function RenderNode(
         gap: "10px",
         padding: node.kind === "FNDEF" ? "10px" : "",
         border:
-          selectedAddr === address
+          renderedAddr === address
             ? "2px solid #f7dc28"
             : node.kind === "FNDEF"
               ? "2px solid #484848"
@@ -386,8 +391,6 @@ function RenderNode(
             width: "fit-content",
             justifyContent: "center",
             alignItems: "center",
-            border: node.address === selectedAddr ? "2px solid #f7dc28" : "",
-            borderRadius: "10px",
           }}
         >
           <Token
@@ -426,6 +429,7 @@ function RenderNode(
                 n,
                 addrStep(`${address}.0`, i + 1),
                 selectedAddr,
+                renderedAddr,
                 pieceIx,
                 node,
                 parentIndents + indent,
