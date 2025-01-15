@@ -63,7 +63,8 @@ function App() {
   }, []);
 
   useEffect(() => {
-    invoke("parse_file", { source: final_source }).then((o: any) => {
+    let initial_source = `define start of args\npretend\ndone define`;
+    invoke("parse_file", { source: initial_source }).then((o: any) => {
       setPayload({
         graph: o,
         blockLoc: "0.0",
