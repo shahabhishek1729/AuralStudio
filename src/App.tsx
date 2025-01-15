@@ -17,9 +17,11 @@ function App() {
     output: null,
   });
 
+  // Play welcome audio as soon as the user opens the app
   useEffect(() => {
     const audioContext = new (window.AudioContext ||
       window.webkitAudioContext)();
+
     const playAudio = async () => {
       try {
         const response = await fetch("./src/assets/Welcome_Bong.mp3");
@@ -30,19 +32,20 @@ function App() {
         source.buffer = audioBuffer;
         source.connect(audioContext.destination);
         source.start(0);
+
+        const response2 = await fetch("./src/assets/Welcome_Voice.mp3");
+        const audioData2 = await response2.arrayBuffer();
+        const audioBuffer2 = await audioContext.decodeAudioData(audioData2);
+
+        const source2 = audioContext.createBufferSource();
+        source2.buffer = audioBuffer2;
+        source2.connect(audioContext.destination);
+        source2.start(0);
       } catch (error) {
         console.error("Error playing audio:", error);
       }
 
       try {
-        const response = await fetch("./src/assets/Welcome_Voice.mp3");
-        const audioData = await response.arrayBuffer();
-        const audioBuffer = await audioContext.decodeAudioData(audioData);
-
-        const source = audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioContext.destination);
-        source.start(0);
       } catch (error) {
         console.error("Error playing audio:", error);
       }
