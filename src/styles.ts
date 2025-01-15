@@ -19,3 +19,16 @@ export const BORDER_ANIMATION: CSSProperties = {
 	zIndex: "2",
 }
 
+export const BUTTON_STYLE: CSSProperties = {
+    height: "3rem",
+    width: "fit-content",
+    borderRadius: "15px",
+    justifyContent: "center", //Centered vertically
+    alignItems: "center", //Centered horizontally
+    paddingLeft: "2rem",
+    paddingRight: "2rem",
+	fontWeight: "500",
+    fontFamily: "Onest",
+	cursor: "pointer",
+	...FLEX_ROW
+}
