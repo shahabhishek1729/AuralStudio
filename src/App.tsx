@@ -17,24 +17,50 @@ function App() {
     output: null,
   });
 
-  let final_source = `define invert of m
-define determinant of m
-let x be m at 0 times m at 3
-let y be m at 1 times m at 2
-return x minus y
-done define
-define adjoint of m 
-let result be list m at 3 0 minus m at 1 0 minus m at 2 m at 0 done 
-return result
-done define
-let d be determinant of m done
-let a be adjoint of m done
-let iterator be range of 4 done
-for i in iterator
-let m at i be 1 over d times a at i
-return m
-done for
-done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define\ndefine start of args\nlet matrix be list 1 2 3 4 done\nlet result be invert of matrix done\noutput result\ndone define`;
+  useEffect(() => {
+    const audioContext = new (window.AudioContext ||
+      window.webkitAudioContext)();
+    const playAudio = async () => {
+      try {
+        const response = await fetch("./src/assets/Welcome_Bong.mp3");
+        const audioData = await response.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(audioData);
+
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+      } catch (error) {
+        console.error("Error playing audio:", error);
+      }
+
+      try {
+        const response = await fetch("./src/assets/Welcome_Voice.mp3");
+        const audioData = await response.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(audioData);
+
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+      } catch (error) {
+        console.error("Error playing audio:", error);
+      }
+    };
+
+    // Attempt to resume the AudioContext immediately
+    if (audioContext.state === "suspended") {
+      audioContext.resume();
+    }
+
+    playAudio();
+
+    return () => {
+      if (audioContext.state !== "closed") {
+        audioContext.close();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     invoke("parse_file", { source: final_source }).then((o: any) => {
