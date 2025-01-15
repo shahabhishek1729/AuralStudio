@@ -2,10 +2,12 @@ import "./App.css";
 
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
+import { CursorState, IDisplay, _ExpectingPiece } from "./types.ts";
+import { Dashboard } from "./Dashboard.tsx";
 import { DAG } from "./Digraph.tsx";
-import { CursorState, _ExpectingPiece } from "./types.ts";
 
 function App() {
+  let [display, setDisplay] = useState<IDisplay>("HOME");
   let [payload, setPayload] = useState<CursorState>({
     graph: [],
     blockLoc: "",
@@ -45,27 +47,41 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
         output: null,
       });
     });
-  }, []);
+  }, [display]);
+
+  const handleEvent = (key: string) => {
+    switch (key) {
+      case "n":
+        setDisplay("EDITOR");
+        break;
+      default:
+        console.log(`Can't yet handle an ${key} keypress`);
+    }
+  };
 
   const onKeyUp = (e: KeyboardEvent) => {
-    const elem = document.getElementById(
-      `${payload.blockLoc},${payload.pieceIx}`,
-    );
+    if (display === "HOME") {
+      handleEvent(e.key);
+    } else if (display === "EDITOR") {
+      const elem = document.getElementById(
+        `${payload.blockLoc},${payload.pieceIx}`,
+      );
 
-    invoke("handle_event", {
-      event: JSON.stringify({ key: e.key }),
-      payload: payload,
-      // (optimization) only send in a value when a value is committed.
-      value: e.key === "Enter" ? elem?.value : null,
-    }).then((state_editor: unknown) => {
-      const elem = document.getElementById(`menu_${payload.blockLoc}`);
-      if (elem) elem.style.display = "none";
+      invoke("handle_event", {
+        event: JSON.stringify({ key: e.key }),
+        payload: payload,
+        // (optimization) only send in a value when a value is committed.
+        value: e.key === "Enter" ? elem?.value : null,
+      }).then((state_editor: unknown) => {
+        const elem = document.getElementById(`menu_${payload.blockLoc}`);
+        if (elem) elem.style.display = "none";
 
-      const new_payload = state_editor as CursorState;
-      // Prevent useEffect loops by only setting `payload` on a change
-      if (payload !== new_payload) setPayload(new_payload);
-      console.log(new_payload);
-    });
+        const new_payload = state_editor as CursorState;
+        // Prevent useEffect loops by only setting `payload` on a change
+        if (payload !== new_payload) setPayload(new_payload);
+        console.log(new_payload);
+      });
+    }
   };
 
   useEffect(() => {
@@ -104,13 +120,11 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
             flexDirection: "column",
           }}
         >
-          <div style={{ overflow: "hidden" }}>
-            <div style={{ height: "20px" }} />
-
-            {DAG(payload)}
+          <div style={{ overflow: "hidden", width: "100vw", height: "100vh" }}>
+            {DAG(payload, display !== "EDITOR")}
             <div
               style={{
-                display: "flex",
+                display: display === "EDITOR" ? "flex" : "none",
                 backgroundColor: "#282828",
                 flexGrow: 1,
                 height: "60%",
@@ -125,6 +139,9 @@ done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\no
               >
                 {payload.output ?? "Code output will appear here..."}
               </pre>
+            </div>
+            <div style={{ display: display !== "HOME" ? "none" : "" }}>
+              <Dashboard />
             </div>
           </div>
         </div>

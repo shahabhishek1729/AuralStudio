@@ -59,7 +59,7 @@ function addrStep(addr: string, n: number = 1): string {
 }
 
 // TODO: When editing, we need to render text boxes for strings + identifiers.
-export function DAG(payload: CursorState) {
+export function DAG(payload: CursorState, hide: boolean) {
   const source = payload.graph;
   const selectedAddr = payload.blockLoc || "filenode";
   const [renderedAddr, setRenderedAddr] = useState("");
@@ -132,7 +132,7 @@ export function DAG(payload: CursorState) {
   }, []);
 
   return (
-    <div>
+    <div style={{ display: hide ? "none" : "" }}>
       <div>
         <ArcherContainer
           ref={archerRef}

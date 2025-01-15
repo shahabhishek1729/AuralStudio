@@ -1,3 +1,5 @@
+export type IDisplay = "HOME" | "PROJECTS" | "EDITOR";
+
 export interface RTLNode {
 	line: number,
 	children: RTLNode[],
