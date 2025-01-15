@@ -23,7 +23,6 @@
     "windows": [
       {
         "title": "final-tauri",
-        "titleBarStyle": "Overlay",
         "hiddenTitle": true,
         "width": 1200,
         "height": 700
