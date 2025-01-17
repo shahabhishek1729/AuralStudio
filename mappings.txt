@@ -8,7 +8,8 @@ CMD   : Move down       | j    | ✅   |
 CMD   : Move in         |      | ✅   |
 CMD   : Move out        | ⌫    | ✅   |
 CMD   : Run program     | r    | x    |
-CMD   : New project     | n    | x    |
+CMD   : Save file       | s    | x    |
+CMD   : New project     | n    | ✅   |
 CMD   : Open project    | o    | x    |
 ---------------------------------------
 TOKEN : Function        | AUTO | ✅   |
