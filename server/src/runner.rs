@@ -36,7 +36,7 @@ pub(crate) fn compile(code: String, path: String) -> Result<String, ()> {
                 return Ok("Failed: Rattle files must end in .rattle".to_string());
             }
 
-            let py_fn = format!("../{}.py", &path[..path.len() - 7]);
+            let py_fn = format!("{}.py", &path[..path.len() - 7]);
             // let py_fn = format!("{}.py", &path[..path.len() - 7]);
             let py_path = path::Path::new(&py_fn);
 

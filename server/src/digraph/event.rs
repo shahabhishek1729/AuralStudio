@@ -325,12 +325,20 @@ impl KeyboardEvent {
             }
             Command::Run => {
                 let rtl = state.to_rtl();
-                let _ = crate::runner::compile(rtl, "auralstudio_la.rattle".into());
+
+                let filename = format!(
+                    "../../../AuralStudioProjects/{}.rattle",
+                    state.filename.trim()
+                );
+                let _ = crate::runner::compile(rtl, filename);
                 // TODO: Clean up
                 state.output = Some(
                     String::from_utf8(
                         std::process::Command::new("python")
-                            .arg("../auralstudio_la.py")
+                            .arg(&format!(
+                                "../../../AuralStudioProjects/{}.py",
+                                state.filename.trim()
+                            ))
                             .output()
                             .unwrap()
                             .stdout,
