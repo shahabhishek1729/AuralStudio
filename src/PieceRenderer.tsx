@@ -21,6 +21,7 @@ import {
 import { useState } from "react";
 import { arrayEquals } from "./utils";
 import { TokenMenu } from "./MenuTemplates";
+import { FAIL_SOUND } from "./App";
 
 const OP_TYPES = ["OP", "PendingOp"];
 
@@ -523,7 +524,14 @@ export function Symbol(
             boxShadow: "none",
           }}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            if (type === "constant" && isNaN(e.target.value)) {
+              FAIL_SOUND.play();
+              return;
+            }
+            setValue(e.target.value);
+          }}
+          onFocus={(e) => e.target.select()}
         />
       ) : (
         <span
