@@ -49,7 +49,7 @@ impl KeyboardEvent {
                         // Going up from a global block goes up to the root
                         state.block_loc = addr!();
                     }
-                    _ => {}
+                    Err(e) => return Err(e),
                 }
             }
             Command::EditMode => {
@@ -362,7 +362,7 @@ impl KeyboardEvent {
                     )?;
                 }
             }
-            Command::NULL => eprintln!("Received a null command"),
+            Command::NULL => return Err(CursorError::InvalidCommand),
         }
 
         return Ok(());

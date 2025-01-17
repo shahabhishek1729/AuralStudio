@@ -5,6 +5,9 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { CursorState, IDisplay, _ExpectingPiece } from "./types.ts";
 import { Dashboard } from "./Dashboard.tsx";
 import { DAG } from "./Digraph.tsx";
+import { speak } from "./speechUtils.ts";
+
+export const FAIL_SOUND = new Audio("./src/assets/Blow.aiff");
 
 function App() {
   let [display, setDisplay] = useState<IDisplay>("HOME");
@@ -41,11 +44,6 @@ function App() {
         source2.buffer = audioBuffer2;
         source2.connect(audioContext.destination);
         source2.start(0);
-      } catch (error) {
-        console.error("Error playing audio:", error);
-      }
-
-      try {
       } catch (error) {
         console.error("Error playing audio:", error);
       }
@@ -102,7 +100,12 @@ function App() {
         payload: payload,
         // (optimization) only send in a value when a value is committed.
         value: e.key === "Enter" ? elem?.value : null,
-      }).then((state_editor: unknown) => {
+      }).then((result: [boolean, unknown]) => {
+        const succeeded = result[0];
+        const state_editor = result[1];
+
+        if (!succeeded) FAIL_SOUND.play();
+
         const elem = document.getElementById(`menu_${payload.blockLoc}`);
         if (elem) elem.style.display = "none";
 
