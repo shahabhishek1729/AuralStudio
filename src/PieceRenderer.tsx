@@ -223,6 +223,7 @@ export function RenderIdent({
           }}
           value={value}
           onChange={(e) => setValue(e.target.value.replace(" ", "_"))}
+          onFocus={(e) => e.target.select()}
         />
       ) : (
         <span
@@ -459,6 +460,7 @@ export function ChainSymbol(
           }}
           value={value}
           onChange={(e) => setValue(e.target.value.replace(" ", "_"))}
+          onFocus={(e) => e.target.select()}
         />
       ) : (
         <p
