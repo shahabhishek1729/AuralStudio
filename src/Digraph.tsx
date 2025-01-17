@@ -59,10 +59,12 @@ function addrStep(addr: string, n: number = 1): string {
 }
 
 // TODO: When editing, we need to render text boxes for strings + identifiers.
-export function DAG(payload: CursorState, hide: boolean) {
+export function DAG(payload: CursorState, hide: boolean, editFname: boolean) {
   const source = payload.graph;
   const selectedAddr = payload.blockLoc || "filenode";
   const [renderedAddr, setRenderedAddr] = useState("");
+  const [fname, setFname] = useState(payload.filename);
+
   const borderRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -158,9 +160,12 @@ export function DAG(payload: CursorState, hide: boolean) {
                 };
               })}
             >
-              {
-                FileNode("linalg.rattle", selectedAddr === "filenode") // TODO: Remove hardcoded file name
-              }
+              {FileNode(
+                fname,
+                setFname,
+                selectedAddr === "filenode",
+                editFname,
+              )}
             </ArcherElement>
           </div>
 
@@ -451,7 +456,12 @@ function RenderNode(
   );
 }
 
-function FileNode(fname: string, includeBorder: boolean) {
+function FileNode(
+  fname: string,
+  setFname: (arg0: string) => void,
+  includeBorder: boolean,
+  editing: boolean,
+) {
   return (
     <div
       id="filenode"
@@ -468,15 +478,33 @@ function FileNode(fname: string, includeBorder: boolean) {
         ...FLEX_ROW,
       }}
     >
-      <p
-        style={{
-          fontFamily: "JetBrains Mono",
-          textAlign: "start",
-          color: "white",
-        }}
-      >
-        {fname}
-      </p>
+      {editing ? (
+        <input
+          id={`edit_filename`}
+          style={{
+            fontFamily: "JetBrains Mono",
+            textAlign: "start",
+            color: "black",
+            background: "white",
+            padding: "0px",
+            width: `${fname.length + 2}ch`,
+            boxShadow: "none",
+          }}
+          value={fname}
+          onChange={(e) => setFname(e.target.value.replace(" ", "_"))}
+          onFocus={(e) => e.target.select()}
+        />
+      ) : (
+        <p
+          style={{
+            fontFamily: "JetBrains Mono",
+            textAlign: "start",
+            color: "white",
+          }}
+        >
+          {fname}
+        </p>
+      )}
     </div>
   );
 }

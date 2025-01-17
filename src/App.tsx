@@ -12,6 +12,7 @@ export const FAIL_SOUND = new Audio("./src/assets/Blow.aiff");
 function App() {
   let [display, setDisplay] = useState<IDisplay>("HOME");
   let [payload, setPayload] = useState<CursorState>({
+    filename: "unnamed",
     graph: [],
     blockLoc: "",
     nodeLoc: "",
@@ -19,6 +20,8 @@ function App() {
     pieceIx: null,
     output: null,
   });
+
+  const [editingFilename, setEditingFilename] = useState(false);
 
   // Play welcome audio as soon as the user opens the app
   useEffect(() => {
@@ -67,6 +70,7 @@ function App() {
     let initial_source = `define start of args\npretend\ndone define`;
     invoke("parse_file", { source: initial_source }).then((o: any) => {
       setPayload({
+        filename: "unnamed",
         graph: o,
         blockLoc: "0.0",
         nodeLoc: "0.0.0",
@@ -91,6 +95,36 @@ function App() {
     if (display === "HOME") {
       handleEvent(e.key);
     } else if (display === "EDITOR") {
+      if (
+        payload.mode === "VIEW" &&
+        e.key === "s" &&
+        payload.filename === "unnamed"
+      ) {
+        setEditingFilename(true);
+        return;
+      }
+
+      if (
+        payload.mode === "TYPE" &&
+        e.key === "Enter" &&
+        payload.blockLoc === "" &&
+        editingFilename
+      ) {
+        // Save the entered filename and continue
+        const elem = document.getElementById("edit_filename");
+        if (elem) {
+          payload.filename = (elem as HTMLInputElement).value;
+        }
+        setEditingFilename(false);
+        return;
+      }
+
+      if (payload.mode === "TYPE" && e.key === "Escape") {
+        // TODO: Play audio that this is not permitted
+        speak("Please type something before escaping");
+        return;
+      }
+
       const elem = document.getElementById(
         `${payload.blockLoc},${payload.pieceIx}`,
       );
@@ -131,6 +165,23 @@ function App() {
     }
   }, [payload]);
 
+  useEffect(() => {
+    if (editingFilename) {
+      // Switch on editingFilename mode
+      payload.mode = "TYPE";
+      payload.blockLoc = "";
+      const elem = document.getElementById("edit_filename");
+      if (elem) elem.focus();
+    } else {
+      payload.mode = "VIEW";
+      invoke("handle_event", {
+        event: JSON.stringify({ key: "s" }),
+        payload: payload,
+        value: null,
+      });
+    }
+  }, [editingFilename]);
+
   return (
     <div className="container" style={{ overflow: "hidden" }}>
       <div
@@ -154,7 +205,7 @@ function App() {
           }}
         >
           <div style={{ overflow: "hidden", width: "100vw", height: "100vh" }}>
-            {DAG(payload, display !== "EDITOR")}
+            {DAG(payload, display !== "EDITOR", editingFilename)}
             <div
               style={{
                 display: display === "EDITOR" ? "flex" : "none",
