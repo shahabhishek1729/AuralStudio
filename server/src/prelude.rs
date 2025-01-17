@@ -182,6 +182,8 @@ pub(crate) enum CursorError {
     DeleteStartFn,
     #[error("key action not supported")]
     InvalidCommand,
+    #[error("I'm sorry, I couldn't create the file you requested, because of: {}", .0)]
+    FileIOError(String),
 }
 
 impl From<std::num::ParseFloatError> for CursorError {
