@@ -354,7 +354,7 @@ impl CursorState {
                 match piece {
                     crate::digraph::parser::Piece::IDENT(s) => s.into(),
                     crate::digraph::parser::Piece::NUMBER(n) => n.to_string(),
-                    crate::digraph::parser::Piece::TEXT(s) => format!("text {} done", s),
+                    crate::digraph::parser::Piece::TEXT(s) => format!("string {} done", s),
                     crate::digraph::parser::Piece::BOOL(b) => b.to_string(),
                     crate::digraph::parser::Piece::NOTHING => "nothing".into(),
                     crate::digraph::parser::Piece::OP(op) => match op {
