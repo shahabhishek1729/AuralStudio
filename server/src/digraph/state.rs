@@ -255,6 +255,7 @@ pub(super) enum ADMode {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CursorState {
+    pub(crate) filename: String,
     pub(crate) block_loc: Address,
     pub(crate) node_loc: Address,
     pub(super) mode: ADMode,
@@ -266,6 +267,7 @@ pub(crate) struct CursorState {
 impl Default for CursorState {
     fn default() -> Self {
         Self {
+            filename: "blank.rattle".into(),
             block_loc: addr!(0, 0),
             node_loc: addr!(0, 0, 0),
             graph: vec![],
@@ -423,6 +425,7 @@ mod tests {
             let mut nodes = parser.parse().unwrap();
             (&mut nodes[..]).fill_addr();
             let mut state = CursorState {
+                filename: "".into(),
                 block_loc: addr!(0, 0),
                 node_loc: addr!(0, 0).coerce(&nodes.get_hash()).expect("Coercion should work"),
                 mode: ADMode::VIEW,
@@ -451,6 +454,7 @@ mod tests {
             let mut nodes = parser.parse().unwrap();
             (&mut nodes[..]).fill_addr();
             let mut state = CursorState {
+                filename: "".into(),
                 block_loc: addr!(0, 0),
                 node_loc: addr!(0, 0).coerce(&nodes.get_hash()).expect("Coercion should work"),
                 mode: ADMode::VIEW,

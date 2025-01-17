@@ -57,6 +57,7 @@ pub(super) enum Command<'a> {
     CommitChunk,
     DeleteNode,
     Run,
+    SaveFile,
     NULL,
     TryBracket,
     TypeChar(&'a str),
@@ -71,6 +72,7 @@ const VIEW_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "Backspace" => Command::NavOut,
     "Enter" => Command::EditMode,
     "r" => Command::Run,
+    "s" => Command::SaveFile,
     "i" => Command::InplaceEditMode,
     "d" => Command::DeleteNode,
 };

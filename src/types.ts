@@ -25,6 +25,8 @@ interface _PieceInterface {
 
 // The state of the digraph currently, including:
 export interface CursorState {
+	// File currently being written to
+	filename: string,
 	// The node graph itself
 	graph: Array<RTLNode>,
 	// The current location (either on an node or a block)

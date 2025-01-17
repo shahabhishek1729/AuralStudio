@@ -481,6 +481,8 @@ mod tests {
             let block_loc = addr!($($id),+);
             let node_loc = block_loc.coerce(&nodes.get_hash()).expect("Node coercion should work");
             let mut state = CursorState {
+                filename: "".into(),
+                output: Some("".into()),
                 block_loc,
                 node_loc,
                 mode: ADMode::VIEW,
@@ -521,6 +523,8 @@ mod tests {
                 .coerce(&nodes.get_hash())
                 .expect("Node coercion should work");
             let mut state = CursorState {
+                filename: "".into(),
+                output: Some("".into()),
                 block_loc,
                 node_loc,
                 mode: ADMode::VIEW,
@@ -550,6 +554,8 @@ mod tests {
                 .coerce(&nodes.get_hash())
                 .expect("Node coercion should work");
             let mut state = CursorState {
+                filename: "".into(),
+                output: Some("".into()),
                 block_loc,
                 node_loc,
                 mode: ADMode::VIEW,

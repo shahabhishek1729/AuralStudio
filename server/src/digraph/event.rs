@@ -9,6 +9,7 @@ use crate::digraph::state::{CursorDir, CursorState};
 use crate::{addr, new_token};
 use crate::{make_node, piece};
 use serde_derive::{Deserialize, Serialize};
+use std::io::Write;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct KeyboardEvent {
@@ -336,6 +337,27 @@ impl KeyboardEvent {
                     )
                     .unwrap(),
                 );
+            }
+            Command::SaveFile => {
+                let rtl = state.to_rtl();
+
+                let filename = format!(
+                    "../../../AuralStudioProjects/{}.rattle",
+                    state.filename.trim()
+                );
+
+                let mut file = match std::fs::File::create(&filename) {
+                    Err(why) => {
+                        dbg!(&why);
+                        return Err(CursorError::FileIOError(why.to_string()));
+                    }
+                    Ok(file_) => file_,
+                };
+
+                match file.write_all(rtl.as_bytes()) {
+                    Err(why) => return Err(CursorError::FileIOError(why.to_string())),
+                    Ok(_) => {}
+                }
             }
             Command::TypeChar(c) => {
                 if c == "Enter" {
