@@ -180,6 +180,8 @@ pub(crate) enum CursorError {
     MisplacedBracket,
     #[error("cannot delete the `start` function in a Rattle program")]
     DeleteStartFn,
+    #[error("key action not supported")]
+    InvalidCommand,
 }
 
 impl From<std::num::ParseFloatError> for CursorError {
