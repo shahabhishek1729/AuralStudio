@@ -22,7 +22,7 @@
     },
     "windows": [
       {
-        "title": "final-tauri",
+        "title": "AuralStudio",
         "hiddenTitle": true,
         "width": 1200,
         "height": 700
