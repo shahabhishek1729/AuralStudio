@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/tauri";
 import {
   RenderBoolean,
   RenderCall,
@@ -12,7 +11,7 @@ import {
 } from "./PieceRenderer";
 import { getColor } from "./utils";
 
-export function TokenMenu({ onClick }) {
+export function TokenMenu({ onClick }: { onClick: () => void }) {
   return (
     <div
       style={{
@@ -91,7 +90,13 @@ export function OpMenu() {
   );
 }
 
-function TokenTemplate({ shortcut, onClick }) {
+function TokenTemplate({
+  shortcut,
+  onClick,
+}: {
+  shortcut: string;
+  onClick: () => void;
+}) {
   let template;
   switch (shortcut) {
     case "⏎":
@@ -158,24 +163,25 @@ function FunctionTemplate() {
         puzzle_color={getColor({ IDENT: "..." })}
         first={true}
         indent={0}
+        addr=""
       />
       <RenderIdent
         pieces={[]}
-        i={0}
+        i={[0]}
         name={"name"}
         chained={true}
         selected={false}
         parentAddr={"0"}
-        pieceIx={0}
+        pieceIx={[0]}
       />
       <RenderIdent
         pieces={[]}
-        i={1}
+        i={[1]}
         name={"parameters"}
         chained={false}
         selected={false}
         parentAddr={"0"}
-        pieceIx={0}
+        pieceIx={[0]}
       />
     </div>
   );
@@ -196,15 +202,16 @@ function VariableTemplate() {
         puzzle_color={getColor({ IDENT: "..." })}
         first={true}
         indent={0}
+        addr=""
       />
       <RenderIdent
         pieces={[]}
-        i={0}
+        i={[0]}
         name={"name"}
         chained={true}
         selected={false}
         parentAddr={"0"}
-        pieceIx={0}
+        pieceIx={[0]}
       />
       <RenderOperator op_name={"ASSN"} selected={false} />
       <RenderPending chained={false} selected={false} kind={"PendingVal"} />
@@ -227,6 +234,7 @@ function ReturnTemplate() {
         puzzle_color={"black"}
         first={true}
         indent={0}
+        addr=""
       />
       <RenderPending chained={true} selected={false} kind={"PendingVal"} />
     </div>
@@ -248,6 +256,7 @@ function OutputTemplate() {
         puzzle_color={"black"}
         first={true}
         indent={0}
+        addr=""
       />
       <RenderPending chained={true} selected={false} kind={"PendingVal"} />
     </div>
@@ -269,15 +278,16 @@ function ForTemplate() {
         puzzle_color={getColor({ IDENT: "" })}
         first={true}
         indent={0}
+        addr=""
       />
       <RenderIdent
         pieces={[]}
-        i={0}
+        i={[0]}
         name={"name"}
         chained={true}
         selected={false}
         parentAddr={"0"}
-        pieceIx={0}
+        pieceIx={[0]}
       />
       <RenderOperator op_name={"IN"} selected={false} />
       <RenderPending chained={false} selected={false} kind={"PendingVal"} />
@@ -300,6 +310,7 @@ function WhileTemplate() {
         puzzle_color={"black"}
         first={true}
         indent={0}
+        addr=""
       />
       <RenderPending chained={false} selected={false} kind={"PendingVal"} />
     </div>
@@ -321,25 +332,26 @@ function IfTemplate() {
         puzzle_color={"black"}
         first={true}
         indent={0}
+        addr=""
       />
       <RenderPending chained={false} selected={false} kind={"PendingVal"} />
     </div>
   );
 }
 
-function ValueTemplate({ shortcut }) {
+function ValueTemplate({ shortcut }: { shortcut: string }) {
   let template;
   switch (shortcut) {
     case "v":
       template = (
         <RenderIdent
           pieces={[]}
-          i={0}
+          i={[0]}
           name={"name"}
           chained={false}
           selected={false}
           parentAddr={"0"}
-          pieceIx={0}
+          pieceIx={[0]}
         />
       );
       break;
@@ -347,7 +359,7 @@ function ValueTemplate({ shortcut }) {
       template = (
         <RenderNumber
           num={0}
-          pieceIx={0}
+          pieceIx={[0]}
           chained={false}
           selected={false}
           parentAddr={"0"}
@@ -410,7 +422,7 @@ function ValueTemplate({ shortcut }) {
   );
 }
 
-function OpTemplate({ shortcut }) {
+function OpTemplate({ shortcut }: { shortcut: string }) {
   let template;
   switch (shortcut) {
     case "p":
