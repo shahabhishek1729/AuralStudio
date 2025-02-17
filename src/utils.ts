@@ -1,8 +1,8 @@
 import { SYMBOL_MAP } from "./PieceRenderer";
 import { RTLPiece, extractPieceType, symbol_metadata } from "./types";
 
-export function getColor(piece: RTLPiece): string | undefined {
-  if (piece === "NOTHING") return undefined;
+export function getColor(piece: RTLPiece): string {
+  if (piece === "NOTHING") return "";
 
   const kind = extractPieceType(piece);
   if (kind === "PendingVal" || kind === "PendingOp") 

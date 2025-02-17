@@ -13,7 +13,7 @@ export interface RTLNode {
 // There are several kinds of pieces in a digraph, as seen below.
 // All but "NOTHING" and Pending* store internal data.
 export type RTLPiece = "NOTHING" | "PendingVal" | "PendingOp" | _PieceInterface;
-interface _PieceInterface {
+export interface _PieceInterface {
 	IDENT?: string,
 	NUMBER?: number,
 	TEXT?: string,

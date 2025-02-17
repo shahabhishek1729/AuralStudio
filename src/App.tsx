@@ -25,8 +25,7 @@ function App() {
 
   // Play welcome audio as soon as the user opens the app
   useEffect(() => {
-    const audioContext = new (window.AudioContext ||
-      window.webkitAudioContext)();
+    const audioContext = new window.AudioContext();
 
     const playAudio = async () => {
       try {
@@ -112,9 +111,7 @@ function App() {
       ) {
         // Save the entered filename and continue
         const elem = document.getElementById("edit_filename");
-        if (elem) {
-          payload.filename = (elem as HTMLInputElement).value;
-        }
+        if (elem) payload.filename = (elem as HTMLInputElement).value;
         setEditingFilename(false);
         return;
       }
@@ -122,6 +119,10 @@ function App() {
       const elem = document.getElementById(
         `${payload.blockLoc},${payload.pieceIx}`,
       );
+
+      let value = null;
+      if (elem && elem instanceof HTMLInputElement)
+        value = (elem as HTMLInputElement).value;
 
       invoke("handle_event", {
         event: JSON.stringify({ key: e.key }),

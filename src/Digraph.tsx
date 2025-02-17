@@ -419,9 +419,11 @@ function RenderNode(
                   : "transparent"
             }
             first={
-              indent &&
-              !!parent &&
-              excludeBlocks(parent)[0].address === node.address
+              !!(
+                indent &&
+                parent &&
+                excludeBlocks(parent)[0].address === node.address
+              )
             }
             indent={parentIndents + indent}
             addr={address}

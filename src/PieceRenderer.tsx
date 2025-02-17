@@ -17,6 +17,7 @@ import {
   op_kind,
   token_metadata,
   extractPieceValue,
+  _PieceInterface,
 } from "./types";
 import { useState } from "react";
 import { arrayEquals } from "./utils";
@@ -42,12 +43,12 @@ export function RenderPiece(
     // Don't re-render indices that have already been compressed into the ident
     if (
       i[i.length - 1] > 0 &&
-      all_pieces[i[i.length - 1] - 1]["OP"] === "AT" &&
+      (all_pieces[i[i.length - 1] - 1] as _PieceInterface)["OP"] === "AT" &&
       all_pieces[i[i.length - 1]] !== "PendingVal" &&
       (!selected ||
-        !!all_pieces[i[i.length - 1]]["IDENT"] ||
-        !!all_pieces[i[i.length - 1]]["NUMBER"] ||
-        !!all_pieces[i[i.length - 1]]["TEXT"])
+        !!(all_pieces[i[i.length - 1]] as _PieceInterface)["IDENT"] ||
+        !!(all_pieces[i[i.length - 1]] as _PieceInterface)["NUMBER"] ||
+        !!(all_pieces[i[i.length - 1]] as _PieceInterface)["TEXT"])
     )
       return <></>;
 
@@ -134,10 +135,24 @@ export function RenderPiece(
     }
   }
 
-  return <div key={i}>{_RenderPiece()}</div>;
+  return <div key={i.join(".")}>{_RenderPiece()}</div>;
 }
 
-export function RenderNumber({ num, pieceIx, chained, selected, parentAddr }) {
+interface NumberProps {
+  num: number;
+  pieceIx: number[];
+  chained: boolean;
+  selected: boolean;
+  parentAddr: string;
+}
+
+export function RenderNumber({
+  num,
+  pieceIx,
+  chained,
+  selected,
+  parentAddr,
+}: NumberProps) {
   return Symbol(
     "constant",
     chained ? "" : "transparent",
@@ -148,7 +163,13 @@ export function RenderNumber({ num, pieceIx, chained, selected, parentAddr }) {
   );
 }
 
-export function RenderBoolean({ bool, chained, selected }) {
+interface BoolProps {
+  bool: boolean;
+  chained: boolean;
+  selected: boolean;
+}
+
+export function RenderBoolean({ bool, chained, selected }: BoolProps) {
   return Symbol(
     "constant",
     chained ? "" : "transparent",
@@ -157,7 +178,21 @@ export function RenderBoolean({ bool, chained, selected }) {
   );
 }
 
-export function RenderText({ text, pieceIx, chained, selected, parentAddr }) {
+interface TextProps {
+  text: string;
+  pieceIx: number[];
+  chained: boolean;
+  selected: boolean;
+  parentAddr: string;
+}
+
+export function RenderText({
+  text,
+  pieceIx,
+  chained,
+  selected,
+  parentAddr,
+}: TextProps) {
   return Symbol(
     "text",
     chained ? "" : "transparent",
@@ -168,8 +203,23 @@ export function RenderText({ text, pieceIx, chained, selected, parentAddr }) {
   );
 }
 
-export function RenderNothing({ chained, selected }) {
+interface NullProps {
+  chained: boolean;
+  selected: boolean;
+}
+
+export function RenderNothing({ chained, selected }: NullProps) {
   return Symbol("constant", chained ? "" : "transparent", selected, "nothing");
+}
+
+interface IdentProps {
+  pieces: RTLPiece[];
+  i: number[];
+  name: string;
+  pieceIx: number[];
+  chained: boolean;
+  selected: boolean;
+  parentAddr: string;
 }
 
 export function RenderIdent({
@@ -180,10 +230,11 @@ export function RenderIdent({
   selected,
   parentAddr,
   pieceIx,
-}) {
+}: IdentProps) {
   const i_ = i[i.length - 1];
   const puzzle_color = chained ? "" : "transparent";
-  const idxFollows = i_ < pieces.length - 2 && pieces[i_ + 1].OP === "AT";
+  const idxFollows =
+    i_ < pieces.length - 2 && (pieces[i_ + 1] as _PieceInterface).OP === "AT";
   let idx = idxFollows ? ` #${extractPieceValue(pieces[i_ + 2]) ?? ""}` : "";
 
   const background = selected ? "white" : SYMBOL_MAP["ident"][0];
@@ -261,11 +312,31 @@ function elementDone(pieces: RTLPiece[], i: number): boolean {
   return !OP_TYPES.includes(currType) && !OP_TYPES.includes(nextType);
 }
 
-export function RenderList({ pieces, chained, myIx, pieceIx, parentAddr }) {
+interface CompoundProps {
+  pieces: RTLPiece[];
+  myIx: number[];
+  pieceIx: number[];
+  chained: boolean;
+  parentAddr: string;
+}
+
+export function RenderList({
+  pieces,
+  chained,
+  myIx,
+  pieceIx,
+  parentAddr,
+}: CompoundProps) {
   return RenderArgs("list", pieces, chained, myIx, pieceIx, parentAddr);
 }
 
-export function RenderCall({ pieces, chained, myIx, pieceIx, parentAddr }) {
+export function RenderCall({
+  pieces,
+  chained,
+  myIx,
+  pieceIx,
+  parentAddr,
+}: CompoundProps) {
   return RenderArgs("call", pieces, chained, myIx, pieceIx, parentAddr);
 }
 
@@ -278,7 +349,7 @@ export function RenderArgs(
   parentAddr: string,
 ) {
   const colorKind = kind === "list" ? "constant" : kind;
-  const name = kind === "call" ? pieces[0].IDENT : "list";
+  const name = kind === "call" ? (pieces[0] as _PieceInterface).IDENT : "list";
 
   return (
     <div
@@ -333,7 +404,12 @@ export function RenderArgs(
   );
 }
 
-export function RenderOperator({ op_name, selected }) {
+interface OpProps {
+  op_name: string;
+  selected: boolean;
+}
+
+export function RenderOperator({ op_name, selected }: OpProps) {
   const _type = op_name === "ASSN" ? "arrow" : "operator";
   const _name = OP_TO_NAME[op_name as keyof op_kind];
 
@@ -348,7 +424,13 @@ export function RenderOperator({ op_name, selected }) {
   );
 }
 
-export function RenderPending({ chained, selected, kind }) {
+interface PendingProps {
+  chained: boolean;
+  selected: boolean;
+  kind: string;
+}
+
+export function RenderPending({ chained, selected, kind }: PendingProps) {
   return (
     <div style={{ display: "flex", flexDirection: "row" }}>
       {!chained ? <div style={{ width: "5px" }} /> : null}
@@ -527,7 +609,7 @@ export function Symbol(
           }}
           value={value}
           onChange={(e) => {
-            if (type === "constant" && isNaN(e.target.value)) {
+            if (type === "constant" && isNaN(+e.target.value)) {
               FAIL_SOUND.play();
               return;
             }
@@ -551,6 +633,14 @@ export function Symbol(
   );
 }
 
+interface TokenProps {
+  token_type: string;
+  puzzle_color: string;
+  first: boolean;
+  indent: number;
+  addr: string;
+}
+
 /**
  * A token is the first piece in a node (e.g., the "variable" keyword)
  * @param token_type {string} the token's kind (e.g., function, variable, ...)
@@ -560,8 +650,15 @@ export function Symbol(
  * @param first {boolean} whether the this token is part of the first line of a
  *						  global block (tells us whether to show the arrow)
  * @param indent {number} how many indents to apply
+ * @param addr {string} the address of the node containing this token
  */
-export function Token({ token_type, puzzle_color, first, indent, addr }) {
+export function Token({
+  token_type,
+  puzzle_color,
+  first,
+  indent,
+  addr,
+}: TokenProps) {
   const [clicked, setClicked] = useState(false);
 
   return (
@@ -603,7 +700,7 @@ export function Token({ token_type, puzzle_color, first, indent, addr }) {
             }}
             onClick={() => {
               setClicked(true);
-              document.getElementById(`selected_${addr}`).style.visibility =
+              document.getElementById(`selected_${addr}`)!.style.visibility =
                 "hidden";
             }}
           >
