@@ -101,6 +101,13 @@ impl KeyboardEvent {
 
                     let curr_node = unsafe { &mut **curr_node };
 
+                    // Allow escaping in TYPE mode only when adding function params.
+                    if state.mode == ADMode::TYPE
+                        && !(curr_node.kind == NodeKind::FNDEF && *piece_ix == vec![0])
+                    {
+                        return Err(CursorError::EscapeWhileType);
+                    }
+
                     let parent_vec =
                         match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
                             Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => args,

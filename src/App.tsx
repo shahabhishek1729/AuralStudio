@@ -119,12 +119,6 @@ function App() {
         return;
       }
 
-      if (payload.mode === "TYPE" && e.key === "Escape") {
-        // TODO: Play audio that this is not permitted
-        speak("Please type something before escaping");
-        return;
-      }
-
       const elem = document.getElementById(
         `${payload.blockLoc},${payload.pieceIx}`,
       );

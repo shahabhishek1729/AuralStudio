@@ -184,6 +184,8 @@ pub(crate) enum CursorError {
     InvalidCommand,
     #[error("I'm sorry, I couldn't create the file you requested, because of: {}", .0)]
     FileIOError(String),
+    #[error("Please finish typing before escaping")]
+    EscapeWhileType,
 }
 
 impl From<std::num::ParseFloatError> for CursorError {
