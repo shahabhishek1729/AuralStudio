@@ -133,17 +133,23 @@ function App() {
         event: JSON.stringify({ key: e.key }),
         payload: payload,
         // (optimization) only send in a value when a value is committed.
-        value: e.key === "Enter" ? elem?.value : null,
-      }).then((result: [boolean, unknown]) => {
-        const succeeded = result[0];
-        const state_editor = result[1];
+        value: e.key === "Enter" ? value : null,
+      }).then((result: unknown) => {
+        const [succeeded, err, new_payload] = result as [
+          boolean,
+          string,
+          CursorState,
+        ];
 
-        if (!succeeded) FAIL_SOUND.play();
+        if (!succeeded) {
+          FAIL_SOUND.play();
+          if (err !== "") speak(err);
+          return;
+        }
 
         const elem = document.getElementById(`menu_${payload.blockLoc}`);
         if (elem) elem.style.display = "none";
 
-        const new_payload = state_editor as CursorState;
         // Prevent useEffect loops by only setting `payload` on a change
         if (payload !== new_payload) setPayload(new_payload);
         console.log(new_payload);

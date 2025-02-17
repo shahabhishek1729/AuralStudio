@@ -94,7 +94,7 @@ fn handle_event(
     event: String,
     mut payload: CursorState,
     value: Option<String>,
-) -> (bool, CursorState) {
+) -> (bool, String, CursorState) {
     let Ok(e): Result<KeyboardEvent, _> = serde_json::from_str(&event) else {
         panic!("Failed to parse keyboardEvent");
     };
@@ -103,12 +103,12 @@ fn handle_event(
         payload.update_value(value).expect("Failed to update value");
     }
 
-    let succeeded = match e.parse_command(&mut payload) {
-        Ok(_) => true,
-        Err(_) => false,
+    let (succeeded, err) = match e.parse_command(&mut payload) {
+        Ok(_) => (true, "".into()),
+        Err(e) => (false, e.to_string()),
     };
 
-    (succeeded, payload)
+    (succeeded, err, payload)
 }
 
 fn main() {

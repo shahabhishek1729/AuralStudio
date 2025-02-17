@@ -158,7 +158,7 @@ where
 pub(crate) enum CursorError {
     #[error("the address {0} does not exist in this tree")]
     InvalidAddress(Address),
-    #[error("the motion {0} is not available at this position")]
+    #[error("")]
     InvalidMotion(CursorDir),
     #[error("couldn't find address: {} in the file", .0)]
     AddrNotFound(Address),
@@ -178,9 +178,9 @@ pub(crate) enum CursorError {
     EmptyIdent,
     #[error("cannot add bracket while expecting a value")]
     MisplacedBracket,
-    #[error("cannot delete the `start` function in a Rattle program")]
+    #[error("Cannot delete the start function")]
     DeleteStartFn,
-    #[error("key action not supported")]
+    #[error("")]
     InvalidCommand,
     #[error("I'm sorry, I couldn't create the file you requested, because of: {}", .0)]
     FileIOError(String),
