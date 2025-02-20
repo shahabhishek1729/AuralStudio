@@ -1,7 +1,7 @@
 #![allow(dead_code)] // Code that is used in the tests module is not recognized here
 use regex::{Captures, Regex};
-use std::fs;
 use std::io::{Read, Write};
+use std::{fs, io};
 
 /// Creates a wrapper around files stored on the user's system.
 /// Only stores files ending in the following extensions:
@@ -25,13 +25,13 @@ use std::io::{Read, Write};
 ///  ```
 #[derive(Debug)]
 pub struct File {
-    ///
+    /// The full name of the file, including `{name}.{ext}`
     pub full_name: String,
-    ///
+    /// The actual name of the file, without the extension
     pub name: Option<String>,
-    ///
+    /// The file extension
     pub ext: Option<&'static str>,
-    ///
+    /// The contents of the file (will always be text with .rattle or .py)
     pub contents: Option<String>,
 }
 
@@ -59,7 +59,6 @@ impl File {
     /// Parses the filename into a name and extension. ALl filenames
     /// are expected to be of the form <NAME>.<EXT>, and these values
     /// are populated into the `name` and `ext` fields, respectively.
-    ///
     /// # Panics
     /// If the filename is does not match the parsed string '<NAME>.<EXT>'
     ///
@@ -174,4 +173,42 @@ impl PartialEq for File {
 
         orig_replaced == oth_replaced
     }
+}
+
+pub(crate) fn auralstudio_dir() -> io::Result<std::path::PathBuf> {
+    // Get the user's home directory
+    let home_dir = dirs::document_dir().ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::NotFound,
+            "Could not find your Documents directory.",
+        )
+    })?;
+
+    // Construct the target directory path
+    let target_dir = home_dir.join("AuralStudioProjects");
+
+    // Ensure directory exists
+    fs::create_dir_all(&target_dir)?;
+
+    Ok(target_dir)
+}
+
+pub(crate) fn to_py(filename: &str) -> String {
+    let Some((pre, _)) = filename.split_once(".") else {
+        panic!("Filename cannot have 0 dots");
+    };
+    format!("{}.py", pre)
+}
+
+pub(crate) fn save_to_file(filename: String, contents: String) -> io::Result<()> {
+    let target_dir = auralstudio_dir()?;
+
+    // Construct the full file path
+    let file_path = target_dir.join(filename);
+
+    // Create and write to the file
+    let mut file = std::fs::File::create(&file_path)?;
+    file.write_all(contents.as_bytes())?;
+
+    Ok(())
 }

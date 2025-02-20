@@ -23,6 +23,7 @@ dualsense-rs = "0.5.0"
 anyhow = "1.0.82"
 thiserror = "1.0.59"
 phf = { version = "0.11", features = ["macros"] }
+dirs = "6.0.0"
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!

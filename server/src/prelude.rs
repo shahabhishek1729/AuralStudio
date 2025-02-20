@@ -184,6 +184,8 @@ pub(crate) enum CursorError {
     InvalidCommand,
     #[error("I'm sorry, I couldn't create the file you requested, because of: {}", .0)]
     FileIOError(String),
+    #[error("Couldn't save your code to a file")]
+    FileError(#[from] std::io::Error),
     #[error("Please finish typing before escaping")]
     EscapeWhileType,
 }

@@ -6,6 +6,7 @@ use crate::digraph::command::Command;
 use crate::digraph::edit::new_piece;
 use crate::digraph::parser::OpKind;
 use crate::digraph::state::{CursorDir, CursorState};
+use crate::file_utils::{auralstudio_dir, to_py};
 use crate::{addr, new_token};
 use crate::{make_node, piece};
 use serde_derive::{Deserialize, Serialize};
@@ -333,19 +334,19 @@ impl KeyboardEvent {
             Command::Run => {
                 let rtl = state.to_rtl();
 
-                let filename = format!(
-                    "../../../AuralStudioProjects/{}.rattle",
-                    state.filename.trim()
-                );
-                let _ = crate::runner::compile(rtl, filename);
+                let filename = format!("{}.rattle", state.filename.trim());
+                let target_dir = auralstudio_dir()?;
+                let filename = target_dir.join(filename);
+                let Some(filename) = filename.to_str() else {
+                    panic!("Found an unreadable filename which shouldn't be possible")
+                };
+
+                let _ = crate::runner::compile(rtl, filename.to_string());
                 // TODO: Clean up
                 state.output = Some(
                     String::from_utf8(
                         std::process::Command::new("python")
-                            .arg(&format!(
-                                "../../../AuralStudioProjects/{}.py",
-                                state.filename.trim()
-                            ))
+                            .arg(to_py(filename))
                             .output()
                             .unwrap()
                             .stdout,
@@ -356,23 +357,15 @@ impl KeyboardEvent {
             Command::SaveFile => {
                 let rtl = state.to_rtl();
 
-                let filename = format!(
-                    "../../../AuralStudioProjects/{}.rattle",
-                    state.filename.trim()
-                );
-
-                let mut file = match std::fs::File::create(&filename) {
-                    Err(why) => {
-                        dbg!(&why);
-                        return Err(CursorError::FileIOError(why.to_string()));
-                    }
-                    Ok(file_) => file_,
+                let filename = format!("{}.rattle", state.filename.trim());
+                let target_dir = auralstudio_dir()?;
+                let filename = target_dir.join(filename);
+                let Some(filename) = filename.to_str() else {
+                    panic!("Found an unreadable filename which shouldn't be possible")
                 };
 
-                match file.write_all(rtl.as_bytes()) {
-                    Err(why) => return Err(CursorError::FileIOError(why.to_string())),
-                    Ok(_) => {}
-                }
+                let mut file = std::fs::File::create(filename)?;
+                file.write_all(rtl.as_bytes())?;
             }
             Command::TypeChar(c) => {
                 if c == "Enter" {
