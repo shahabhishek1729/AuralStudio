@@ -1177,7 +1177,7 @@ return m
 done for
 done define\ndefine g of x\noutput x plus 1\nif x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone define\ndefine start of args\nlet matrix be list 1 2 3 4 done\ndone define";
             let mut parser = Parser::new(String::from(source)).unwrap();
-            let tokens = parser.parse().unwrap();
+            let _tokens = parser.parse().unwrap();
         }
     }
 }
