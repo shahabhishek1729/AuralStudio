@@ -100,7 +100,10 @@ fn handle_event(
     };
 
     if let Some(value) = value {
-        payload.update_value(value).expect("Failed to update value");
+        match payload.update_value(value) {
+            Ok(_) => {}
+            Err(e) => return (false, e.to_string(), payload),
+        }
     }
 
     let (succeeded, err) = match e.parse_command(&mut payload) {
