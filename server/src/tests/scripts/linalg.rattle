@@ -5,7 +5,7 @@ let y be m at 1 times m at 2
 return x minus y
 done define
 define adjoint of m
-let result be list
+let result be list m at 3 0 minus m at 1 0 minus m at 2 m at 0 done
 return result
 done define
 let d be determinant
