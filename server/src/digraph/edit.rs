@@ -283,7 +283,7 @@ impl CursorState {
             parent_addr: from_addr,
             rtl: Some("define pretend".into()),
         };
-        parent_node.children.push(new_node);
+        parent_node.children.insert(0, new_node);
         Ok(())
     }
 
