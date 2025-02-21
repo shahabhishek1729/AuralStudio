@@ -592,6 +592,7 @@ export function Symbol(
         alignItems: "center", //Centered horizontally
         paddingLeft: "5px",
         paddingRight: "5px",
+        filter: `drop-shadow(4px 4px 16px ${background})`,
       }}
     >
       {selected && ["text", "constant", "ident", "call"].includes(type) ? (
@@ -697,6 +698,7 @@ export function Token({
               justifyContent: "center", //Centered vertically
               alignItems: "center", //Centered horizontally
               paddingLeft: token_type === "pending" ? "0px" : "8px",
+              filter: `drop-shadow(-8px 2px 20px ${TOKEN_MAP[token_type as keyof token_metadata][0]})`,
             }}
             onClick={() => {
               setClicked(true);
