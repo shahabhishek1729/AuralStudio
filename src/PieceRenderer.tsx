@@ -698,7 +698,7 @@ export function Token({
               justifyContent: "center", //Centered vertically
               alignItems: "center", //Centered horizontally
               paddingLeft: token_type === "pending" ? "0px" : "8px",
-              filter: `drop-shadow(-8px 2px 20px ${TOKEN_MAP[token_type as keyof token_metadata][0]})`,
+              filter: `drop-shadow(-8px 2px 16px ${TOKEN_MAP[token_type as keyof token_metadata][0]})`,
             }}
             onClick={() => {
               setClicked(true);
