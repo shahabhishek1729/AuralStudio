@@ -188,7 +188,7 @@ impl CursorState {
                     // Append <num_blocks (the index of the new node), 0 (root of the block)>
                     next_addr.join(&[num_blocks, 0])
                 };
-                self._insert_fn(&insert_loc_, curr_addr)?;
+                self._insert_fn(&insert_loc_, curr_addr, num_blocks)?;
                 self.mode = ADMode::TYPE;
                 self.piece_ix = Some(vec![0usize]);
                 insert_loc_ // function name must follow
@@ -255,7 +255,12 @@ impl CursorState {
 
     // Update graph with a new function (@ `at_addr`) as a child of the function @ `from_addr`.
     #[inline]
-    fn _insert_fn(&mut self, at_addr: &Address, from_addr: Address) -> Result<(), CursorError> {
+    fn _insert_fn(
+        &mut self,
+        at_addr: &Address,
+        from_addr: Address,
+        num_blocks: usize,
+    ) -> Result<(), CursorError> {
         let hash_ = self.graph.get_hash_mut();
         let Some(parent_node) = hash_.get(&from_addr) else {
             return Err(CursorError::ParentNotFound(from_addr));
@@ -283,7 +288,7 @@ impl CursorState {
             parent_addr: from_addr,
             rtl: Some("define pretend".into()),
         };
-        parent_node.children.insert(0, new_node);
+        parent_node.children.insert(num_blocks, new_node);
         Ok(())
     }
 
