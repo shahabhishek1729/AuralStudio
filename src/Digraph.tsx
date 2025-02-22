@@ -477,6 +477,7 @@ function FileNode(
         alignItems: "center", //Centered horizontally
         paddingLeft: "10px",
         paddingRight: "10px",
+        filter: `drop-shadow(-8px 2px 16px #5C89FD)`,
         ...FLEX_ROW,
       }}
     >
