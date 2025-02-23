@@ -142,7 +142,7 @@ function App() {
         // Save the entered filename and continue
         const elem = document.getElementById(`note_${payload.blockLoc}`);
         invoke("save_note", {
-          note: (elem as HTMLInputElement).value,
+          note: (elem as HTMLInputElement).value.trimEnd(),
           payload: payload,
         }).then((result: unknown) => {
           const new_payload = result as CursorState;

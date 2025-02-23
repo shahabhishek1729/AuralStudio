@@ -469,19 +469,22 @@ function RenderNode(
                 width: "fit-content",
                 justifyContent: "center",
                 alignItems: "center",
-                border:
-                  renderedAddr === `${address}.0` ? "2px solid #f7dc28" : "",
-                borderRadius: "10px",
+                background: "#333",
               }}
             >
-              <input
+              <textarea
                 id={node.children.length > 0 ? `note_${address}.0` : ""}
+                onKeyUp={(e) => {
+                  e.target.style.height = "0px";
+                  e.target.style.height = -8 + e.target.scrollHeight + "px";
+                }}
                 style={{
-                  fontFamily: "JetBrains Mono",
+                  width: "100%",
+                  height: "fit-content",
                   textAlign: "start",
-                  color: "white",
-                  fontSize: "16px",
-                  padding: "0px",
+                  color: "#CCCCCC",
+                  fontSize: "12px",
+                  padding: "5px",
                   boxShadow: "none",
                 }}
               />
