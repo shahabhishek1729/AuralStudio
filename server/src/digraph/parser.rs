@@ -195,6 +195,7 @@ pub(crate) struct Node {
     #[serde(rename = "parent")]
     pub(crate) parent_addr: Address,
     pub(crate) rtl: Option<String>,
+    pub(crate) note: Option<String>,
 }
 
 impl Default for Node {
@@ -207,6 +208,7 @@ impl Default for Node {
             addr: Address::new(vec![]),
             parent_addr: Address::new(vec![]),
             rtl: None,
+            note: None,
         }
     }
 }

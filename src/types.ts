@@ -8,6 +8,7 @@ export interface RTLNode {
 	address: string,
 	parent?: string,
 	rtl: string | null,
+	note: string | null,
 }
 
 // There are several kinds of pieces in a digraph, as seen below.

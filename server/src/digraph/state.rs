@@ -408,6 +408,34 @@ impl CursorState {
         }
         rtl
     }
+
+    pub(crate) fn save_note(&mut self, note: String) {
+        let hash = self.graph.get_hash_mut();
+        let Some(curr_node) = hash.get(&self.block_loc) else {
+            unreachable!("Couldn't have added note to an non-existent node");
+        };
+
+        // SAFETY: This node must be valid because it comes from the current block_loc of the
+        // PayloadState. block_loc must point to a node since otherwise we would have returned Err.
+        let curr_node = unsafe { &mut **curr_node };
+        curr_node.note = Some(note);
+
+        self.mode = ADMode::VIEW;
+    }
+
+    pub(crate) fn fetch_note(&self) -> String {
+        let hash = self.graph.get_hash();
+        let Some(curr_node) = hash.get(&self.block_loc) else {
+            unreachable!("Couldn't have added note to an non-existent node");
+        };
+
+        if let Some(ref note) = curr_node.note {
+            note
+        } else {
+            ""
+        }
+        .to_string()
+    }
 }
 
 #[cfg(test)]

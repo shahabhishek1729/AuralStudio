@@ -7,10 +7,12 @@ CMD   : Move up         | k    | ✅   |
 CMD   : Move down       | j    | ✅   |
 CMD   : Move in         |      | ✅   |
 CMD   : Move out        | ⌫    | ✅   |
-CMD   : Run program     | r    | x    |
-CMD   : Save file       | s    | x    |
-CMD   : New project     | n    | ✅   |
-CMD   : Open project    | o    | x    |
+CMD   : Run program     | r    | ✅   |
+CMD   : Save file       | s    | ✅   |
+CMD   : New note        | n    | x    |
+---------------------------------------
+HOME  : New project     | n    | ✅   |
+HOME  : Open project    | o    | x    |
 ---------------------------------------
 TOKEN : Function        | AUTO | ✅   |
 TOKEN : Variable		| v    | ✅   |

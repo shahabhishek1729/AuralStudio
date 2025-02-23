@@ -14,6 +14,7 @@ import { CursorState, RTLNode } from "./types";
 import { ROW_STYLE, FLEX_COL, FLEX_ROW, BORDER_ANIMATION } from "./styles";
 import { Token, RenderPiece } from "./PieceRenderer";
 import { getColor } from "./utils";
+import ReactCardFlip from "react-card-flip";
 
 const token_type = {
   FNDEF: "function",
@@ -59,7 +60,12 @@ function addrStep(addr: string, n: number = 1): string {
 }
 
 // TODO: When editing, we need to render text boxes for strings + identifiers.
-export function DAG(payload: CursorState, hide: boolean, editFname: boolean) {
+export function DAG(
+  payload: CursorState,
+  hide: boolean,
+  editFname: boolean,
+  flipped: string,
+) {
   const source = payload.graph;
   const selectedAddr = payload.blockLoc || "filenode";
   const [renderedAddr, setRenderedAddr] = useState("");
@@ -186,6 +192,7 @@ export function DAG(payload: CursorState, hide: boolean, editFname: boolean) {
                   selectedAddr,
                   renderedAddr,
                   payload.pieceIx,
+                  flipped,
                 ),
               )}
             </div>
@@ -202,6 +209,7 @@ function RenderSubtree(
   selectedAddr: string,
   renderedAddr: string,
   pieceIx: number[] | null,
+  flipped: string,
 ): ReactNode {
   return (
     <div key={addr}>
@@ -213,6 +221,7 @@ function RenderSubtree(
           renderedAddr,
           pieceIx,
           addr.includes(".") ? subtreeRoot : undefined,
+          flipped,
         )}
       </div>
       {hasBlocks(subtreeRoot) ? (
@@ -230,6 +239,7 @@ function RenderSubtree(
               selectedAddr,
               renderedAddr,
               pieceIx,
+              flipped,
             ),
           )}
         </div>
@@ -245,6 +255,7 @@ function RenderBlock(
   renderedAddr: string,
   pieceIx: number[] | null,
   subtreeParent?: RTLNode,
+  flipped: string = "",
 ): ReactNode {
   const blockAddr =
     hasBlocks(subtreeRoot) || !subtreeParent ? `${address}.0` : address;
@@ -280,6 +291,8 @@ function RenderBlock(
             subtreeParent,
             0,
             false,
+            undefined,
+            flipped,
           )}
         </div>
       </ArcherElement>
@@ -298,6 +311,7 @@ function RenderNode(
   parentIndents: number = 0, // How many times the parent node was indented
   check_blocks: boolean = true, // Used on recursive calls
   recursive: boolean = true, // Used on recursive calls
+  flipped: string = "",
 ) {
   if (LOCAL_BLOCK_NODES.includes(node.kind) && check_blocks) {
     return (
@@ -321,6 +335,7 @@ function RenderNode(
             parentIndents,
             false,
             false,
+            flipped,
           )}
         </div>
         <div style={{ height: "50px" }} />
@@ -340,6 +355,10 @@ function RenderNode(
                 renderedAddr,
                 pieceIx,
                 node,
+                undefined,
+                undefined,
+                undefined,
+                flipped,
               )}
             </div>
           ))}
@@ -397,45 +416,77 @@ function RenderNode(
             };
           })}
       >
-        <div
-          id={node.children.length > 0 ? `${address}.0` : ""}
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            width: "fit-content",
-            justifyContent: "center",
-            alignItems: "center",
-            border: renderedAddr === `${address}.0` ? "2px solid #f7dc28" : "",
-            borderRadius: "10px",
-          }}
-        >
-          <Token
-            token_type={token_type[node.kind as keyof typeof token_type]}
-            puzzle_color={
-              node.address === selectedAddr && (pieceIx ?? [1])[0] === 0
-                ? "white"
-                : node.pieces.length > 0
-                  ? getColor(node.pieces[0])
-                  : "transparent"
-            }
-            first={
-              !!(
-                indent &&
-                parent &&
-                excludeBlocks(parent)[0].address === node.address
-              )
-            }
-            indent={parentIndents + indent}
-            addr={address}
-          />
-          {node.pieces.map((_, ix) =>
-            RenderPiece(
-              node.pieces,
-              [ix],
-              node.address === selectedAddr ? pieceIx ?? [-1] : [-1],
-              node.address,
-            ),
-          )}
+        <div id={node.children.length > 0 ? `${address}.0` : ""}>
+          <ReactCardFlip
+            isFlipped={flipped === `${address}.0`}
+            flipDirection="vertical"
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                width: "fit-content",
+                justifyContent: "center",
+                alignItems: "center",
+                border:
+                  renderedAddr === `${address}.0` ? "2px solid #f7dc28" : "",
+                borderRadius: "10px",
+              }}
+            >
+              <Token
+                token_type={token_type[node.kind as keyof typeof token_type]}
+                puzzle_color={
+                  node.address === selectedAddr && (pieceIx ?? [1])[0] === 0
+                    ? "white"
+                    : node.pieces.length > 0
+                      ? getColor(node.pieces[0])
+                      : "transparent"
+                }
+                first={
+                  !!(
+                    indent &&
+                    parent &&
+                    excludeBlocks(parent)[0].address === node.address
+                  )
+                }
+                indent={parentIndents + indent}
+                addr={address}
+              />
+              {node.pieces.map((_, ix) =>
+                RenderPiece(
+                  node.pieces,
+                  [ix],
+                  node.address === selectedAddr ? pieceIx ?? [-1] : [-1],
+                  node.address,
+                ),
+              )}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                width: "fit-content",
+                justifyContent: "center",
+                alignItems: "center",
+                border:
+                  renderedAddr === `${address}.0` ? "2px solid #f7dc28" : "",
+                borderRadius: "10px",
+              }}
+            >
+              <input
+                id={node.children.length > 0 ? `note_${address}.0` : ""}
+                style={{
+                  fontFamily: "JetBrains Mono",
+                  textAlign: "start",
+                  color: "white",
+                  fontSize: "16px",
+                  padding: "0px",
+                  boxShadow: "none",
+                }}
+              />
+            </div>
+          </ReactCardFlip>
         </div>
       </ArcherElement>
 

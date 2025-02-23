@@ -22,6 +22,7 @@ function App() {
   });
 
   const [editingFilename, setEditingFilename] = useState(false);
+  const [activeNote, setActiveNote] = useState("");
 
   // Play welcome audio as soon as the user opens the app
   useEffect(() => {
@@ -94,6 +95,25 @@ function App() {
     if (display === "HOME") {
       handleEvent(e.key);
     } else if (display === "EDITOR") {
+      // Handle a few cases manually where the server is not required:
+      //
+      // 1. "n" in view mode to create a new note
+      if (payload.mode === "VIEW" && e.key === "n") {
+        // TODO: Implement
+        setActiveNote(payload.blockLoc);
+        const elem = document.getElementById(`note_${payload.blockLoc}`);
+        if (elem) {
+          elem.focus();
+          invoke("fetch_note", { payload: payload }).then((result: unknown) => {
+            const text = result as string;
+            const _elem = elem as HTMLInputElement;
+            _elem.value = text;
+          });
+        }
+        payload.mode = "TYPE";
+      }
+
+      // 2. "s" in view mode on an unnamed file to give it a name
       if (
         payload.mode === "VIEW" &&
         e.key === "s" &&
@@ -103,6 +123,7 @@ function App() {
         return;
       }
 
+      // 3. "Enter" after filename has been edited
       if (
         payload.mode === "TYPE" &&
         e.key === "Enter" &&
@@ -113,6 +134,21 @@ function App() {
         const elem = document.getElementById("edit_filename");
         if (elem) payload.filename = (elem as HTMLInputElement).value;
         setEditingFilename(false);
+        return;
+      }
+
+      // 4. "Enter" after note has been edited
+      if (payload.mode === "TYPE" && e.key === "Enter" && activeNote) {
+        // Save the entered filename and continue
+        const elem = document.getElementById(`note_${payload.blockLoc}`);
+        invoke("save_note", {
+          note: (elem as HTMLInputElement).value,
+          payload: payload,
+        }).then((result: unknown) => {
+          const new_payload = result as CursorState;
+          if (new_payload !== payload) setPayload(new_payload);
+        });
+        setActiveNote("");
         return;
       }
 
@@ -206,7 +242,7 @@ function App() {
           }}
         >
           <div style={{ overflow: "hidden", width: "100vw", height: "100vh" }}>
-            {DAG(payload, display !== "EDITOR", editingFilename)}
+            {DAG(payload, display !== "EDITOR", editingFilename, activeNote)}
             <div
               style={{
                 display: display === "EDITOR" ? "flex" : "none",

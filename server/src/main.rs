@@ -114,6 +114,17 @@ fn handle_event(
     (succeeded, err, payload)
 }
 
+#[tauri::command]
+fn save_note(note: String, mut payload: CursorState) -> CursorState {
+    payload.save_note(note);
+    payload
+}
+
+#[tauri::command]
+fn fetch_note(payload: CursorState) -> String {
+    payload.fetch_note()
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -121,6 +132,8 @@ fn main() {
             run_code,
             parse_file,
             handle_event,
+            save_note,
+            fetch_note,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
