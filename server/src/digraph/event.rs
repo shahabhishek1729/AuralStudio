@@ -371,17 +371,18 @@ impl KeyboardEvent {
                 };
 
                 let _ = crate::runner::compile(rtl, filename.to_string());
-                // TODO: Clean up
-                state.output = Some(
-                    String::from_utf8(
-                        std::process::Command::new("python")
-                            .arg(to_py(filename))
-                            .output()
-                            .unwrap()
-                            .stdout,
-                    )
-                    .unwrap(),
-                );
+                let process = std::process::Command::new("python")
+                    .arg(to_py(filename))
+                    .output()?;
+
+                let out = String::from_utf8(process.stdout).expect("stdout conversion can't fail");
+                let mut err =
+                    String::from_utf8(process.stderr).expect("stdout conversion can't fail");
+                if !err.is_empty() {
+                    err = format!("\n\nError:\n{}", err);
+                }
+
+                state.output = Some(format!("{}{}", out, err));
             }
             Command::SaveFile => {
                 let rtl = state.to_rtl();
