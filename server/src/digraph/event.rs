@@ -156,8 +156,37 @@ impl KeyboardEvent {
                      make_node!(line 0 -> NodeKind::PENDING [piece!(..#)])
                 }};
             }
-            Command::InsertBreak => new_token! { From state, NodeKind::BREAK => [] },
-            Command::InsertContinue => new_token! { From state, NodeKind::CONTINUE => [] },
+            Command::InsertBreak | Command::InsertContinue => {
+                // Ensure we're in a loop before we add either of these blocks
+                let hash = state.graph.get_hash();
+                let curr_node = hash.get(&state.block_loc);
+                let Some(start_node) = curr_node else {
+                    return Err(CursorError::AddrNotFound(state.block_loc.clone()));
+                };
+
+                let mut curr_node = start_node;
+                let mut in_loop = false;
+                while curr_node.parent_addr.len() > 2 {
+                    curr_node = hash
+                        .get(&curr_node.parent_addr)
+                        .expect("Cannot have no parent");
+                    if curr_node.kind == NodeKind::FORLOOP || curr_node.kind == NodeKind::WHLLOOP {
+                        in_loop = true;
+                        break;
+                    }
+                }
+
+                if !in_loop {
+                    return Err(CursorError::NotInLoop);
+                }
+
+                let kind = match *command {
+                    Command::InsertBreak => NodeKind::BREAK,
+                    Command::InsertContinue => NodeKind::CONTINUE,
+                    _ => unreachable!("within sub-match"),
+                };
+                new_token! { From state, kind => [] }
+            }
             Command::InsertReturn => {
                 new_token! { From state, NodeKind::RETURN => [piece!(..#)] @ vec![0] };
             }

@@ -127,6 +127,8 @@ export interface token_metadata {
   return: [string, string];
   list: [string, string];
   pending: [string, string];
+  continue: [string, string];
+  break: [string, string];
 }
 
 export interface op_kind {

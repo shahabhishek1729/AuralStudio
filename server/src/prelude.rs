@@ -186,6 +186,8 @@ pub(crate) enum CursorError {
     FileError(#[from] std::io::Error),
     #[error("Please finish typing before escaping")]
     EscapeWhileType,
+    #[error("Can only add this piece when you're in a loop")]
+    NotInLoop,
 }
 
 impl From<std::num::ParseFloatError> for CursorError {

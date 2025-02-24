@@ -27,6 +27,8 @@ const token_type = {
   PENDING: "pending",
   FORLOOP: "for",
   WHLLOOP: "while",
+  BREAK: "break",
+  CONTINUE: "continue",
 };
 
 // The kinds of nodes that would require an arrow to be drawn towards them.

@@ -453,6 +453,8 @@ const TOKEN_MAP: token_metadata = {
   return: ["#B140B4", book],
   list: ["#06975A", question],
   pending: ["transparent", ""],
+  continue: ["#06975A", ""],
+  break: ["#06975A", ""],
 };
 
 export const SYMBOL_MAP: symbol_metadata = {
