@@ -94,21 +94,21 @@ impl KeyboardEvent {
             Command::ViewMode => state.to_view()?,
             Command::Escape => {
                 let piece_ix = &state.piece_ix.clone().unwrap_or(vec![]);
+                let hash = state.graph.get_hash_mut();
+                let Some(curr_node) = hash.get(&state.block_loc) else {
+                    return Err(CursorError::AddrNotFound(state.block_loc.clone()));
+                };
+
+                let curr_node = unsafe { &mut **curr_node };
+
+                // Allow escaping in TYPE mode only when adding function params.
+                if state.mode == ADMode::TYPE
+                    && !(curr_node.kind == NodeKind::FNDEF && *piece_ix != vec![0])
+                {
+                    return Err(CursorError::EscapeWhileType);
+                }
+
                 if piece_ix.len() > 1 {
-                    let hash = state.graph.get_hash_mut();
-                    let Some(curr_node) = hash.get(&state.block_loc) else {
-                        return Err(CursorError::AddrNotFound(state.block_loc.clone()));
-                    };
-
-                    let curr_node = unsafe { &mut **curr_node };
-
-                    // Allow escaping in TYPE mode only when adding function params.
-                    if state.mode == ADMode::TYPE
-                        && !(curr_node.kind == NodeKind::FNDEF && *piece_ix == vec![0])
-                    {
-                        return Err(CursorError::EscapeWhileType);
-                    }
-
                     let parent_vec =
                         match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
                             Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => args,

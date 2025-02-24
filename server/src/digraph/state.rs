@@ -213,7 +213,17 @@ impl CursorDir {
             CursorDir::IN => self.move_global(state),
             CursorDir::OUT => {
                 let mut src = src.clone();
+                let hash = state.graph.get_hash();
                 let _ = src.addr.pop();
+
+                // For conditionals, go out once more since there's an extra 0.0 (there can only
+                // ever be one node on the first level of a conditional).
+                if let Some(curr_node) = hash.get(&state.block_loc) {
+                    if curr_node.kind == NodeKind::CONDTL {
+                        let _ = src.addr.pop();
+                    }
+                }
+
                 Ok(src)
             }
         }

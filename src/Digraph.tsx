@@ -475,8 +475,9 @@ function RenderNode(
               <textarea
                 id={node.children.length > 0 ? `note_${address}.0` : ""}
                 onKeyUp={(e) => {
-                  e.target.style.height = "0px";
-                  e.target.style.height = -8 + e.target.scrollHeight + "px";
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = "0px";
+                  target.style.height = -8 + target.scrollHeight + "px";
                 }}
                 style={{
                   width: "100%",
@@ -487,6 +488,7 @@ function RenderNode(
                   padding: "5px",
                   boxShadow: "none",
                 }}
+                placeholder="Enter note here..."
               />
             </div>
           </ReactCardFlip>
