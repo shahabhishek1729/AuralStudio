@@ -84,6 +84,16 @@ impl KeyboardEvent {
                     state.piece_ix = None;
                     state.mode = ADMode::EDIT(Expecting::Token);
                 } else {
+                    // Insert a blank node at the end
+                    let Some(last) = curr_node.pieces.last() else {
+                        unreachable!("Empty nodes are impossible");
+                    };
+                    curr_node.pieces.push(if last.resolves_to_val() {
+                        piece!(..+)
+                    } else {
+                        piece!(..#)
+                    });
+
                     state._move_to_next(
                         curr_node,
                         Some(&mut vec![0usize]),
