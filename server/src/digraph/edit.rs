@@ -574,10 +574,12 @@ mod tests {
             state.to_insert().expect("Could not toggle node");
             assert_eq!(state.block_loc, addr!(0, 1, 2, 0));
 
+            state.coerce().expect("Coercion should work");
             let hash = state.graph.get_hash();
+
             assert_eq!(
-                hash.get(&state.block_loc)
-                    .expect(&format!("Should find a node at {:?}", state.block_loc))
+                hash.get(&state.node_loc)
+                    .expect(&format!("Should find a node at {:?}", state.node_loc))
                     .kind,
                 NodeKind::FNDEF
             );
