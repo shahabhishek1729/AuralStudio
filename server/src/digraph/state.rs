@@ -253,7 +253,7 @@ impl std::ops::Not for Expecting {
 
 /// The modes a user can be in when navigating through the digraph
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub(super) enum ADMode {
+pub(crate) enum ADMode {
     /// Used to insert code or replace existing code (i.e., modifying the digraph)
     EDIT(Expecting),
     /// Used for moving around in the digraph, running code or any other non-modifying actions.
@@ -268,10 +268,10 @@ pub(crate) struct CursorState {
     pub(crate) filename: String,
     pub(crate) block_loc: Address,
     pub(crate) node_loc: Address,
-    pub(super) mode: ADMode,
-    pub(super) graph: Vec<Node>,
-    pub(super) piece_ix: Option<Vec<usize>>,
-    pub(super) output: Option<String>,
+    pub(crate) mode: ADMode,
+    pub(crate) graph: Vec<Node>,
+    pub(crate) piece_ix: Option<Vec<usize>>,
+    pub(crate) output: Option<String>,
 }
 
 impl Default for CursorState {
