@@ -107,7 +107,6 @@ fn test_script_linalg() {
 
     let gt_path = "src/tests/scripts/linalg.py";
     let mut f2 = file_utils::File::new(gt_path);
-    // Stores tone contents of the file inside the `contents` attribute
     let _ = f2.read();
 
     let mut decompiler = Decompiler::new(&rtl_source).unwrap();

@@ -5,7 +5,7 @@ def inverse(m):
         return x - y
         
     def adjoint(m):
-        result = [m[3], and, 0 - m[1], 0 - m[2], m[0]]
+        result = [m[3], 0 - m[1], 0 - m[2], m[0]]
         return result
         
     d = determinant
