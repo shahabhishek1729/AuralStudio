@@ -8,6 +8,7 @@ pub mod file_utils;
 pub mod prelude;
 pub mod runner;
 pub mod scanner;
+mod static_analysis;
 mod syntax;
 mod tests;
 pub mod transpiler;
