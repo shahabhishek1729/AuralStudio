@@ -282,6 +282,7 @@ impl CursorState {
                 children: vec![],
                 rtl: Some("pretend".into()),
                 note: None,
+                err: None,
             }],
             kind: NodeKind::FNDEF,
             pieces: vec![Piece::IDENT("".into())],
@@ -289,6 +290,7 @@ impl CursorState {
             parent_addr: from_addr,
             rtl: Some("define pretend".into()),
             note: None,
+            err: None,
         };
         parent_node.children.insert(num_blocks, new_node);
         Ok(())
@@ -337,6 +339,7 @@ impl CursorState {
             parent_addr: from_addr,
             rtl: Some("pretend".into()),
             note: None,
+            err: None,
         };
         parent_node.children.insert(recomputed_ix, new_node);
         Ok(())

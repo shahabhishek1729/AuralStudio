@@ -3,6 +3,7 @@ use crate::digraph::util::HORIZ_CHILDREN;
 use crate::prelude::Stack;
 use crate::scanner::rtl_token::RTLToken;
 use crate::scanner::scanner::{Scanner, Token};
+use crate::static_analysis::analyzer::SemanticError;
 use serde_derive::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -196,6 +197,7 @@ pub(crate) struct Node {
     pub(crate) parent_addr: Address,
     pub(crate) rtl: Option<String>,
     pub(crate) note: Option<String>,
+    pub(crate) err: Option<SemanticError>,
 }
 
 impl Default for Node {
@@ -209,6 +211,7 @@ impl Default for Node {
             parent_addr: Address::new(vec![]),
             rtl: None,
             note: None,
+            err: None,
         }
     }
 }

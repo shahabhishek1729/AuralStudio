@@ -1,6 +1,9 @@
 #![allow(dead_code)] // Code that is used in the tests module is not recognized here
 use regex::{Captures, Regex};
-use std::io::{Read, Write};
+use rodio::{Decoder, OutputStream, Sink};
+use std::io::{BufReader, Read, Write};
+use std::sync::Arc;
+use std::thread;
 use std::{fs, io};
 
 /// Creates a wrapper around files stored on the user's system.
@@ -209,6 +212,25 @@ pub(crate) fn save_to_file(filename: String, contents: String) -> io::Result<()>
     // Create and write to the file
     let mut file = std::fs::File::create(&file_path)?;
     file.write_all(contents.as_bytes())?;
+
+    Ok(())
+}
+
+pub(crate) fn play_from_file(filename: &'static str) -> io::Result<()> {
+    thread::spawn(move || {
+        // Create an audio output stream
+        let (_stream, stream_handle) =
+            OutputStream::try_default().expect("Failed to get output stream");
+        let sink = Sink::try_new(&stream_handle).expect("Failed to create audio sink");
+
+        // Open the audio file
+        let file = fs::File::open(filename).expect("Failed to open file");
+        let source = Decoder::new(BufReader::new(file)).expect("Failed to decode audio");
+
+        // Play the audio
+        sink.append(source);
+        sink.sleep_until_end(); // Wait for the sound to finish playing
+    });
 
     Ok(())
 }

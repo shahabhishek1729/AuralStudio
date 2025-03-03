@@ -1,10 +1,12 @@
 use crate::digraph::parser::{Node, Piece};
 use crate::digraph::{address::Addressable, parser::NodeKind, state::CursorState};
 use crate::static_analysis::ident::IDGraph;
+use serde_derive::{Deserialize, Serialize};
+use thiserror::Error;
 
-struct Analyzer;
+pub(crate) struct Analyzer;
 impl Analyzer {
-    pub fn analyze(state: CursorState, id_graph: IDGraph) -> Result<(), SemanticError> {
+    pub(crate) fn analyze(state: &CursorState, id_graph: &IDGraph) -> Result<(), SemanticError> {
         let hash = state.graph.get_hash();
         let curr_node = hash
             .get(&state.block_loc)
@@ -16,8 +18,12 @@ impl Analyzer {
                     break;
                 }
                 match child.kind {
-                    NodeKind::RETURN | NodeKind::BREAK | NodeKind::CONTINUE => {
-                        return Err(SemanticError::UnreachableCode)
+                    NodeKind::BREAK => return Err(SemanticError::UnreachableCode("break".into())),
+                    NodeKind::CONTINUE => {
+                        return Err(SemanticError::UnreachableCode("continue".into()))
+                    }
+                    NodeKind::RETURN => {
+                        return Err(SemanticError::UnreachableCode("return".into()))
                     }
                     _ => continue,
                 }
@@ -41,8 +47,7 @@ impl Analyzer {
                             break 'inner;
                         }
                         let Some(ident) = hash.get(&state.block_loc) else {
-                            // TODO: Handle this better
-                            panic!()
+                            return Err(SemanticError::UseBeforeDef(name.into()));
                         };
                         if !ident.is_valid() {
                             return Err(SemanticError::UseBeforeDef(name.into()));
@@ -52,14 +57,17 @@ impl Analyzer {
                         _analyze_piecewise(pieces, curr_node, id_graph, state)?;
                         let n_args_supp = pieces.len() - 1;
                         let Piece::IDENT(ref fn_name) = pieces[0] else {
-                            // TODO: Handle this better
-                            panic!()
+                            unreachable!("function calls must start with identifiers");
                         };
                         let Some(&n_args_req) = args_hash.get(fn_name) else {
-                            panic!()
+                            return Err(SemanticError::UseBeforeDef(fn_name.into()));
                         };
                         if n_args_supp != n_args_req {
-                            return Err(SemanticError::UnmatchedSignature(n_args_supp, n_args_req));
+                            return Err(SemanticError::UnmatchedSignature(
+                                fn_name.into(),
+                                n_args_supp,
+                                n_args_req,
+                            ));
                         }
                     }
                     _ => {}
@@ -74,16 +82,19 @@ impl Analyzer {
 
 /// The kinds of semantic errors detectable by AuralStudio during interactive development.
 /// NOTE: Doesn't include syntax errors, as these are rendered impossible by digraphs.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Error, Serialize, Deserialize)]
 pub(crate) enum SemanticError {
     /// Code found directly below a break, a continue or a return that can never be executed.
     /// XXX: Doesn't strictly need to be an error, yet likely accidental on the programmer's part.
-    UnreachableCode,
+    #[error("code right below a {0} will never be run.")]
+    UnreachableCode(String),
     /// When a variable is used in an expression or a function is called where the identifier does
     /// not match a valid entry in the identifier digraph.
+    #[error("can't find the variable or function named {0}")]
     UseBeforeDef(String),
     /// When a function is called with the incorrect number of arguments (NOTE: not type checked)
-    UnmatchedSignature(usize, usize),
+    #[error("the function {0} expected {2} arguments, but you provided {1}.")]
+    UnmatchedSignature(String, usize, usize),
 }
 
 #[cfg(test)]
@@ -118,7 +129,7 @@ mod tests {
         };
 
         let dag = IDGraph::from_state(&state);
-        let result = Analyzer::analyze(state, dag);
+        let result = Analyzer::analyze(&state, &dag);
         assert_eq!(result, Err(SemanticError::UseBeforeDef("y".into())));
     }
 
@@ -142,7 +153,10 @@ mod tests {
         };
 
         let dag = IDGraph::from_state(&state);
-        let result = Analyzer::analyze(state, dag);
-        assert_eq!(result, Err(SemanticError::UnmatchedSignature(2, 1)));
+        let result = Analyzer::analyze(&state, &dag);
+        assert_eq!(
+            result,
+            Err(SemanticError::UnmatchedSignature("f".into(), 2, 1))
+        );
     }
 }

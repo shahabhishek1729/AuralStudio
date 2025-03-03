@@ -188,6 +188,8 @@ pub(crate) enum CursorError {
     EscapeWhileType,
     #[error("Can only add this piece when you're in a loop")]
     NotInLoop,
+    #[error("{0}")]
+    SemanticError(#[from] crate::static_analysis::analyzer::SemanticError),
 }
 
 impl From<std::num::ParseFloatError> for CursorError {

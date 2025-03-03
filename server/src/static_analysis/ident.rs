@@ -113,12 +113,12 @@ impl PartialEq for Ident {
 }
 
 #[derive(Debug)]
-pub(super) struct IDGraph {
+pub(crate) struct IDGraph {
     pub(super) graph: Vec<Child<Ident>>,
 }
 
 impl IDGraph {
-    pub(super) fn from_state(state: &CursorState) -> Self {
+    pub(crate) fn from_state(state: &CursorState) -> Self {
         let mut graph: Vec<Child<Ident>> = vec![];
 
         fn _inner(_node: &Node, parent: Option<Parent<Ident>>) -> Option<Child<Ident>> {
@@ -368,6 +368,6 @@ mod tests {
             output: None,
         };
 
-        let dag = IDGraph::from_state(&state);
+        let _dag = IDGraph::from_state(&state);
     }
 }

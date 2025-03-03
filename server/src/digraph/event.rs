@@ -6,11 +6,16 @@ use crate::digraph::command::Command;
 use crate::digraph::edit::new_piece;
 use crate::digraph::parser::OpKind;
 use crate::digraph::state::{CursorDir, CursorState};
-use crate::file_utils::{auralstudio_dir, to_py};
+use crate::file_utils::{auralstudio_dir, play_from_file, to_py};
+use crate::static_analysis::analyzer::Analyzer;
+use crate::static_analysis::ident::IDGraph;
 use crate::{addr, new_token};
 use crate::{make_node, piece};
+use rodio::{Decoder, OutputStream, Sink};
 use serde_derive::{Deserialize, Serialize};
-use std::io::Write;
+use std::fs::File;
+use std::io::{BufReader, Write};
+use std::thread;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct KeyboardEvent {
@@ -67,7 +72,30 @@ impl KeyboardEvent {
                     state.piece_ix = Some(vec![0]);
                     state.mode = ADMode::TYPE;
                 } else {
+                    // TODO: Set up analyzer
+                    let id_graph = IDGraph::from_state(&state);
+                    let res = Analyzer::analyze(&state, &id_graph);
+                    match res {
+                        Ok(_) => play_from_file("../public/correct.mp3")?,
+                        Err(ref e) => {
+                            let hash = state.graph.get_hash_mut();
+                            let Some(curr_node) = hash.get(&state.block_loc) else {
+                                return Err(CursorError::AddrNotFound(state.block_loc.clone()));
+                            };
+
+                            // SAFETY: We know this reference must be valid because we just retrieved the
+                            // `curr_node` pointer from our graph's hash. The nodes in that hash cannot have
+                            // been dropped since its creation (no concurrency), so this is safe.
+                            let curr_node = unsafe { &mut **curr_node };
+                            curr_node.err = Some(e.clone());
+
+                            play_from_file("../public/incorrect.mp3")?;
+                        }
+                    }
                     state.to_insert()?;
+                    if let Err(ref e) = res {
+                        return Err(CursorError::SemanticError(e.clone()));
+                    }
                 }
             }
             Command::InplaceEditMode => {
