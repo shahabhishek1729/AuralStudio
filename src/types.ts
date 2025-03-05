@@ -1,5 +1,6 @@
 export type IDisplay = "HOME" | "PROJECTS" | "EDITOR";
 
+
 export interface RTLNode {
 	line: number,
 	children: RTLNode[],
@@ -9,6 +10,12 @@ export interface RTLNode {
 	parent?: string,
 	rtl: string | null,
 	note: string | null,
+	err: SemanticError | null
+}
+interface SemanticError {
+    UnreachableCode: string,
+    UseBeforeDef: string,
+    UnmatchedSignature: [string, number, number],
 }
 
 // There are several kinds of pieces in a digraph, as seen below.
