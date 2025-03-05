@@ -15,6 +15,7 @@ import { ROW_STYLE, FLEX_COL, FLEX_ROW, BORDER_ANIMATION } from "./styles";
 import { Token, RenderPiece } from "./PieceRenderer";
 import { getColor } from "./utils";
 import ReactCardFlip from "react-card-flip";
+import { CheckmarkIcon, ErrorIcon } from "./Components";
 
 const token_type = {
   FNDEF: "function",
@@ -418,7 +419,10 @@ function RenderNode(
             };
           })}
       >
-        <div id={node.children.length > 0 ? `${address}.0` : ""}>
+        <div
+          id={node.children.length > 0 ? `${address}.0` : ""}
+          style={{ ...FLEX_ROW, alignItems: "center", gap: "8px" }}
+        >
           <ReactCardFlip
             isFlipped={flipped === `${address}.0`}
             flipDirection="vertical"
@@ -488,12 +492,16 @@ function RenderNode(
                   color: "#CCCCCC",
                   fontSize: "12px",
                   padding: "5px",
-                  boxShadow: "none",
                 }}
                 placeholder="Enter note here..."
               />
             </div>
           </ReactCardFlip>
+          {node.err ? (
+            <ErrorIcon />
+          ) : !["FNDEF", "PENDING"].includes(node.kind) ? (
+            <CheckmarkIcon />
+          ) : null}
         </div>
       </ArcherElement>
 
@@ -549,7 +557,6 @@ function FileNode(
             background: "white",
             padding: "0px",
             width: `${fname.length + 2}ch`,
-            boxShadow: "none",
           }}
           value={fname}
           onChange={(e) => setFname(e.target.value.replace(" ", "_"))}
