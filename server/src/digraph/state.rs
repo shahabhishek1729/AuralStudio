@@ -232,7 +232,7 @@ impl CursorDir {
 
 /// When pieces are pending, there are three possibilities of the next piece we're expecting
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-pub(super) enum Expecting {
+pub(crate) enum Expecting {
     /// Anything that is or simplifies to a boolean, number, string, list, etc.
     Value,
     /// An operator (takes in 1-2 values and produces a third value)
