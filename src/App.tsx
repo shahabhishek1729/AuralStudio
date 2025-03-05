@@ -175,7 +175,6 @@ function App() {
         if (!succeeded) {
           FAIL_SOUND.play();
           if (err !== "") speak(err);
-          return;
         }
 
         const elem = document.getElementById(`menu_${payload.blockLoc}`);
