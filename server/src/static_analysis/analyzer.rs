@@ -72,6 +72,9 @@ impl Analyzer {
                             ));
                         }
                     }
+                    crate::digraph::parser::Piece::LIST(pieces) => {
+                        _analyze_piecewise(pieces, curr_node, id_graph, state)?
+                    }
                     _ => {}
                 }
             }
