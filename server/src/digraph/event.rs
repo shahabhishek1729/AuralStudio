@@ -366,9 +366,11 @@ impl KeyboardEvent {
 
                             // Handle deletions of the last node in a parent's children
                             if i == parent_len - 1 {
-                                if i == 0 {
-                                    parent_children
-                                        .push(make_node!(line 0 -> NodeKind::PENDING [piece!(..#)]))
+                                if i == num_fn {
+                                    parent_children.push(
+                                        make_node!(L 0 @ state.block_loc.clone() => NodeKind::PENDING [piece!(..#)]),
+                                    );
+                                    state.coerce()?;
                                 } else {
                                     state.block_loc = parent_children[i - 1].addr.clone();
                                     state.coerce()?;

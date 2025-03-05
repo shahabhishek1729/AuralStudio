@@ -77,6 +77,19 @@ macro_rules! make_node {
             }
         }
     };
+    (L $line:literal @ $addr:expr => $kind:path [$($piece:expr),*]) => {
+        {
+            use $crate::digraph::parser::Node;
+            Node {
+                line: $line,
+                children: vec![],
+                kind: $kind,
+                pieces: vec![$($piece),*],
+                addr: $addr,
+                ..Default::default()
+            }
+        }
+    };
     (L $line:literal @ $($addr:literal),* -> $kind:path [$($piece:expr),*]) => {
         {
             use $crate::digraph::address::Address;
