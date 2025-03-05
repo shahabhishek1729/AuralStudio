@@ -33,24 +33,47 @@ pub(super) enum Ident {
 impl Ident {
     pub(super) fn get_name<'a>(&'a self) -> &'a str {
         match self {
-            Ident::Var { name, .. } => name,
-            Ident::Fun { name, .. } => name,
+            Ident::Var { name, .. } | Ident::Fun { name, .. } => name,
         }
     }
 
     fn get_addr<'a>(&'a self) -> &'a Address {
         match self {
-            Ident::Var { addr, .. } => addr,
-            Ident::Fun { addr, .. } => addr,
+            Ident::Var { addr, .. } | Ident::Fun { addr, .. } => addr,
         }
     }
 
-    pub(super) fn is_valid(&self) -> bool {
+    fn get_parent(&self) -> Option<Parent<Ident>> {
+        match self {
+            Ident::Var { parent, .. } | Ident::Fun { parent, .. } => parent.clone(),
+        }
+    }
+
+    fn get_valid_idents<'a>(&'a self) -> &'a [String] {
+        match self {
+            Ident::Var { valid_idents, .. } | Ident::Fun { valid_idents, .. } => valid_idents,
+        }
+    }
+
+    fn set_valid_idents(&mut self, new: Vec<String>) {
+        match self {
+            Ident::Var {
+                ref mut valid_idents,
+                ..
+            }
+            | Ident::Fun {
+                ref mut valid_idents,
+                ..
+            } => *valid_idents = new,
+        }
+    }
+
+    pub(super) fn is_valid(&self, name: &String) -> bool {
         let valid_names = match self {
             Ident::Var { valid_idents, .. } => valid_idents,
             Ident::Fun { valid_idents, .. } => valid_idents,
         };
-        valid_names.contains(&self.get_name().into())
+        valid_names.contains(name)
     }
 }
 
@@ -181,55 +204,48 @@ impl IDGraph {
         Self { graph }
     }
 
-    fn valid_identifiers(&self) {
-        fn _inner(_acc: &mut Vec<String>, ident: &mut Ident, full_graph: &Vec<Child<Ident>>) {
-            // Appends `ident`'s parent and all LHS siblings to `_acc`
-            let Some(ref p) = (match ident {
-                Ident::Var { ref parent, .. } => parent,
-                Ident::Fun { ref parent, .. } => parent,
-            }) else {
-                _acc.extend(full_graph.iter().map(|c| c.borrow().get_name().into()));
-                return;
-            };
+    pub(crate) fn populate_valid_idents(&self) {
+        for node in &self.graph {
+            Self::update_valid_idents(node.clone());
+        }
+    }
 
-            let p = unsafe { p.as_ptr().read() };
-            let p = &*(p.borrow());
-            match p {
-                Ident::Fun { name, children, .. } => {
-                    // Append parent name
-                    _acc.push(name.into());
-                    // Append all LHS siblings' names
-                    for child in children.iter() {
-                        let child = child.borrow();
-                        if *child == *ident {
-                            break;
+    fn update_valid_idents(node: Child<Ident>) {
+        let mut valid_idents = Vec::new();
+
+        // Get parent's valid_idents if available
+        if let Some(parent_weak) = node.borrow().get_parent() {
+            if let Some(parent_rc) = parent_weak.upgrade() {
+                let parent = parent_rc.borrow();
+                let p_valid_idents = parent.get_valid_idents();
+                let p_name = parent.get_name();
+                valid_idents.extend_from_slice(p_valid_idents);
+                valid_idents.push(p_name.to_string());
+
+                // If parent is a function, find this node's left siblings
+                if let Ident::Fun { children, .. } = &*parent {
+                    if let Some(index) = children.iter().position(|c| Rc::ptr_eq(c, &node)) {
+                        for left_sibling in &children[..index] {
+                            let name = left_sibling.borrow();
+                            let name = name.get_name();
+                            valid_idents.push(name.to_string());
                         }
-                        _acc.push(child.get_name().into());
-                    }
-                }
-                _ => unreachable!("parent must be function"),
-            }
-
-            match ident {
-                Ident::Var {
-                    ref mut valid_idents,
-                    ..
-                } => *valid_idents = _acc.to_vec(),
-                Ident::Fun {
-                    ref mut valid_idents,
-                    ref children,
-                    ..
-                } => {
-                    *valid_idents = _acc.to_vec();
-                    for child in children {
-                        _inner(_acc, &mut child.borrow_mut(), &vec![])
                     }
                 }
             }
         }
 
-        for node in self.graph.iter() {
-            _inner(&mut vec![], &mut node.borrow_mut(), &self.graph);
+        {
+            // Update the node's valid_idents
+            let mut node_mut = node.borrow_mut();
+            node_mut.set_valid_idents(valid_idents);
+        }
+
+        let node = node.borrow();
+        if let Ident::Fun { children, .. } = &*node {
+            for child in children {
+                Self::update_valid_idents(child.clone())
+            }
         }
     }
 
@@ -273,77 +289,6 @@ mod tests {
     use crate::digraph::parser::Parser;
     use crate::digraph::state::ADMode;
     use crate::digraph::state::CursorState;
-
-    macro_rules! move_cursor {
-        // Move sequences that result in an attempted move "off the graph" should return errors
-        ($($dir:tt),+ _in_ $src:ident -> $err:tt) => {{
-            let mut parser = Parser::new(String::from($src)).unwrap();
-            let mut nodes = parser.parse().unwrap();
-            (&mut nodes[..]).fill_addr();
-            let mut state = CursorState {
-                filename: "".into(),
-                block_loc: addr!(0, 0),
-                node_loc: addr!(0, 0).coerce(&nodes.get_hash()).expect("Coercion should work"),
-                mode: ADMode::VIEW,
-                graph: nodes.to_vec(),
-                piece_ix: None,
-                output: None,
-            };
-            let mut failed = false;
-            $(
-                let coerced = state.block_loc.coerce(&(state.graph).get_hash()).expect("Coercion should work");
-                let dst = if coerced != state.block_loc && GLOBAL_BLOCKS.contains(&(state.graph).get_hash().get(&coerced).expect("Retrieval should work").kind) {
-                    move_cursor!($dir).move_global(&state)
-                } else {
-                    move_cursor!($dir).move_local(&state)
-                };
-                failed = failed || matches!(dst, Err($err(_)));
-                if let Ok(dst) = dst {
-                    state.block_loc = dst;
-                    let _ = state.coerce().expect("Post-motion coercion should succeed");
-                }
-            )+
-            assert!(failed);
-        }};
-        ($($dir:tt),+ _in_ $src:ident -> <$($id:literal),+>) => {{
-            let mut parser = Parser::new(String::from($src)).unwrap();
-            let mut nodes = parser.parse().unwrap();
-            (&mut nodes[..]).fill_addr();
-            let mut state = CursorState {
-                filename: "".into(),
-                block_loc: addr!(0, 0),
-                node_loc: addr!(0, 0).coerce(&nodes.get_hash()).expect("Coercion should work"),
-                mode: ADMode::VIEW,
-                graph: nodes.to_vec(),
-                piece_ix: None,
-                output: None,
-            };
-            $(
-                let coerced = state.block_loc.coerce(&(state.graph).get_hash()).expect("Coercion should work");
-                let dst = if coerced != state.block_loc && GLOBAL_BLOCKS.contains(&(state.graph).get_hash().get(&coerced).expect("Retrieval should work").kind) {
-                    move_cursor!($dir).move_global(&state).expect("Motion should succeed")
-                } else {
-                    move_cursor!($dir).move_local(&state).expect("Motion should succeed")
-                };
-                state.block_loc = dst.clone();
-                let _ = state.coerce().expect("Post-motion coercion should succeed");
-            )+
-            assert_eq!(dst, addr!($($id),+));
-        }};
-        // Cycles are sequences of motions that end up at the leftmost root (i.e., <0, 0>)
-        ($($dir:tt),+ _in_ $src:ident ||) => {{
-            move_cursor!($($dir),+ _in_ $src -> <0, 0>);
-        }};
-        ($($dir:tt),+ _in_ $src:ident ##) => {{
-            move_cursor!($($dir),+ _in_ $src -> <1, 0>);
-        }};
-        (U) => {$crate::digraph::state::CursorDir::UP};
-        (D) => {$crate::digraph::state::CursorDir::DOWN};
-        (L) => {$crate::digraph::state::CursorDir::LEFT};
-        (R) => {$crate::digraph::state::CursorDir::RIGHT};
-        (I) => {$crate::digraph::state::CursorDir::IN};
-        (O) => {$crate::digraph::state::CursorDir::OUT};
-    }
 
     const SOURCE: &'static str = "define f of x\noutput x\ndefine f1 of x\noutput x\ndone define\ndefine \
                           f2 of x\noutput x\ndefine f21 of x\noutput x\ndone define\ndefine f22 of \

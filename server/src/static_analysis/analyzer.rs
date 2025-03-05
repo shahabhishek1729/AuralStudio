@@ -43,13 +43,15 @@ impl Analyzer {
                         if curr_node.kind != NodeKind::FNDEF =>
                     'inner: {
                         if curr_node.kind == NodeKind::VARDECL && i == 0 {
-                            // This is fine
+                            // When declaring variable names, no need to check validity.
+                            // TODO: Ensure name follows conventions
                             break 'inner;
                         }
                         let Some(ident) = hash.get(&state.block_loc) else {
                             return Err(SemanticError::UseBeforeDef(name.into()));
                         };
-                        if !ident.is_valid() {
+
+                        if !ident.is_valid(name) {
                             return Err(SemanticError::UseBeforeDef(name.into()));
                         }
                     }
@@ -158,5 +160,30 @@ mod tests {
             result,
             Err(SemanticError::UnmatchedSignature("f".into(), 2, 1))
         );
+    }
+
+    #[test]
+    fn valid_code() {
+        let SOURCE = "define f of x\nlet x be 2\nlet y be x\ndone define";
+        let mut parser = Parser::new(String::from(SOURCE)).unwrap();
+        let mut nodes = parser.parse().unwrap();
+        (&mut nodes[..]).fill_addr();
+        let state = CursorState {
+            filename: "".into(),
+            block_loc: addr!(0, 0, 2),
+            node_loc: addr!(0, 0, 2)
+                .coerce(&nodes.get_hash())
+                .expect("Coercion should work"),
+            mode: ADMode::VIEW,
+            graph: nodes.to_vec(),
+            piece_ix: None,
+            output: None,
+        };
+
+        let dag = IDGraph::from_state(&state);
+        dag.populate_valid_idents();
+        dbg!(&dag);
+        let result = Analyzer::analyze(&state, &dag);
+        assert_eq!(result, Ok(()));
     }
 }
