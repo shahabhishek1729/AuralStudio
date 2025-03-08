@@ -15,7 +15,7 @@ import { ROW_STYLE, FLEX_COL, FLEX_ROW, BORDER_ANIMATION } from "./styles";
 import { Token, RenderPiece } from "./PieceRenderer";
 import { getColor } from "./utils";
 import ReactCardFlip from "react-card-flip";
-import { CheckmarkIcon, ErrorIcon } from "./Components";
+import { CheckmarkIcon, ErrorIcon, MessageIcon } from "./Components";
 
 const token_type = {
   FNDEF: "function",
@@ -424,7 +424,11 @@ function RenderNode(
           style={{ ...FLEX_ROW, alignItems: "center", gap: "8px" }}
         >
           <ReactCardFlip
-            isFlipped={flipped === `${address}.0`}
+            isFlipped={
+              node.children.length > 0
+                ? flipped === `${address}.0`
+                : flipped === address
+            }
             flipDirection="vertical"
           >
             <div
@@ -479,7 +483,11 @@ function RenderNode(
               }}
             >
               <textarea
-                id={node.children.length > 0 ? `note_${address}.0` : ""}
+                id={
+                  node.children.length > 0
+                    ? `note_${address}.0`
+                    : `note_${address}`
+                }
                 onKeyUp={(e) => {
                   const target = e.target as HTMLTextAreaElement;
                   target.style.height = "0px";
@@ -497,6 +505,7 @@ function RenderNode(
               />
             </div>
           </ReactCardFlip>
+          {node.note ? <MessageIcon /> : null}
           {node.err ? (
             <ErrorIcon />
           ) : !["FNDEF", "PENDING"].includes(node.kind) ? (
@@ -517,6 +526,9 @@ function RenderNode(
                 pieceIx,
                 node,
                 parentIndents + indent,
+                undefined,
+                undefined,
+                flipped,
               ),
             )
         : null}
