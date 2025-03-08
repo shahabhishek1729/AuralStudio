@@ -43,8 +43,9 @@ impl Analyzer {
                         if curr_node.kind != NodeKind::FNDEF =>
                     'inner: {
                         if curr_node.kind == NodeKind::VARDECL && i == 0 {
-                            // When declaring variable names, no need to check validity.
-                            // TODO: Ensure name follows conventions
+                            // When declaring variable names, no need to check validity. Naming
+                            // conventions are checked when the value is updated because otherwise
+                            // the scanner will crash.
                             break 'inner;
                         }
                         let Some(ident) = hash.get(&state.block_loc) else {
@@ -93,6 +94,9 @@ pub(crate) enum SemanticError {
     /// XXX: Doesn't strictly need to be an error, yet likely accidental on the programmer's part.
     #[error("code right below a {0} will never be run.")]
     UnreachableCode(String),
+    /// When a variable doesn't have a valid name (e.g., uses a keyword, starts with #, etc.)
+    #[error("your variable {0} has an invalid name. Please rename it.")]
+    InvalidVarName(String),
     /// When a variable is used in an expression or a function is called where the identifier does
     /// not match a valid entry in the identifier digraph.
     #[error("can't find the variable or function named {0}")]
@@ -185,7 +189,6 @@ mod tests {
 
         let dag = IDGraph::from_state(&state);
         dag.populate_valid_idents();
-        dbg!(&dag);
         let result = Analyzer::analyze(&state, &dag);
         assert_eq!(result, Ok(()));
     }

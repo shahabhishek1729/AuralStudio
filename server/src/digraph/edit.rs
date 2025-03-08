@@ -360,7 +360,14 @@ impl CursorState {
         // PayloadState. block_loc must point to a node since otherwise we would have returned Err.
         let curr_node = unsafe { &mut **curr_node };
         let new_piece = match curr_node.pieces[PieceIdx(&piece_ix)] {
-            Piece::IDENT(_) => Piece::IDENT(value),
+            Piece::IDENT(_) => {
+                if !valid_varname(&value) {
+                    return Err(CursorError::SemanticError(
+                        crate::static_analysis::analyzer::SemanticError::InvalidVarName(value),
+                    ));
+                }
+                Piece::IDENT(value)
+            }
             Piece::NUMBER(_) => Piece::NUMBER(value.parse::<f64>()?),
             Piece::TEXT(_) => Piece::TEXT(value),
             _ => unreachable!("cannot update value for non-typed pieces"),
@@ -588,4 +595,39 @@ mod tests {
             );
         }
     }
+}
+
+fn valid_varname(name: &str) -> bool {
+    // List of Python keywords (Python 3.x)
+    let keywords = [
+        "False", "None", "True", "and", "as", "assert", "async", "await", "break", "class",
+        "continue", "def", "del", "elif", "else", "except", "finally", "for", "from", "global",
+        "if", "import", "in", "is", "lambda", "nonlocal", "not", "or", "pass", "raise", "return",
+        "try", "while", "with", "yield",
+    ];
+
+    // Check if the name is empty
+    if name.is_empty() {
+        return false;
+    }
+
+    // Check if it's a Python keyword
+    if keywords.contains(&name) {
+        return false;
+    }
+
+    // Check if the first character is valid (letter or underscore)
+    let mut chars = name.chars();
+    if let Some(first) = chars.next() {
+        if !first.is_alphabetic() && first != '_' {
+            return false;
+        }
+    }
+
+    // Check if the remaining characters are valid (letters, numbers, or underscore)
+    if !chars.all(|c| c.is_alphanumeric() || c == '_') {
+        return false;
+    }
+
+    true
 }
