@@ -311,6 +311,12 @@ impl KeyboardEvent {
                 };
                 let curr_kind = curr_node.kind.clone();
 
+                // First, we must ensure you're not deleting the condition of an if-statement. To
+                // delete a conditional, you must delete the whole block.
+                if curr_kind == NodeKind::CONDTL && state._at_node() {
+                    return Err(CursorError::DeleteCondtl);
+                }
+
                 let curr_addr = curr_node.addr.clone();
                 let parent_addr = curr_node.parent_addr.clone();
 
