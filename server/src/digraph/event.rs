@@ -314,14 +314,13 @@ impl KeyboardEvent {
                 let Some(curr_node) = hash_ref.get(&state.node_loc) else {
                     return Err(CursorError::AddrNotFound(state.block_loc.clone()));
                 };
-                let curr_kind = curr_node.kind.clone();
 
-                // First, we must ensure you're not deleting the condition of an if-statement. To
-                // delete a conditional, you must delete the whole block.
-                if curr_kind == NodeKind::CONDTL && state._at_node() {
-                    return Err(CursorError::DeleteCondtl);
+                // First, we must ensure you're not deleting the root of a block.
+                if curr_node.children.len() > 0 && state._at_node() {
+                    return Err(CursorError::DeleteBlock);
                 }
 
+                let curr_kind = curr_node.kind.clone();
                 let curr_addr = curr_node.addr.clone();
                 let parent_addr = curr_node.parent_addr.clone();
 

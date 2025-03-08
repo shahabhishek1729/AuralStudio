@@ -180,8 +180,8 @@ pub(crate) enum CursorError {
     MisplacedBracket,
     #[error("Cannot delete the start function")]
     DeleteStartFn,
-    #[error("Cannot delete a condition by itself. Please move out and delete the whole block.")]
-    DeleteCondtl,
+    #[error("Cannot delete this line by itself. Please move out and delete the whole block.")]
+    DeleteBlock,
     #[error("")]
     InvalidCommand,
     #[error("Couldn't save your code to a file")]
