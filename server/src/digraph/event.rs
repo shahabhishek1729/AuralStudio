@@ -98,31 +98,36 @@ impl KeyboardEvent {
                 if !state._at_node() {
                     return Err(CursorError::AmbiguousEdit);
                 }
+
                 let hash = state.graph.get_hash_mut();
                 let Some(curr_node) = hash.get(&state.block_loc) else {
                     return Err(CursorError::AddrNotFound(state.block_loc.clone()));
                 };
                 let curr_node = unsafe { &mut **curr_node };
 
-                if curr_node.kind == NodeKind::PENDING {
-                    state.piece_ix = None;
-                    state.mode = ADMode::EDIT(Expecting::Token);
-                } else {
-                    // Insert a blank node at the end
-                    let Some(last) = curr_node.pieces.last() else {
-                        unreachable!("Empty nodes are impossible");
-                    };
-                    curr_node.pieces.push(if last.resolves_to_val() {
-                        piece!(..+)
-                    } else {
-                        piece!(..#)
-                    });
+                match curr_node.kind {
+                    NodeKind::PENDING => {
+                        state.piece_ix = None;
+                        state.mode = ADMode::EDIT(Expecting::Token);
+                    }
+                    NodeKind::FNDEF => {
+                        curr_node.pieces.push(piece!(IDENT ""));
+                        state._move_to_next(curr_node, Some(&mut vec![0usize]), true)?;
+                        state.mode = ADMode::TYPE;
+                    }
+                    _ => {
+                        // Insert a blank node at the end
+                        let Some(last) = curr_node.pieces.last() else {
+                            unreachable!("Empty nodes are impossible");
+                        };
+                        curr_node.pieces.push(if last.resolves_to_val() {
+                            piece!(..+)
+                        } else {
+                            piece!(..#)
+                        });
 
-                    state._move_to_next(
-                        curr_node,
-                        Some(&mut vec![0usize]),
-                        curr_node.kind == NodeKind::FNDEF,
-                    )?;
+                        state._move_to_next(curr_node, Some(&mut vec![0usize]), false)?;
+                    }
                 }
             }
             Command::ViewMode => state.to_view()?,
