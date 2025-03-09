@@ -9,7 +9,8 @@ CMD   : Move in         |      | ✅   |
 CMD   : Move out        | ⌫    | ✅   |
 CMD   : Run program     | r    | ✅   |
 CMD   : Save file       | s    | ✅   |
-CMD   : New note        | n    | x    |
+CMD   : New note        | n    | ✅   |
+CMD   : See error       | e    | ✅   |
 ---------------------------------------
 HOME  : New project     | n    | ✅   |
 HOME  : Open project    | o    | x    |

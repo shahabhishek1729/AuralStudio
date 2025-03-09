@@ -433,18 +433,16 @@ impl CursorState {
         self.mode = ADMode::VIEW;
     }
 
-    pub(crate) fn fetch_note(&self) -> String {
+    pub(crate) fn fetch_field<F>(&self, get_field: F) -> String
+    where
+        F: FnOnce(&Node) -> Option<String>,
+    {
         let hash = self.graph.get_hash();
         let Some(curr_node) = hash.get(&self.block_loc) else {
             unreachable!("Couldn't have added note to an non-existent node");
         };
 
-        if let Some(ref note) = curr_node.note {
-            note
-        } else {
-            ""
-        }
-        .to_string()
+        get_field(curr_node).unwrap_or_default().to_string()
     }
 }
 

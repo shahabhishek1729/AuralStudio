@@ -123,7 +123,12 @@ fn save_note(note: String, mut payload: CursorState) -> CursorState {
 
 #[tauri::command]
 fn fetch_note(payload: CursorState) -> String {
-    payload.fetch_note()
+    payload.fetch_field(|node| node.note.clone())
+}
+
+#[tauri::command]
+fn fetch_err(payload: CursorState) -> String {
+    payload.fetch_field(|node| node.err.as_ref().map(|e| e.to_string()))
 }
 
 fn main() {
@@ -135,6 +140,7 @@ fn main() {
             handle_event,
             save_note,
             fetch_note,
+            fetch_err,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

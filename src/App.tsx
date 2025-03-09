@@ -152,6 +152,16 @@ function App() {
         return;
       }
 
+      // 5. "e" on a node with an error
+      if (payload.mode === "VIEW" && e.key == "e") {
+        invoke("fetch_err", { payload: payload }).then((result: unknown) => {
+          const err = result as string;
+          if (err) speak(err);
+          else FAIL_SOUND.play();
+        });
+        return;
+      }
+
       const elem = document.getElementById(
         `${payload.blockLoc},${payload.pieceIx}`,
       );
