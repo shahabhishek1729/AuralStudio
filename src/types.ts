@@ -111,11 +111,14 @@ export function extractPieceValue(piece: RTLPiece): string | undefined | RTLPiec
 
 export interface symbol_metadata {
   constant: [string, string, number, number];
+  number: [string, string, number, number];
+  bool: [string, string, number, number];
   arrow: [string, string, number, number];
   operator: [string, string, number, number];
   text: [string, string, number, number];
   ident: [string, string, number, number];
-  call: [string, string, number, number];
+  fncall: [string, string, number, number];
+  list: [string, string, number, number];
   PendingVal: [string, string, number, number];
   PendingOp: [string, string, number, number];
 }

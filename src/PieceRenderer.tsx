@@ -337,7 +337,7 @@ export function RenderCall({
   pieceIx,
   parentAddr,
 }: CompoundProps) {
-  return RenderArgs("call", pieces, chained, myIx, pieceIx, parentAddr);
+  return RenderArgs("fncall", pieces, chained, myIx, pieceIx, parentAddr);
 }
 
 export function RenderArgs(
@@ -349,7 +349,8 @@ export function RenderArgs(
   parentAddr: string,
 ) {
   const colorKind = kind === "list" ? "constant" : kind;
-  const name = kind === "call" ? (pieces[0] as _PieceInterface).IDENT : "list";
+  const name =
+    kind === "fncall" ? (pieces[0] as _PieceInterface).IDENT : "list";
 
   return (
     <div
@@ -457,13 +458,17 @@ const TOKEN_MAP: token_metadata = {
   break: ["#06975A", ""],
 };
 
+// ["IDENT", "NUMBER", "OP", "TEXT", "BOOL", "FNCALL", "LIST"];
 export const SYMBOL_MAP: symbol_metadata = {
   constant: ["#FF8A00", "#FFFFFF", 16, 36],
+  number: ["#FF8A00", "#FFFFFF", 16, 36],
+  bool: ["#FF8A00", "#FFFFFF", 16, 36],
   arrow: ["transparent", "#FFCD4E", 20, 36],
   operator: ["#701490", "#FFFFFF", 20, 25],
   text: ["#374f40", "#FFFFFF", 16, 36],
   ident: ["#333333", "#FFFFFF", 16, 36],
-  call: ["#179c8a", "#FFFFFF", 16, 36],
+  fncall: ["#179c8a", "#FFFFFF", 16, 36],
+  list: ["#FF8A00", "#FFFFFF", 16, 36],
   PendingVal: ["transparent", "#FFFFFF", 16, 36],
   PendingOp: ["transparent", "#FFFFFF", 16, 25],
 };
@@ -597,7 +602,7 @@ export function Symbol(
         filter: `drop-shadow(4px 4px 16px ${background})`,
       }}
     >
-      {selected && ["text", "constant", "ident", "call"].includes(type) ? (
+      {selected && ["text", "constant", "ident", "fncall"].includes(type) ? (
         <input
           id={`${parentAddr},${pieceIx}`}
           style={{
