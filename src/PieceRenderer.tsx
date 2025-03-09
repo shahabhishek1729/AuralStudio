@@ -35,7 +35,7 @@ export function RenderPiece(
 ) {
   const piece = all_pieces[i[i.length - 1]];
   const kind = extractPieceType(piece);
-  const first = i.reduce((psum, x) => psum + x, 0) === 0;
+  const first = arrEq(i, [0]);
   const selected = arrEq(pieceIx, i);
 
   // Inner wrapper function allows us to key each piece in a node below
