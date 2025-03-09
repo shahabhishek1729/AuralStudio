@@ -13,7 +13,7 @@ import { ReactNode } from "react";
 import { CursorState, RTLNode } from "./types";
 import { ROW_STYLE, FLEX_COL, FLEX_ROW, BORDER_ANIMATION } from "./styles";
 import { Token, RenderPiece } from "./PieceRenderer";
-import { getColor } from "./utils";
+import { arrEq, getColor } from "./utils";
 import ReactCardFlip from "react-card-flip";
 import { CheckmarkIcon, ErrorIcon, MessageIcon } from "./Components";
 
@@ -446,7 +446,7 @@ function RenderNode(
               <Token
                 token_type={token_type[node.kind as keyof typeof token_type]}
                 puzzle_color={
-                  node.address === selectedAddr && (pieceIx ?? [1])[0] === 0
+                  node.address === selectedAddr && arrEq(pieceIx ?? [1], [0])
                     ? "white"
                     : node.pieces.length > 0
                       ? getColor(node.pieces[0])

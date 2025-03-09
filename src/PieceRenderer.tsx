@@ -20,7 +20,7 @@ import {
   _PieceInterface,
 } from "./types";
 import { useState } from "react";
-import { arrayEquals } from "./utils";
+import { arrEq } from "./utils";
 import { TokenMenu } from "./MenuTemplates";
 import { FAIL_SOUND } from "./App";
 
@@ -35,8 +35,8 @@ export function RenderPiece(
 ) {
   const piece = all_pieces[i[i.length - 1]];
   const kind = extractPieceType(piece);
-  const first = i[0] === 0;
-  const selected = arrayEquals(pieceIx, i);
+  const first = i.reduce((psum, x) => psum + x, 0) === 0;
+  const selected = arrEq(pieceIx, i);
 
   // Inner wrapper function allows us to key each piece in a node below
   function _RenderPiece() {
@@ -357,7 +357,7 @@ export function RenderArgs(
       style={{
         display: "flex",
         flexDirection: "row",
-        border: arrayEquals(myIx, pieceIx) ? "2px solid white" : "",
+        border: arrEq(myIx, pieceIx) ? "2px solid white" : "",
       }}
     >
       {ChainSymbol(
@@ -365,7 +365,7 @@ export function RenderArgs(
         chained,
         false,
         parentAddr,
-        arrayEquals(pieceIx.slice(0, myIx.length), myIx) ? pieceIx : [],
+        arrEq(pieceIx.slice(0, myIx.length), myIx) ? pieceIx : [],
         name,
       )}
       <div

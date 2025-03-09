@@ -11,7 +11,7 @@ export function getColor(piece: RTLPiece): string {
 	  return SYMBOL_MAP[kind.toLowerCase() as keyof symbol_metadata][0];
 } 
 
-export function arrayEquals(a: number[], b: number[]) {
+export function arrEq(a: number[], b: number[]) {
     return a.length === b.length &&
         a.every((val, index) => val === b[index]);
 }
