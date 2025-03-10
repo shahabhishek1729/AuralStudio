@@ -162,6 +162,7 @@ mod tests {
         };
 
         let dag = IDGraph::from_state(&state);
+        dag.populate_valid_idents();
         let result = Analyzer::analyze(&state, &dag);
         assert_eq!(
             result,
@@ -179,6 +180,30 @@ mod tests {
             filename: "".into(),
             block_loc: addr!(0, 0, 2),
             node_loc: addr!(0, 0, 2)
+                .coerce(&nodes.get_hash())
+                .expect("Coercion should work"),
+            mode: ADMode::VIEW,
+            graph: nodes.to_vec(),
+            piece_ix: None,
+            output: None,
+        };
+
+        let dag = IDGraph::from_state(&state);
+        dag.populate_valid_idents();
+        let result = Analyzer::analyze(&state, &dag);
+        assert_eq!(result, Ok(()));
+    }
+
+    #[test]
+    fn valid_code_args() {
+        let SOURCE = "define f of x\nlet y be x\ndone define";
+        let mut parser = Parser::new(String::from(SOURCE)).unwrap();
+        let mut nodes = parser.parse().unwrap();
+        (&mut nodes[..]).fill_addr();
+        let state = CursorState {
+            filename: "".into(),
+            block_loc: addr!(0, 0, 1),
+            node_loc: addr!(0, 0, 1)
                 .coerce(&nodes.get_hash())
                 .expect("Coercion should work"),
             mode: ADMode::VIEW,

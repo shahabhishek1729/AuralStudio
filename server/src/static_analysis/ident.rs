@@ -23,7 +23,7 @@ pub(super) enum Ident {
     Fun {
         name: String,
         children: Vec<Child<Ident>>,
-        n_args: usize,
+        args: Vec<String>,
         parent: Option<Parent<Ident>>,
         addr: Address,
         valid_idents: Vec<String>,
@@ -104,28 +104,28 @@ impl PartialEq for Ident {
             }
             (
                 Ident::Fun {
+                    name: n0,
+                    children: c0,
+                    args: arg0,
+                    parent: p0,
+                    addr: a0,
+                    ..
+                },
+                Ident::Fun {
                     name: n1,
                     children: c1,
-                    n_args: na1,
+                    args: arg1,
                     parent: p1,
                     addr: a1,
                     ..
                 },
-                Ident::Fun {
-                    name: n2,
-                    children: c2,
-                    n_args: na2,
-                    parent: p2,
-                    addr: a2,
-                    ..
-                },
             ) => {
-                n1 == n2
-                    && na1 == na2
-                    && a1 == a2
-                    && c1 == c2
-                    && match (p1, p2) {
-                        (Some(r1), Some(r2)) => r1.as_ptr() == r2.as_ptr(),
+                n0 == n1
+                    && arg0 == arg1
+                    && a0 == a1
+                    && c0 == c1
+                    && match (p0, p1) {
+                        (Some(r0), Some(r1)) => r0.as_ptr() == r1.as_ptr(),
                         (None, None) => true,
                         _ => false,
                     }
@@ -150,12 +150,24 @@ impl IDGraph {
                     let Piece::IDENT(ref name) = _node.pieces[0] else {
                         return None;
                     };
-                    let n_args = _node.pieces.len() - 1;
+
+                    let args = _node
+                        .pieces
+                        .iter()
+                        .skip(1) // Skip the function name which is piece #1
+                        .map(|p| {
+                            let Piece::IDENT(s) = p else {
+                                unreachable!("FNDEF can only have IDENT pieces");
+                            };
+                            s.into()
+                        })
+                        .collect::<Vec<_>>();
+
                     let addr = _node.addr.clone();
 
                     let fun = Rc::new(RefCell::new(Ident::Fun {
                         name: name.into(),
-                        n_args,
+                        args,
                         children: vec![],
                         parent: parent.clone(),
                         addr,
@@ -223,7 +235,9 @@ impl IDGraph {
                 valid_idents.push(p_name.to_string());
 
                 // If parent is a function, find this node's left siblings
-                if let Ident::Fun { children, .. } = &*parent {
+                if let Ident::Fun { args, children, .. } = &*parent {
+                    valid_idents.extend_from_slice(&args[..]);
+
                     if let Some(index) = children.iter().position(|c| Rc::ptr_eq(c, &node)) {
                         for left_sibling in &children[..index] {
                             let name = left_sibling.borrow();
@@ -264,11 +278,11 @@ impl IDGraph {
             if let Ident::Fun {
                 name,
                 children,
-                n_args,
+                args,
                 ..
             } = node
             {
-                _args_hm.insert(name, n_args);
+                _args_hm.insert(name, args.len());
                 children
                     .into_iter()
                     .for_each(|n| _inner(n.clone(), _hm, _args_hm));
