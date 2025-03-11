@@ -334,6 +334,10 @@ impl std::ops::Index<PieceIdx<'_>> for Vec<Piece> {
     fn index(&self, index: PieceIdx) -> &Self::Output {
         let mut curr = self;
         for (i, curr_ix) in index.0.iter().enumerate() {
+            if *curr_ix >= curr.len() {
+                return &Piece::NULL;
+            }
+
             if i == index.0.len() - 1 {
                 return &curr[*curr_ix];
             }
