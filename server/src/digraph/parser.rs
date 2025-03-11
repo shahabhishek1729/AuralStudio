@@ -314,6 +314,8 @@ pub(crate) enum Piece {
     PendingVal,
     /// Being edited (operator)
     PendingOp,
+    /// Placeholder type for when an invalid piece index is used
+    NULL,
 }
 
 impl Piece {
@@ -341,7 +343,7 @@ impl std::ops::Index<PieceIdx<'_>> for Vec<Piece> {
                 ref piece => return piece,
             }
         }
-        unreachable!("Incorrect index address, {:?}, for piece vector", index.0);
+        &Piece::NULL
     }
 }
 

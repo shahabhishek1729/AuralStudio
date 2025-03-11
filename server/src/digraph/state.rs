@@ -409,6 +409,9 @@ impl CursorState {
                     }
                     crate::digraph::parser::Piece::PendingVal => "pretend".into(),
                     crate::digraph::parser::Piece::PendingOp => "pretend".into(),
+                    crate::digraph::parser::Piece::NULL => {
+                        unreachable!("this is a placeholder type and should never be present")
+                    }
                 }
             }
         }

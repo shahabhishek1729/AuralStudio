@@ -34,6 +34,65 @@ impl KeyboardEvent {
         let command = Command::from(&self.key, &state.mode);
 
         match *command {
+            Command::NavIn | Command::NavRight | Command::NavLeft if state._at_node() => {
+                let dir = dir_map(*command);
+                match dir {
+                    CursorDir::IN if state.piece_ix.is_none() => {
+                        let mut pix = state.piece_ix.clone().unwrap_or_else(|| vec![]);
+                        pix.push(0);
+
+                        // Ensure that moving in results in a valid piece
+                        let hash = state.graph.get_hash();
+                        let Some(curr_node) = hash.get(&state.block_loc) else {
+                            unreachable!("Node can never be null");
+                        };
+                        if curr_node.pieces[PieceIdx(&pix)] == Piece::NULL {
+                            dbg!(&pix);
+                            return Err(CursorError::InvalidMotion(dir));
+                        }
+                        state.piece_ix = Some(pix);
+                    }
+                    CursorDir::OUT if state.piece_ix.is_some() => {
+                        let mut pix = state.piece_ix.clone().expect("must have non-null piece_ix");
+                        pix.pop();
+                        if pix.is_empty() {
+                            state.piece_ix = None
+                        } else {
+                            state.piece_ix = Some(pix);
+                        }
+                    }
+                    CursorDir::LEFT if state.piece_ix.is_some() => {
+                        let mut pix = state.piece_ix.clone().expect("must be non-null");
+                        let len = pix.len();
+
+                        if len == 0 || pix.last() == Some(&0) {
+                            return Err(CursorError::InvalidMotion(dir));
+                        }
+                        pix[len - 1] -= 1;
+                        state.piece_ix = Some(pix);
+                    }
+                    CursorDir::RIGHT if state.piece_ix.is_some() => {
+                        let mut pix = state.piece_ix.clone().expect("must be non-null");
+                        let len = pix.len();
+
+                        if len == 0 {
+                            return Err(CursorError::InvalidMotion(dir));
+                        }
+                        pix[len - 1] += 1;
+
+                        // Ensure that moving in results in a valid piece
+                        let hash = state.graph.get_hash();
+                        let Some(curr_node) = hash.get(&state.block_loc) else {
+                            unreachable!("Node can never be null");
+                        };
+                        if curr_node.pieces[PieceIdx(&pix)] == Piece::NULL {
+                            return Err(CursorError::InvalidMotion(dir));
+                        }
+                        state.piece_ix = Some(pix);
+                    }
+                    _ => return Err(CursorError::InvalidMotion(dir)),
+                }
+            }
             Command::NavUp
             | Command::NavDown
             | Command::NavLeft

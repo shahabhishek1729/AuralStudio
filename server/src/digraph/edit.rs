@@ -111,6 +111,7 @@ pub(super) fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), Cur
             state.mode = ADMode::TYPE;
             state.piece_ix.as_mut().expect("Cannot be empty").push(0);
         }
+        Piece::NULL => unreachable!("this is a placeholder type and should never be present"),
     }
 
     curr_node.pieces[PieceIdx(&piece_ix)] = piece;
@@ -230,6 +231,7 @@ impl CursorState {
     #[inline(always)]
     pub(super) fn to_view(&mut self) -> Result<(), CursorError> {
         self.mode = ADMode::VIEW;
+        self.piece_ix = None;
         let hash = self.graph.get_hash_mut();
         let Some(curr_node) = hash.get(&self.block_loc) else {
             return Err(CursorError::AddrNotFound(self.block_loc.clone()));
