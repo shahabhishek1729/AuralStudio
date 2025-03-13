@@ -5,7 +5,7 @@ use crate::digraph::address::Addressable;
 use crate::digraph::command::Command;
 use crate::digraph::edit::new_piece;
 use crate::digraph::parser::OpKind;
-use crate::digraph::state::{CursorDir, Canvas};
+use crate::digraph::state::{Canvas, CursorDir};
 use crate::file_utils::{auralstudio_dir, to_py};
 use crate::static_analysis::analyzer::Analyzer;
 use crate::static_analysis::ident::IDGraph;
@@ -567,7 +567,7 @@ impl KeyboardEvent {
                 };
 
                 let curr_node = unsafe { &mut **curr_node };
-                let Some(ref pix) = state.piece_ix else {
+                let Some(ref mut pix) = state.piece_ix else {
                     unreachable!("Can't be in match arm without passing guard clause");
                 };
 
@@ -586,12 +586,29 @@ impl KeyboardEvent {
                 };
 
                 parent_vec.remove(curr_ix);
-                if curr_piece.resolves_to_val() {
-                    parent_vec.insert(curr_ix, piece!(..#));
-                    state.mode = ADMode::EDIT(Expecting::Value);
+
+                // If there were two pending pieces in a row, remove both
+                if parent_vec.len() > 1
+                    && curr_ix < parent_vec.len()
+                    && parent_vec[curr_ix].resolves_to_pending()
+                {
+                    parent_vec.remove(curr_ix);
+                    pix[last_ix] = std::cmp::min(curr_ix, parent_vec.len() - 1);
+                } else if parent_vec.len() > 1
+                    && curr_ix > 0
+                    && parent_vec[curr_ix - 1].resolves_to_pending()
+                {
+                    parent_vec.remove(curr_ix - 1);
+                    pix[last_ix] = std::cmp::min(curr_ix, parent_vec.len() - 1);
                 } else {
-                    parent_vec.insert(curr_ix, piece!(..+));
-                    state.mode = ADMode::EDIT(Expecting::Op);
+                    parent_vec.insert(
+                        curr_ix,
+                        if curr_piece.resolves_to_val() {
+                            piece!(..#)
+                        } else {
+                            piece!(..+)
+                        },
+                    );
                 }
             }
             _ => return Ok(true),
