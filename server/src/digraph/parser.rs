@@ -325,6 +325,10 @@ impl Piece {
             _ => true,
         }
     }
+
+    pub(crate) fn resolves_to_pending(&self) -> bool {
+        [piece!(..#), piece!(..+)].contains(self)
+    }
 }
 
 pub(crate) struct PieceIdx<'a>(pub &'a [usize]);
