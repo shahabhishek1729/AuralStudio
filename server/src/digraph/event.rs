@@ -417,6 +417,9 @@ impl KeyboardEvent {
                 let rtl = state.to_rtl();
 
                 let filename = format!("{}.rattle", state.filename.trim());
+                if filename == "unnamed.rattle" {
+                    return Err(CursorError::UnnamedFile);
+                }
                 let target_dir = auralstudio_dir()?;
                 let filename = target_dir.join(filename);
                 let Some(filename) = filename.to_str() else {
@@ -509,6 +512,7 @@ impl KeyboardEvent {
                             state.piece_ix = Some(pix);
                         }
                     }
+                    CursorDir::OUT if state.piece_ix.is_none() => return Ok(true),
                     CursorDir::LEFT if state.piece_ix.is_some() => {
                         let mut pix = state.piece_ix.clone().expect("must be non-null");
                         let len = pix.len();

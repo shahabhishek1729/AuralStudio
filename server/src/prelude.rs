@@ -192,6 +192,8 @@ pub(crate) enum CursorError {
     NotInLoop,
     #[error("{0}")]
     SemanticError(#[from] crate::static_analysis::analyzer::SemanticError),
+    #[error("Please save your file before running it")]
+    UnnamedFile,
 }
 
 impl From<std::num::ParseFloatError> for CursorError {
