@@ -613,7 +613,11 @@ export function Symbol(
           }}
           value={value}
           onChange={(e) => {
-            if (type === "constant" && isNaN(+e.target.value)) {
+            if (
+              type === "constant" &&
+              isNaN(+e.target.value) &&
+              e.target.value !== "-"
+            ) {
               FAIL_SOUND.play();
               return;
             }
