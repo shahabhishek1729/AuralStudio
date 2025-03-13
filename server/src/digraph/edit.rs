@@ -84,7 +84,7 @@ pub(super) fn new_piece(state: &mut Canvas, piece: Piece) -> Result<(), CursorEr
             // 2. Add a pending node to the parent index
             // 3. Update index to +1
             let last_piece_ix = piece_ix.len() - 1;
-            let parent_vec = if piece_ix.len() == 1 {
+            let parent_vec = if last_piece_ix == 0 {
                 &mut curr_node.pieces
             } else {
                 match curr_node.pieces[PieceIdx(&piece_ix[0..last_piece_ix])] {
@@ -96,12 +96,18 @@ pub(super) fn new_piece(state: &mut Canvas, piece: Piece) -> Result<(), CursorEr
             state.piece_ix.as_mut().expect("Cannot be empty")[last_piece_ix] =
                 piece_ix[last_piece_ix] + 1;
 
-            parent_vec.push(match expecting {
-                Expecting::Op => piece!(..#),
-                Expecting::Value => piece!(..+),
-                Expecting::Token => unreachable!("cannot manually add a token piece"),
-            });
-            state.mode = ADMode::EDIT(!expecting);
+            if piece_ix[last_piece_ix] == parent_vec.len() - 1 {
+                // Reached last piece, need to add another
+                parent_vec.push(match expecting {
+                    Expecting::Op => piece!(..#),
+                    Expecting::Value => piece!(..+),
+                    Expecting::Token => unreachable!("cannot manually add a token piece"),
+                });
+                state.mode = ADMode::EDIT(!expecting);
+            } else {
+                // Still another piece there, do nothing
+                state.mode = ADMode::VIEW;
+            }
         }
         Piece::LIST(_) => {
             state.mode = ADMode::EDIT(Expecting::Value);
