@@ -8,13 +8,13 @@ def inverse(m):
         result = [m[3], 0 - m[1], 0 - m[2], m[0]]
         return result
         
-    d = determinant
-    a = adjoint
-    iterator = range
+    d = determinant(m)
+    a = adjoint(m)
+    iterator = range(4)
     for i in iterator:
         m[i] = 1 / d * a[i]
-        return m
         
+    return m
     
 def g(x):
     print(x + 1)

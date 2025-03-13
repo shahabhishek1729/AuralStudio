@@ -8,13 +8,13 @@ define adjoint of m
 let result be list m at 3 0 minus m at 1 0 minus m at 2 m at 0 done
 return result
 done define
-let d be determinant
-let a be adjoint
-let iterator be range
+let d be determinant of m done
+let a be adjoint of m done
+let iterator be range of 4 done
 for i in iterator
 let m at i be 1 over d times a at i
-return m
 done for
+return m
 done define
 define g of x
 output x plus 1
