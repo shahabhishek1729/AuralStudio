@@ -467,7 +467,6 @@ impl KeyboardEvent {
                         _ => {}
                     };
 
-                    // TODO: let x at 3 be 2 -> x[3] = 2: How do we allow this?
                     state._move_to_next(
                         curr_node,
                         Some(piece_ix),
@@ -495,7 +494,8 @@ impl KeyboardEvent {
                         let Some(curr_node) = hash.get(&state.block_loc) else {
                             unreachable!("Node can never be null");
                         };
-                        if curr_node.pieces[PieceIdx(&pix)] == Piece::NULL {
+                        let curr_piece = &curr_node.pieces[PieceIdx(&pix)];
+                        if curr_piece == &Piece::NULL {
                             return Err(CursorError::InvalidMotion(dir));
                         }
                         state.piece_ix = Some(pix);
@@ -533,12 +533,65 @@ impl KeyboardEvent {
                         let Some(curr_node) = hash.get(&state.block_loc) else {
                             unreachable!("Node can never be null");
                         };
-                        if curr_node.pieces[PieceIdx(&pix)] == Piece::NULL {
+
+                        let curr_piece = &curr_node.pieces[PieceIdx(&pix)];
+                        if curr_piece == &Piece::NULL {
                             return Err(CursorError::InvalidMotion(dir));
                         }
                         state.piece_ix = Some(pix);
                     }
                     _ => return Err(CursorError::InvalidMotion(dir)),
+                }
+            }
+            Command::InplaceEditMode if state.piece_ix.is_some() => {
+                let hash = state.graph.get_hash();
+                let Some(curr_node) = hash.get(&state.block_loc) else {
+                    unreachable!("Node can never be null");
+                };
+
+                let Some(ref pix) = state.piece_ix else {
+                    unreachable!("Can't be in match arm without passing guard clause");
+                };
+                let curr_piece = &curr_node.pieces[PieceIdx(pix)];
+                match curr_piece {
+                    Piece::IDENT(_) | Piece::NUMBER(_) | Piece::TEXT(_) => {
+                        state.mode = ADMode::TYPE
+                    }
+                    _ => {}
+                }
+            }
+            Command::DeleteNode if state.piece_ix.is_some() => {
+                let hash = state.graph.get_hash_mut();
+                let Some(curr_node) = hash.get(&state.block_loc) else {
+                    unreachable!("Node can never be null");
+                };
+
+                let curr_node = unsafe { &mut **curr_node };
+                let Some(ref pix) = state.piece_ix else {
+                    unreachable!("Can't be in match arm without passing guard clause");
+                };
+
+                let curr_piece = &curr_node.pieces[PieceIdx(pix)].clone();
+
+                let last_ix = pix.len() - 1;
+                let (parent_vec, curr_ix) = if last_ix == 0 {
+                    (&mut curr_node.pieces, pix[0])
+                } else {
+                    match curr_node.pieces[PieceIdx(&pix[0..last_ix])] {
+                        Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => {
+                            (args, pix[last_ix])
+                        }
+                        _ => return Err(CursorError::PieceAddrNotFound(pix.to_vec())),
+                    }
+                };
+
+                parent_vec.remove(curr_ix);
+                if curr_piece.resolves_to_val() {
+                    parent_vec.insert(curr_ix, piece!(..#));
+                    state.mode = ADMode::EDIT(Expecting::Value);
+                } else {
+                    parent_vec.insert(curr_ix, piece!(..+));
+                    state.mode = ADMode::EDIT(Expecting::Op);
                 }
             }
             _ => return Ok(true),

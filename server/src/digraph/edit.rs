@@ -436,26 +436,11 @@ impl CursorState {
             return Ok(());
         }
 
-        let piece_ix_len = piece_ix.len() - 1;
-        let start_i = piece_ix[piece_ix_len] + 1;
-        for i in start_i..parent_vec.len() {
-            piece_ix[piece_ix_len] = i;
-            if PENDING_PIECES.contains(&curr_node.pieces[PieceIdx(&piece_ix)]) {
-                self.piece_ix = Some(piece_ix.to_vec());
-                match &parent_vec[i - 1] {
-                    piece @ _ if PENDING_PIECES.contains(piece) => {
-                        unreachable!("should have reached earlier")
-                    }
-                    Piece::OP(_) => self.mode = ADMode::EDIT(Expecting::Value),
-                    _ => self.mode = ADMode::EDIT(Expecting::Op),
-                }
-                break;
-            }
-        }
         // Find the next pending piece in the local piece[]
         // A pending piece is either an unnamed identifier, or an explicit pending
         let piece_ix_len = piece_ix.len() - 1;
         let start_i = piece_ix[piece_ix_len] + 1;
+        let mut broken = false;
         for i in start_i..parent_vec.len() {
             piece_ix[piece_ix_len] = i;
             if PENDING_PIECES.contains(&curr_node.pieces[PieceIdx(&piece_ix)]) {
@@ -467,8 +452,52 @@ impl CursorState {
                     Piece::OP(_) => self.mode = ADMode::EDIT(Expecting::Value),
                     _ => self.mode = ADMode::EDIT(Expecting::Op),
                 }
+                dbg!("Found one!");
+                broken = true;
                 break;
             }
+        }
+
+        if !broken {
+            dbg!("Couldn't be broken");
+            self.mode = ADMode::VIEW;
+        }
+
+        Ok(())
+    }
+
+    pub(crate) fn _move_right(
+        &mut self,
+        curr_node: &mut Node,
+        piece_ix: Option<&mut Vec<usize>>,
+    ) -> Result<(), CursorError> {
+        let mut piece_ix = if piece_ix.is_none() {
+            self.piece_ix.clone().expect("Can never be None")
+        } else {
+            piece_ix.unwrap().to_vec()
+        };
+
+        let parent_vec = if piece_ix.len() == 1 {
+            &curr_node.pieces
+        } else {
+            match curr_node.pieces[PieceIdx(&piece_ix[0..piece_ix.len() - 1])] {
+                Piece::LIST(ref args) | Piece::FNCALL(ref args) => args,
+                _ => return Err(CursorError::PieceAddrNotFound(piece_ix.to_vec())),
+            }
+        };
+
+        // If we are at the end of our local piece[], we stay
+        if piece_ix.last() == Some(&(parent_vec.len() - 1)) {
+            self.mode = ADMode::VIEW;
+            return Ok(());
+        }
+
+        let piece_ix_len = piece_ix.len() - 1;
+        piece_ix[piece_ix_len] += 1;
+        let curr_piece = &curr_node.pieces[PieceIdx(&piece_ix)];
+        if curr_piece != &Piece::NULL {
+            self.piece_ix = Some(piece_ix.to_vec());
+            self.mode = ADMode::VIEW;
         }
 
         Ok(())
