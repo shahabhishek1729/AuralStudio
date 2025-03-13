@@ -21,7 +21,7 @@ use std::fs;
 use crate::digraph::address::Addressable;
 use crate::digraph::event::KeyboardEvent;
 use crate::digraph::parser::{Node, Parser};
-use crate::digraph::state::CursorState;
+use crate::digraph::state::Canvas;
 use crate::runner::compile;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -93,9 +93,9 @@ fn parse_file(source: String) -> Vec<Node> {
 #[tauri::command]
 fn handle_event(
     event: String,
-    mut payload: CursorState,
+    mut payload: Canvas,
     value: Option<String>,
-) -> (bool, String, CursorState) {
+) -> (bool, String, Canvas) {
     let Ok(e): Result<KeyboardEvent, _> = serde_json::from_str(&event) else {
         panic!("Failed to parse keyboardEvent");
     };
@@ -116,18 +116,18 @@ fn handle_event(
 }
 
 #[tauri::command]
-fn save_note(note: String, mut payload: CursorState) -> CursorState {
+fn save_note(note: String, mut payload: Canvas) -> Canvas {
     payload.save_note(note);
     payload
 }
 
 #[tauri::command]
-fn fetch_note(payload: CursorState) -> String {
+fn fetch_note(payload: Canvas) -> String {
     payload.fetch_field(|node| node.note.clone())
 }
 
 #[tauri::command]
-fn fetch_err(payload: CursorState) -> String {
+fn fetch_err(payload: Canvas) -> String {
     payload.fetch_field(|node| node.err.as_ref().map(|e| e.to_string()))
 }
 

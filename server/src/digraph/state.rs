@@ -74,7 +74,7 @@ impl CursorDir {
     // Retrieves the current node and its index within its parent
     fn _find_parent_child<'a>(
         &self,
-        state: &'a CursorState,
+        state: &'a Canvas,
         src: &'a Address,
     ) -> Result<(&'a Node, usize), CursorError> {
         let graph_hash: HashMap<Address, &'a Node> = state.graph.get_hash();
@@ -110,7 +110,7 @@ impl CursorDir {
         Ok((parent, i))
     }
 
-    fn move_global<'a>(&'a self, state: &CursorState) -> anyhow::Result<Address, CursorError> {
+    fn move_global<'a>(&'a self, state: &Canvas) -> anyhow::Result<Address, CursorError> {
         let src = &state.block_loc;
 
         self._ensure_global_validity(src)?;
@@ -142,7 +142,7 @@ impl CursorDir {
         }
     }
 
-    fn move_local<'cur>(&'cur self, state: &CursorState) -> anyhow::Result<Address, CursorError> {
+    fn move_local<'cur>(&'cur self, state: &Canvas) -> anyhow::Result<Address, CursorError> {
         let src: &Address = &state.block_loc;
 
         // When going up and down, no coercion - check children for local blocks
@@ -264,7 +264,7 @@ pub(crate) enum ADMode {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct CursorState {
+pub(crate) struct Canvas {
     pub(crate) filename: String,
     pub(crate) block_loc: Address,
     pub(crate) node_loc: Address,
@@ -274,7 +274,7 @@ pub(crate) struct CursorState {
     pub(crate) output: Option<String>,
 }
 
-impl Default for CursorState {
+impl Default for Canvas {
     fn default() -> Self {
         Self {
             filename: "blank.rattle".into(),
@@ -288,7 +288,7 @@ impl Default for CursorState {
     }
 }
 
-impl CursorState {
+impl Canvas {
     pub fn navigate(&self, dir: CursorDir) -> Result<Address, CursorError> {
         let graph_hash = self.graph.get_hash();
 
@@ -455,7 +455,7 @@ mod tests {
     use crate::addr;
     use crate::digraph::address::Addressable;
     use crate::digraph::parser::Parser;
-    use crate::digraph::state::{CursorError::InvalidMotion, CursorState};
+    use crate::digraph::state::{CursorError::InvalidMotion, Canvas};
 
     macro_rules! move_cursor {
         // Move sequences that result in an attempted move "off the graph" should return errors
@@ -463,7 +463,7 @@ mod tests {
             let mut parser = Parser::new(String::from($src)).unwrap();
             let mut nodes = parser.parse().unwrap();
             (&mut nodes[..]).fill_addr();
-            let mut state = CursorState {
+            let mut state = Canvas {
                 filename: "".into(),
                 block_loc: addr!(0, 0),
                 node_loc: addr!(0, 0).coerce(&nodes.get_hash()).expect("Coercion should work"),
@@ -492,7 +492,7 @@ mod tests {
             let mut parser = Parser::new(String::from($src)).unwrap();
             let mut nodes = parser.parse().unwrap();
             (&mut nodes[..]).fill_addr();
-            let mut state = CursorState {
+            let mut state = Canvas {
                 filename: "".into(),
                 block_loc: addr!(0, 0),
                 node_loc: addr!(0, 0).coerce(&nodes.get_hash()).expect("Coercion should work"),

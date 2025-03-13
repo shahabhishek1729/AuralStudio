@@ -1,7 +1,7 @@
 use crate::digraph::{
     address::Address,
     parser::{Node, NodeKind, Piece},
-    state::CursorState,
+    state::Canvas,
 };
 use std::{
     cell::RefCell,
@@ -141,7 +141,7 @@ pub(crate) struct IDGraph {
 }
 
 impl IDGraph {
-    pub(crate) fn from_state(state: &CursorState) -> Self {
+    pub(crate) fn from_state(state: &Canvas) -> Self {
         let mut graph: Vec<Child<Ident>> = vec![];
 
         fn _inner(_node: &Node, parent: Option<Parent<Ident>>) -> Option<Child<Ident>> {
@@ -302,7 +302,7 @@ mod tests {
     use crate::digraph::address::Addressable;
     use crate::digraph::parser::Parser;
     use crate::digraph::state::ADMode;
-    use crate::digraph::state::CursorState;
+    use crate::digraph::state::Canvas;
 
     const SOURCE: &'static str = "define f of x\noutput x\ndefine f1 of x\noutput x\ndone define\ndefine \
                           f2 of x\noutput x\ndefine f21 of x\noutput x\ndone define\ndefine f22 of \
@@ -315,7 +315,7 @@ mod tests {
         let mut parser = Parser::new(String::from(SOURCE)).unwrap();
         let mut nodes = parser.parse().unwrap();
         (&mut nodes[..]).fill_addr();
-        let state = CursorState {
+        let state = Canvas {
             filename: "".into(),
             block_loc: addr!(0, 0),
             node_loc: addr!(0, 0)

@@ -1,12 +1,12 @@
 use crate::digraph::parser::{Node, Piece};
-use crate::digraph::{address::Addressable, parser::NodeKind, state::CursorState};
+use crate::digraph::{address::Addressable, parser::NodeKind, state::Canvas};
 use crate::static_analysis::ident::IDGraph;
 use serde_derive::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub(crate) struct Analyzer;
 impl Analyzer {
-    pub(crate) fn analyze(state: &CursorState, id_graph: &IDGraph) -> Result<(), SemanticError> {
+    pub(crate) fn analyze(state: &Canvas, id_graph: &IDGraph) -> Result<(), SemanticError> {
         let hash = state.graph.get_hash();
         let curr_node = hash
             .get(&state.block_loc)
@@ -34,7 +34,7 @@ impl Analyzer {
             pieces: &Vec<Piece>,
             curr_node: &Node,
             id_graph: &IDGraph,
-            state: &CursorState,
+            state: &Canvas,
         ) -> Result<(), SemanticError> {
             let (hash, args_hash) = id_graph.get_hash();
             for (i, piece) in pieces.iter().enumerate() {
@@ -114,7 +114,7 @@ mod tests {
         digraph::{
             address::Addressable,
             parser::Parser,
-            state::{ADMode, CursorState},
+            state::{ADMode, Canvas},
         },
         static_analysis::ident::IDGraph,
     };
@@ -125,7 +125,7 @@ mod tests {
         let mut parser = Parser::new(String::from(SOURCE)).unwrap();
         let mut nodes = parser.parse().unwrap();
         (&mut nodes[..]).fill_addr();
-        let state = CursorState {
+        let state = Canvas {
             filename: "".into(),
             block_loc: addr!(0, 0, 1),
             node_loc: addr!(0, 0, 1)
@@ -149,7 +149,7 @@ mod tests {
         let mut parser = Parser::new(String::from(SOURCE)).unwrap();
         let mut nodes = parser.parse().unwrap();
         (&mut nodes[..]).fill_addr();
-        let state = CursorState {
+        let state = Canvas {
             filename: "".into(),
             block_loc: addr!(1, 0, 1),
             node_loc: addr!(1, 0, 1)
@@ -176,7 +176,7 @@ mod tests {
         let mut parser = Parser::new(String::from(SOURCE)).unwrap();
         let mut nodes = parser.parse().unwrap();
         (&mut nodes[..]).fill_addr();
-        let state = CursorState {
+        let state = Canvas {
             filename: "".into(),
             block_loc: addr!(0, 0, 2),
             node_loc: addr!(0, 0, 2)
@@ -200,7 +200,7 @@ mod tests {
         let mut parser = Parser::new(String::from(SOURCE)).unwrap();
         let mut nodes = parser.parse().unwrap();
         (&mut nodes[..]).fill_addr();
-        let state = CursorState {
+        let state = Canvas {
             filename: "".into(),
             block_loc: addr!(0, 0, 1),
             node_loc: addr!(0, 0, 1)

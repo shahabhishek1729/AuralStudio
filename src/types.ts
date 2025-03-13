@@ -32,7 +32,7 @@ export interface _PieceInterface {
 }
 
 // The state of the digraph currently, including:
-export interface CursorState {
+export interface Canvas {
 	// File currently being written to
 	filename: string,
 	// The node graph itself

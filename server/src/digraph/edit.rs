@@ -1,6 +1,6 @@
 use super::address::Address;
 use super::parser::{Node, NodeKind, Piece, PieceIdx};
-use super::state::{ADMode, CursorState, Expecting};
+use super::state::{ADMode, Canvas, Expecting};
 use crate::digraph::address::Addressable;
 use crate::digraph::util::*;
 use crate::piece;
@@ -58,7 +58,7 @@ macro_rules! new_token {
 }
 
 /// Inserts a new piece within a node
-pub(super) fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), CursorError> {
+pub(super) fn new_piece(state: &mut Canvas, piece: Piece) -> Result<(), CursorError> {
     let hash = state.graph.get_hash_mut();
     let Some(curr_node) = hash.get(&state.block_loc) else {
         return Err(CursorError::AddrNotFound(state.block_loc.clone()));
@@ -119,8 +119,8 @@ pub(super) fn new_piece(state: &mut CursorState, piece: Piece) -> Result<(), Cur
     Ok(())
 }
 
-impl CursorState {
-    /// Transforms a `CursorState` object from viewing to editing mode.
+impl Canvas {
+    /// Transforms a `Canvas` object from viewing to editing mode.
     ///
     /// From a given node, when a user attempts to "insert below", determines what the address and
     /// kind of the new node should be (global inserts create functions, local inserts create
@@ -131,7 +131,7 @@ impl CursorState {
     /// // Assume `nodes` references the parsed version of SOURCE.
     /// let block_loc = addr!(0, 0);
     ///
-    /// let mut state = CursorState {
+    /// let mut state = Canvas {
     ///     block_loc,
     ///     node_loc, // Assume `node_loc` is defined as a coerced `block_loc`
     ///     mode: ADMode::VIEW,
@@ -227,7 +227,7 @@ impl CursorState {
         Ok(())
     }
 
-    /// Toggles `CursorState` back to viewing mode
+    /// Toggles `Canvas` back to viewing mode
     #[inline(always)]
     pub(super) fn to_view(&mut self) -> Result<(), CursorError> {
         self.mode = ADMode::VIEW;
@@ -530,7 +530,7 @@ mod tests {
 
             let block_loc = addr!($($id),+);
             let node_loc = block_loc.coerce(&nodes.get_hash()).expect("Node coercion should work");
-            let mut state = CursorState {
+            let mut state = Canvas {
                 filename: "".into(),
                 output: Some("".into()),
                 block_loc,
@@ -572,7 +572,7 @@ mod tests {
             let node_loc = block_loc
                 .coerce(&nodes.get_hash())
                 .expect("Node coercion should work");
-            let mut state = CursorState {
+            let mut state = Canvas {
                 filename: "".into(),
                 output: Some("".into()),
                 block_loc,
@@ -603,7 +603,7 @@ mod tests {
             let node_loc = block_loc
                 .coerce(&nodes.get_hash())
                 .expect("Node coercion should work");
-            let mut state = CursorState {
+            let mut state = Canvas {
                 filename: "".into(),
                 output: Some("".into()),
                 block_loc,

@@ -10,7 +10,7 @@ import {
   ArcherElement,
 } from "react-archer";
 import { ReactNode } from "react";
-import { CursorState, RTLNode } from "./types";
+import { Canvas, RTLNode } from "./types";
 import { ROW_STYLE, FLEX_COL, FLEX_ROW, BORDER_ANIMATION } from "./styles";
 import { Token, RenderPiece } from "./PieceRenderer";
 import { arrEq, getColor } from "./utils";
@@ -64,7 +64,7 @@ function addrStep(addr: string, n: number = 1): string {
 
 // TODO: When editing, we need to render text boxes for strings + identifiers.
 export function DAG(
-  payload: CursorState,
+  payload: Canvas,
   hide: boolean,
   editFname: boolean,
   flipped: string,

@@ -2,7 +2,7 @@ import "./App.css";
 
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
-import { CursorState, IDisplay, _ExpectingPiece } from "./types.ts";
+import { Canvas, IDisplay, _ExpectingPiece } from "./types.ts";
 import { Dashboard } from "./Dashboard.tsx";
 import { DAG } from "./Digraph.tsx";
 import { speak } from "./speechUtils.ts";
@@ -11,7 +11,7 @@ export const FAIL_SOUND = new Audio("./src/assets/Blow.aiff");
 
 function App() {
   let [display, setDisplay] = useState<IDisplay>("HOME");
-  let [payload, setPayload] = useState<CursorState>({
+  let [payload, setPayload] = useState<Canvas>({
     filename: "unnamed",
     graph: [],
     blockLoc: "",
@@ -145,7 +145,7 @@ function App() {
           note: (elem as HTMLInputElement).value.trimEnd(),
           payload: payload,
         }).then((result: unknown) => {
-          const new_payload = result as CursorState;
+          const new_payload = result as Canvas;
           if (new_payload !== payload) setPayload(new_payload);
         });
         setActiveNote("");
@@ -179,7 +179,7 @@ function App() {
         const [succeeded, err, new_payload] = result as [
           boolean,
           string,
-          CursorState,
+          Canvas,
         ];
 
         if (!succeeded) {

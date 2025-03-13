@@ -5,7 +5,7 @@ use crate::digraph::address::Addressable;
 use crate::digraph::command::Command;
 use crate::digraph::edit::new_piece;
 use crate::digraph::parser::OpKind;
-use crate::digraph::state::{CursorDir, CursorState};
+use crate::digraph::state::{CursorDir, Canvas};
 use crate::file_utils::{auralstudio_dir, to_py};
 use crate::static_analysis::analyzer::Analyzer;
 use crate::static_analysis::ident::IDGraph;
@@ -30,7 +30,7 @@ pub(crate) struct KeyboardEvent {
 }
 
 impl KeyboardEvent {
-    pub(crate) fn parse_command(&self, state: &mut CursorState) -> Result<(), CursorError> {
+    pub(crate) fn parse_command(&self, state: &mut Canvas) -> Result<(), CursorError> {
         let command = Command::from(&self.key, &state.mode);
 
         if state._at_node() {
@@ -480,7 +480,7 @@ impl KeyboardEvent {
         Ok(())
     }
 
-    fn _parse_node_level(state: &mut CursorState, command: Command) -> Result<bool, CursorError> {
+    fn _parse_node_level(state: &mut Canvas, command: Command) -> Result<bool, CursorError> {
         match command {
             Command::NavIn | Command::NavRight | Command::NavLeft | Command::NavOut => {
                 let dir = dir_map(command);
