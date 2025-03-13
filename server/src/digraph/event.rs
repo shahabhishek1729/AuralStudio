@@ -474,7 +474,7 @@ impl KeyboardEvent {
                     )?;
                 }
             }
-            Command::NULL => return Err(CursorError::InvalidCommand),
+            _ => return Err(CursorError::InvalidCommand),
         }
 
         Ok(())
@@ -612,6 +612,32 @@ impl KeyboardEvent {
                         },
                     );
                 }
+            }
+            Command::AddPiece if state.piece_ix.is_some() => {
+                let hash = state.graph.get_hash_mut();
+                let Some(curr_node) = hash.get(&state.block_loc) else {
+                    unreachable!("Node can never be null");
+                };
+
+                let curr_node = unsafe { &mut **curr_node };
+                let Some(ref mut pix) = state.piece_ix else {
+                    unreachable!("Can't be in match arm without passing guard clause");
+                };
+
+                let last_ix = pix.len() - 1;
+                let (parent_vec, curr_ix) = if last_ix == 0 {
+                    (&mut curr_node.pieces, pix[0])
+                } else {
+                    match curr_node.pieces[PieceIdx(&pix[0..last_ix])] {
+                        Piece::LIST(ref mut args) | Piece::FNCALL(ref mut args) => {
+                            (args, pix[last_ix])
+                        }
+                        _ => return Err(CursorError::PieceAddrNotFound(pix.to_vec())),
+                    }
+                };
+                parent_vec.insert(curr_ix + 1, piece!(..+));
+                state.mode = ADMode::EDIT(Expecting::Op);
+                pix[last_ix] = curr_ix + 1;
             }
             _ => return Ok(true),
         }

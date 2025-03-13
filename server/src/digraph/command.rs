@@ -34,6 +34,7 @@ pub(super) enum Command<'a> {
     AddNothing,
     AddCall,
     AddList,
+    AddPiece,
     ChainAdd,
     ChainSub,
     ChainMul,
@@ -75,6 +76,7 @@ const VIEW_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "s" => Command::SaveFile,
     "i" => Command::InplaceEditMode,
     "d" => Command::DeleteNode,
+    "a" => Command::AddPiece,
 };
 
 const TOKEN_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
