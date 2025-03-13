@@ -3,10 +3,6 @@
  * digraph - can render operators, tokens, identifiers, numbers, chains, etc.
  */
 
-import gear from "./assets/action_cpu.png";
-import question from "./assets/conditional_q4.png";
-import cube from "./assets/value_box.png";
-import book from "./assets/vuesax/bold/book.png";
 import rattle_icon from "./assets/rattle_icon.png";
 import output from "./assets/output_icon.png";
 import function_arrow from "./assets/function_arrow.png";
@@ -442,20 +438,20 @@ export function RenderPending({ chained, selected, kind }: PendingProps) {
 
 const TOKEN_MAP: token_metadata = {
   file: ["#FFFFFF", rattle_icon],
-  function: ["#FE4949", gear],
-  variable: ["#49A7FE", cube],
-  conditional: ["#06975A", question],
-  yes: ["#06975A", question],
-  no: ["#06975A", question],
-  for: ["#06975A", question],
-  while: ["#06975A", question],
-  library: ["#B140B4", book],
-  output: ["#FF7A00", output],
-  return: ["#B140B4", book],
-  list: ["#06975A", question],
-  pending: ["transparent", ""],
-  continue: ["#06975A", ""],
-  break: ["#06975A", ""],
+  function: ["#FE4949", null],
+  variable: ["#49A7FE", null],
+  conditional: ["#06975A", null],
+  yes: ["#06975A", null],
+  no: ["#06975A", null],
+  for: ["#06975A", null],
+  while: ["#06975A", null],
+  library: ["#B140B4", null],
+  output: ["#FF7A00", null],
+  return: ["#B140B4", null],
+  list: ["#06975A", null],
+  pending: ["transparent", null],
+  continue: ["#06975A", null],
+  break: ["#06975A", null],
 };
 
 // ["IDENT", "NUMBER", "OP", "TEXT", "BOOL", "FNCALL", "LIST"];

@@ -125,20 +125,20 @@ export interface symbol_metadata {
 
 export interface token_metadata {
   file: [string, string];
-  function: [string, string];
-  variable: [string, string];
-  conditional: [string, string];
-  yes: [string, string];
-  no: [string, string];
-  for: [string, string];
-  while: [string, string];
-  library: [string, string];
-  output: [string, string];
-  return: [string, string];
-  list: [string, string];
-  pending: [string, string];
-  continue: [string, string];
-  break: [string, string];
+  function: [string, null];
+  variable: [string, null];
+  conditional: [string, null];
+  yes: [string, null];
+  no: [string, null];
+  for: [string, null];
+  while: [string, null];
+  library: [string, null];
+  output: [string, null];
+  return: [string, null];
+  list: [string, null];
+  pending: [string, null];
+  continue: [string, null];
+  break: [string, null];
 }
 
 export interface op_kind {
