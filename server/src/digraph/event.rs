@@ -557,6 +557,8 @@ impl KeyboardEvent {
                     Piece::IDENT(_) | Piece::NUMBER(_) | Piece::TEXT(_) => {
                         state.mode = ADMode::TYPE
                     }
+                    Piece::PendingVal => state.mode = ADMode::EDIT(Expecting::Value),
+                    Piece::PendingOp => state.mode = ADMode::EDIT(Expecting::Op),
                     _ => {}
                 }
             }
