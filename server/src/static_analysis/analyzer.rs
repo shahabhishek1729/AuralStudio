@@ -42,7 +42,9 @@ impl Analyzer {
                     crate::digraph::parser::Piece::IDENT(name)
                         if curr_node.kind != NodeKind::FNDEF =>
                     'inner: {
-                        if curr_node.kind == NodeKind::VARDECL && i == 0 {
+                        if [NodeKind::VARDECL, NodeKind::FORLOOP].contains(&curr_node.kind)
+                            && i == 0
+                        {
                             // When declaring variable names, no need to check validity. Naming
                             // conventions are checked when the value is updated because otherwise
                             // the scanner will crash.

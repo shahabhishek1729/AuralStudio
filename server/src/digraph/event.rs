@@ -1,3 +1,4 @@
+use super::address::Address;
 use super::parser::{NodeKind, Piece, PieceIdx};
 use super::state::Expecting;
 use super::state::{ADMode, CursorError};
@@ -495,7 +496,7 @@ impl KeyboardEvent {
                         // Ensure that moving in results in a valid piece
                         let hash = state.graph.get_hash();
                         let Some(curr_node) = hash.get(&state.block_loc) else {
-                            unreachable!("Node can never be null");
+                            return Err(CursorError::AddrNotFound(state.block_loc.clone()));
                         };
                         let curr_piece = &curr_node.pieces[PieceIdx(&pix)];
                         if curr_piece == &Piece::NULL {
@@ -535,7 +536,7 @@ impl KeyboardEvent {
                         // Ensure that moving in results in a valid piece
                         let hash = state.graph.get_hash();
                         let Some(curr_node) = hash.get(&state.block_loc) else {
-                            unreachable!("Node can never be null");
+                            return Err(CursorError::AddrNotFound(state.block_loc.clone()));
                         };
 
                         let curr_piece = &curr_node.pieces[PieceIdx(&pix)];
@@ -550,7 +551,7 @@ impl KeyboardEvent {
             Command::InplaceEditMode if state.piece_ix.is_some() => {
                 let hash = state.graph.get_hash();
                 let Some(curr_node) = hash.get(&state.block_loc) else {
-                    unreachable!("Node can never be null");
+                    return Err(CursorError::AddrNotFound(state.block_loc.clone()));
                 };
 
                 let Some(ref pix) = state.piece_ix else {
@@ -569,7 +570,7 @@ impl KeyboardEvent {
             Command::DeleteNode if state.piece_ix.is_some() => {
                 let hash = state.graph.get_hash_mut();
                 let Some(curr_node) = hash.get(&state.block_loc) else {
-                    unreachable!("Node can never be null");
+                    return Err(CursorError::AddrNotFound(state.block_loc.clone()));
                 };
 
                 let curr_node = unsafe { &mut **curr_node };
@@ -620,7 +621,7 @@ impl KeyboardEvent {
             Command::AddPiece if state.piece_ix.is_some() => {
                 let hash = state.graph.get_hash_mut();
                 let Some(curr_node) = hash.get(&state.block_loc) else {
-                    unreachable!("Node can never be null");
+                    return Err(CursorError::AddrNotFound(state.block_loc.clone()));
                 };
 
                 let curr_node = unsafe { &mut **curr_node };
