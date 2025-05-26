@@ -12,7 +12,7 @@ import {
 import { ReactNode } from "react";
 import { Canvas, RTLNode } from "./types";
 import { ROW_STYLE, FLEX_COL, FLEX_ROW, BORDER_ANIMATION } from "./styles";
-import { Token, RenderPiece } from "./PieceRenderer";
+import { Token, RenderPiece, TOKEN_MAP } from "./PieceRenderer";
 import { arrEq, getColor } from "./utils";
 import ReactCardFlip from "react-card-flip";
 import { CheckmarkIcon, ErrorIcon, MessageIcon } from "./Components";
@@ -82,45 +82,55 @@ export function DAG(
   // Builds a sliding border around selected nodes within the graph
   // TODO: Scale when resizing windows (moving border when selecting groups)
   useEffect(() => {
-    const removeBorder = () => {
-      setRenderedAddr(selectedAddr);
+    // const removeBorder = () => {
+    //   setRenderedAddr(selectedAddr);
+    // };
+    console.log(`Re rendered with address ${selectedAddr}`);
+
+    const updateBorder = () => {
+      if (selectedAddr !== null && borderRef.current && containerRef.current) {
+        // setRenderedAddr("");
+        const activeElement = document.getElementById(selectedAddr);
+        const containerElement = containerRef.current;
+
+        if (activeElement) {
+          const activeRect = activeElement.getBoundingClientRect();
+          const containerRect = containerElement.getBoundingClientRect();
+
+          const top = activeRect.top - containerRect.top;
+          const left = activeRect.left - containerRect.left;
+
+          const width = activeRect.width - 5;
+          const height = activeRect.height - 5;
+
+          borderRef.current.style.transform = `translate(${left}px, ${top}px)`;
+          borderRef.current.style.width = `${width}px`;
+          borderRef.current.style.height = `${height}px`;
+          borderRef.current.style.visibility = "visible";
+
+          // borderRef.current.addEventListener("transitionend", removeBorder);
+
+          document.getElementById(selectedAddr)?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+
+          let selectedId = `${selectedAddr === "filenode" ? "" : "selected_"}${selectedAddr}`;
+          document.getElementById(selectedId)?.focus();
+          document.getElementById(selectedAddr)?.focus();
+        }
+      }
+      // return () => {
+      //   if (borderRef.current)
+      //     borderRef.current.removeEventListener("transitionend", removeBorder);
+      // };
     };
 
-    if (selectedAddr !== null && borderRef.current && containerRef.current) {
-      setRenderedAddr("");
-      const activeElement = document.getElementById(selectedAddr);
-      const containerElement = containerRef.current;
+    updateBorder();
+    window.addEventListener("resize", updateBorder);
 
-      if (activeElement) {
-        const activeRect = activeElement.getBoundingClientRect();
-        const containerRect = containerElement.getBoundingClientRect();
-
-        const top = activeRect.top - containerRect.top;
-        const left = activeRect.left - containerRect.left;
-
-        const width = activeRect.width - 5;
-        const height = activeRect.height - 5;
-
-        borderRef.current.style.transform = `translate(${left}px, ${top}px)`;
-        borderRef.current.style.width = `${width}px`;
-        borderRef.current.style.height = `${height}px`;
-        borderRef.current.style.visibility = "visible";
-
-        borderRef.current.addEventListener("transitionend", removeBorder);
-
-        document.getElementById(selectedAddr)?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-
-        let selectedId = `${selectedAddr === "filenode" ? "" : "selected_"}${selectedAddr}`;
-        document.getElementById(selectedId)?.focus();
-        document.getElementById(selectedAddr)?.focus();
-      }
-    }
     return () => {
-      if (borderRef.current)
-        borderRef.current.removeEventListener("transitionend", removeBorder);
+      window.removeEventListener("resize", updateBorder);
     };
   }, [source, selectedAddr]);
 
@@ -144,7 +154,7 @@ export function DAG(
 
   return (
     <div style={{ display: hide ? "none" : "" }}>
-      <div>
+      <div className="relative">
         <ArcherContainer
           ref={archerRef}
           strokeColor="white"
@@ -152,6 +162,7 @@ export function DAG(
           endShape={{ arrow: { arrowLength: 6, arrowThickness: 5 } }}
           endMarker={true}
           offset={5}
+          style={{ zIndex: 5 }}
         >
           <div
             style={{
@@ -215,8 +226,8 @@ function RenderSubtree(
   flipped: string,
 ): ReactNode {
   return (
-    <div key={addr}>
-      <div style={FLEX_COL}>
+    <div key={addr} className="z-[1]">
+      <div className="flex flex-col mb-10">
         {RenderBlock(
           addr,
           subtreeRoot,
@@ -263,43 +274,63 @@ function RenderBlock(
   const blockAddr =
     hasBlocks(subtreeRoot) || !subtreeParent ? `${address}.0` : address;
   return (
-    <div key={address}>
-      <div style={{ height: "30px" }} />
-      <ArcherElement
-        id={blockAddr}
-        relations={getBlocks(subtreeRoot).map((c) => {
-          return {
-            targetId: c.address,
-            sourceAnchor: "bottom",
-            targetAnchor: "top",
-          };
-        })}
+    <div
+      id={address.length === 1 ? `${address}.0` : blockAddr} // Handle root blocks differently
+      key={address}
+      style={{
+        background:
+          renderedAddr === `${address}.0` && selectedAddr === `${address}.0`
+            ? "#f7dc28"
+            : "linear-gradient(#FFFFFF2A, #191A1B99)",
+        borderRadius: "25px",
+        padding: "2px",
+      }}
+    >
+      <div
+        style={{
+          height: "100%",
+          background:
+            "radial-gradient(ellipse 60% 70% at center top, #292B4C, #18191B)",
+          borderRadius: "23px",
+        }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingLeft: "10px",
-            paddingRight: "10px",
-            paddingBottom: "5px",
-          }}
+        <div style={{ height: "30px" }} />
+        <ArcherElement
+          id={blockAddr}
+          relations={getBlocks(subtreeRoot).map((c) => {
+            return {
+              targetId: c.address,
+              sourceAnchor: "bottom",
+              targetAnchor: "top",
+            };
+          })}
         >
-          {RenderNode(
-            subtreeRoot,
-            blockAddr,
-            selectedAddr,
-            renderedAddr,
-            pieceIx,
-            subtreeParent,
-            0,
-            false,
-            undefined,
-            flipped,
-          )}
-        </div>
-      </ArcherElement>
-      <div style={{ height: "25px" }} />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingLeft: "10px",
+              paddingRight: "10px",
+              paddingBottom: "5px",
+            }}
+          >
+            {RenderNode(
+              subtreeRoot,
+              blockAddr,
+              selectedAddr,
+              renderedAddr,
+              pieceIx,
+              subtreeParent,
+              0,
+              false,
+              undefined,
+              flipped,
+            )}
+          </div>
+        </ArcherElement>
+        <div style={{ height: "25px" }} />
+      </div>
     </div>
   );
 }
@@ -323,8 +354,11 @@ function RenderNode(
         id={address}
         style={{
           ...FLEX_COL,
-          border: renderedAddr === address ? "2px solid #f7dc28" : "",
-          borderRadius: "10px",
+          border:
+            renderedAddr === address && selectedAddr === address
+              ? "2px solid #f7dc28"
+              : "",
+          borderRadius: "25px",
         }}
       >
         <div id={`${address}.0`}>
@@ -385,19 +419,19 @@ function RenderNode(
   return (
     <div
       key={address}
-      id={address}
+      id={node.kind === "FNDEF" ? `fn_${address}` : address}
       style={{
         display: "flex",
         flexDirection: "column",
         gap: "10px",
         padding: node.kind === "FNDEF" ? "10px" : "",
         border:
-          renderedAddr === address
+          node.kind !== "FNDEF" &&
+          renderedAddr === address &&
+          selectedAddr === address
             ? "2px solid #f7dc28"
-            : node.kind === "FNDEF"
-              ? "2px solid #484848"
-              : "",
-        borderRadius: "10px",
+            : "",
+        borderRadius: "25px",
         alignItems: ARROW_NODES.includes(
           token_type[node.kind as keyof typeof token_type],
         )
@@ -439,8 +473,11 @@ function RenderNode(
                 justifyContent: "center",
                 alignItems: "center",
                 border:
-                  renderedAddr === `${address}.0` ? "2px solid #f7dc28" : "",
-                borderRadius: "10px",
+                  renderedAddr === `${address}.0` &&
+                  selectedAddr === `${address}.0`
+                    ? "2px solid #f7dc28"
+                    : "",
+                borderRadius: "25px",
               }}
             >
               <Token
@@ -477,6 +514,7 @@ function RenderNode(
                 display: "flex",
                 flexDirection: "row",
                 width: "fit-content",
+                height: "fit-content",
                 justifyContent: "center",
                 alignItems: "center",
                 background: "#333",
@@ -549,13 +587,13 @@ function FileNode(
         background: `linear-gradient(45deg, #5C89FD, #00D1FF)`,
         height: "40px",
         width: "fit-content",
-        border: includeBorder ? "2px solid #f7dc28" : "",
+        border: includeBorder ? "2px solid #EEEEFFAA" : "",
         borderRadius: "10px",
         justifyContent: "center", //Centered vertically
         alignItems: "center", //Centered horizontally
         paddingLeft: "10px",
         paddingRight: "10px",
-        filter: `drop-shadow(-8px 2px 16px #5C89FD)`,
+        // filter: `drop-shadow(-8px 2px 16px #5C89FD)`,
         ...FLEX_ROW,
       }}
     >

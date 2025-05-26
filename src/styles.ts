@@ -12,10 +12,15 @@ export const ROW_STYLE: CSSProperties = {
 
 export const BORDER_ANIMATION: CSSProperties = {
 	position: "absolute",
-	border: "2px solid #f7dc28",
-	borderRadius: "10px",
+	border: "2px solid #EEEEFFAA",
+	width: "100%",
+	borderRadius: "25px",
+	padding: "1px",
 	pointerEvents: "none",
+	boxSizing: "content-box",
+	display: "flex",
 	transition: "transform 0.4s ease, width 0.4s ease, height 0.4s ease",
+	// boxShadow: "0 0 40px 0px #f7dc28",
 	zIndex: "2",
 }
 
