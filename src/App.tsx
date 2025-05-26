@@ -2,7 +2,14 @@ import "./App.css";
 
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
-import { Canvas, IDisplay, _ExpectingPiece } from "./types.ts";
+import {
+  Canvas,
+  Debugger,
+  IDisplay,
+  RDisplay,
+  _ExpectingPiece,
+  IDGraph,
+} from "./types.ts";
 import { Dashboard } from "./Dashboard.tsx";
 import { DAG } from "./Digraph.tsx";
 import { speak } from "./speechUtils.ts";
@@ -10,7 +17,9 @@ import { speak } from "./speechUtils.ts";
 export const FAIL_SOUND = new Audio("./src/assets/Blow.aiff");
 
 function App() {
-  let [display, setDisplay] = useState<IDisplay>("HOME");
+  let [display, setDisplay] = useState<IDisplay>("EDITOR");
+  const [RDisplay, setRDisplay] = useState<RDisplay>("PANEL");
+  const [debugger_, setDebugger_] = useState<Debugger | null>(null);
   let [payload, setPayload] = useState<Canvas>({
     filename: "unnamed",
     graph: [],
@@ -19,6 +28,11 @@ function App() {
     mode: "VIEW",
     pieceIx: null,
     output: null,
+    err: null,
+  });
+
+  let [idg, setIdg] = useState<IDGraph>({
+    graph: [],
   });
 
   const [editingFilename, setEditingFilename] = useState(false);
@@ -77,6 +91,7 @@ function App() {
         mode: "VIEW",
         pieceIx: null,
         output: null,
+        err: null,
       });
     });
   }, [display]);
@@ -162,6 +177,38 @@ function App() {
         return;
       }
 
+      // 6. "w" in VIEW mode to enter Walkthrough Mode
+      if (payload.mode === "VIEW" && e.key == "w") {
+        let dbg = debugger_;
+        if (debugger_ === null) {
+          dbg = {
+            state: payload,
+            call_stack: ["0.0.0"],
+          };
+          setDebugger_(dbg);
+        }
+
+        invoke("runWalkthrough", { debugger: dbg, idg: idg }).then(
+          (result: unknown) => {
+            //                        [DBG,      expl,   IDGraph, exit code]
+            const new_dbg = result as [Debugger, string, IDGraph, number];
+            setPayload(new_dbg[0].state);
+            setDebugger_(new_dbg[0]);
+            speak(new_dbg[1]);
+            setIdg(new_dbg[2]);
+
+            if (new_dbg[3] === 1) {
+              setDebugger_(null);
+              speak("Program terminated successfully");
+            } else if (new_dbg[3] === -1) {
+              setDebugger_(null);
+              speak("Walkthrough terminated, program failure");
+            }
+          },
+        );
+        return;
+      }
+
       const elem = document.getElementById(
         `${payload.blockLoc},${payload.pieceIx}`,
       );
@@ -203,6 +250,11 @@ function App() {
         `${payload.blockLoc},${payload.pieceIx}`,
       );
       if (elem && payload.mode === "TYPE") elem.focus();
+
+      invoke("sync_idents", { payload: payload }).then((res: unknown) => {
+        let idg_ = res as IDGraph;
+        setIdg(idg_);
+      });
 
       window.addEventListener("keyup", onKeyUp);
       return () => {

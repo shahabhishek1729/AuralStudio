@@ -22,7 +22,8 @@ use crate::digraph::address::Addressable;
 use crate::digraph::event::KeyboardEvent;
 use crate::digraph::parser::{Node, Parser};
 use crate::digraph::state::Canvas;
-use crate::runner::compile;
+use static_analysis::debugger::Debugger;
+use static_analysis::ident::IDGraph;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -68,18 +69,6 @@ fn get_file_hierarchy(root_path: &str) -> FileType {
         name: root_name,
         children,
     })
-}
-
-// This runs a Rattle script at a specified path and returns output of the script
-#[tauri::command]
-fn run_code(code: &str, path: &str) -> String {
-    let part1 = compile(code.to_string(), path.to_string()).unwrap();
-    let output1 = std::process::Command::new("python")
-        .arg("../linalg.py")
-        .output()
-        .expect("failed to run")
-        .stdout;
-    format!("{}: {}", part1, std::str::from_utf8(&output1).unwrap())
 }
 
 #[tauri::command]
@@ -131,16 +120,39 @@ fn fetch_err(payload: Canvas) -> String {
     payload.fetch_field(|node| node.err.as_ref().map(|e| e.to_string()))
 }
 
+#[tauri::command]
+fn sync_idents(payload: Canvas) -> IDGraph {
+    let idg = IDGraph::from_state(&payload);
+    idg.populate_valid_idents();
+    idg
+}
+
+#[tauri::command]
+fn runWalkthrough(mut debugger_: Debugger, mut idg: IDGraph) -> (Debugger, String, IDGraph, i8) {
+    let (expl, action) = debugger_.explain(&mut idg);
+    let mut exitcode = 0;
+    if let Ok(fin) = action.execute(&mut debugger_) {
+        if fin {
+            exitcode = 1;
+        }
+    } else {
+        exitcode = -1;
+    }
+    idg.populate_valid_idents();
+    (debugger_, expl, idg, exitcode)
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             get_file_hierarchy,
-            run_code,
             parse_file,
             handle_event,
             save_note,
             fetch_note,
             fetch_err,
+            sync_idents,
+            runWalkthrough,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

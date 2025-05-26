@@ -47,6 +47,39 @@ export interface Canvas {
 	pieceIx: number[] | null,
 	// The output to be displayed in the output panel
 	output: string | null,
+	// The error to be displayed in the output panel
+	err: string | null,
+}
+
+// The state of the debugger
+export interface Debugger {
+	state: Canvas,
+	call_stack: Address[],
+}
+
+export interface IDGraph {
+	graph: Ident[];
+}
+
+export type Ident = IdentVar | IdentFun;
+type ValidIdent = [string, string | null];
+interface IdentVar {
+	Var: {
+		name: string;
+		addr: Address;
+		valid_idents: ValidIdent[];
+		val: string | null;
+	}
+}
+
+interface IdentFun {
+	Fun: {
+		name: string;
+		addr: Address;
+		valid_idents: ValidIdent[];
+		args: string[];
+		children: Ident[];
+	}
 }
 
 // Either we are viewing or editing the digraph; if editing, we might be expecting a certain piece
