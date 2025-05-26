@@ -268,8 +268,6 @@ impl KeyboardEvent {
             Command::ChainLe => new_piece(state, Piece::OP(OpKind::LE))?,
             Command::ChainEq => new_piece(state, Piece::OP(OpKind::EQ))?,
             Command::ChainNot => new_piece(state, Piece::OP(OpKind::NOT))?,
-            Command::ChainAnd => new_piece(state, Piece::OP(OpKind::AND))?,
-            Command::ChainOr => new_piece(state, Piece::OP(OpKind::OR))?,
             Command::ChainIdx => new_piece(state, Piece::OP(OpKind::AT))?,
             Command::ChainIn => new_piece(state, Piece::OP(OpKind::IN))?,
             Command::ChainDot => new_piece(state, Piece::OP(OpKind::DOT))?,

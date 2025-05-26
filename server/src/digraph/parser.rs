@@ -418,10 +418,6 @@ pub(crate) enum OpKind {
     LE,
     /// = or ->
     ASSN,
-    /// && (and)
-    AND,
-    /// || (or)
-    OR,
     /// !
     NOT,
     /// in
@@ -778,8 +774,6 @@ impl Parser {
             RTLToken::GtEqComparator => Ok(Piece::OP(OpKind::GE)),
             RTLToken::LtEqComparator => Ok(Piece::OP(OpKind::LE)),
             RTLToken::AssnEq => Ok(Piece::OP(OpKind::ASSN)),
-            RTLToken::AndLogical => Ok(Piece::OP(OpKind::AND)),
-            RTLToken::OrLogical => Ok(Piece::OP(OpKind::OR)),
             RTLToken::NotLogical => Ok(Piece::OP(OpKind::NOT)),
             RTLToken::MembershipOperator => Ok(Piece::OP(OpKind::IN)),
             RTLToken::DotOperator => Ok(Piece::OP(OpKind::DOT)),
