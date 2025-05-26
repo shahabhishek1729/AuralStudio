@@ -5,6 +5,12 @@ description = "Digraph parsing and the Rattle programming language"
 authors = ["Abhishek Shah"]
 edition = "2021"
 
+[profile.dev]
+debug = 1
+
+[profile.dev.package."*"]
+debug = false
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
