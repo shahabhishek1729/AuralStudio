@@ -1,10 +1,10 @@
-use crate::addr;
-use crate::check;
+use crate::{addr, throw};
 use crate::digraph::address::{Address, Addressable};
 use crate::digraph::parser::NodeKind;
 use crate::digraph::parser::Piece;
 use crate::digraph::util::*;
 pub(crate) use crate::prelude::CursorError;
+use crate::tern;
 use crate::Node;
 use anyhow;
 use serde_derive::{Deserialize, Serialize};
@@ -59,13 +59,13 @@ impl CursorDir {
     fn _ensure_global_validity(&self, src: &Address) -> anyhow::Result<(), CursorError> {
         // 0.0.0, 1.0.0, 2.0.0.0, etc. -> can't go up anymore without hitting the root
         if *self == CursorDir::UP && src[1..].iter().sum::<usize>() == 0 {
-            return Err(CursorError::InvalidMotion(*self));
+            throw!(InvalidMotion => *self);
         }
 
         // If the length is even, the last index is odd (i.e., represents a level). If this is not
         // true, this must mean there are no levels below the current block in the current subtree.
         if *self == CursorDir::DOWN && src.len() % 2 == 1 {
-            return Err(CursorError::InvalidMotion(*self));
+            throw!(InvalidMotion => *self);
         }
 
         Ok(())
@@ -85,13 +85,13 @@ impl CursorDir {
 
         let Some(_) = graph_hash.get(&node.parent_addr) else {
             // This node is a FNDEF/CLSDECL; cannot go up without going out first.
-            return Err(CursorError::InvalidMotion(*self));
+            throw!(InvalidMotion => *self);
         };
 
         let coerced_parent = node.parent_addr.coerce(&graph_hash)?;
         if coerced_parent == node.addr {
             // This only allows for DOWN, and is handled separately in that branch.
-            return Err(CursorError::InvalidMotion(*self));
+            throw!(InvalidMotion => *self);
         }
 
         let Some(parent) = graph_hash.get(&coerced_parent) else {
@@ -103,7 +103,7 @@ impl CursorDir {
             .find(|(_, n)| n.addr == src)
         else {
             // This is an unacceptable local motion
-            return Err(CursorError::InvalidMotion(*self));
+            throw!(InvalidMotion => *self);
         };
         assert_eq!(curr_node, node);
 
@@ -121,24 +121,27 @@ impl CursorDir {
                 let l = dst.len();
                 for i in (0..l).filter(|x| x % 2 == self._parity_val()).rev() {
                     // If we're going up, make sure we can and move. Otherwise, go down.
-                    check!(self._modifying_val() => dst[i] += 1 ; check!(dst[i] > 0 => dst[i] -= 1 ; continue));
+                    tern!(self._modifying_val() => dst[i] += 1 ; 
+                        tern!(dst[i] > 0 => dst[i] -= 1 ; 
+                            tern!(*self == CursorDir::LEFT => throw!(InvalidMotion => *self) ; continue)));
                     let dst = Address::new(dst[0..(i + 1)].to_vec());
 
                     // Ensure the motion worked (i.e., not going right from the rightmost block).
                     let Ok(mut dst) = dst.coerce(&state.graph.get_hash()) else {
-                        return Err(CursorError::InvalidMotion(*self));
+                        throw!(InvalidMotion => *self);
                     };
                     let _ = dst.addr.pop();
 
                     return Ok(dst);
                 }
-                return Err(CursorError::InvalidMotion(*self));
+                throw!(InvalidMotion => *self);
             }
             CursorDir::IN => {
                 let dst = src.coerce(&(state.graph).get_hash())?;
                 Ok(dst)
             }
-            _ => return Err(CursorError::InvalidMotion(*self)),
+            _ => throw!(InvalidMotion => *self),
+
         }
     }
 

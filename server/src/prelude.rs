@@ -18,9 +18,9 @@ pub type RESULT = Result<(), Box<dyn SyntaxError>>;
 pub type RESVAL<T> = Result<T, Box<dyn SyntaxError>>;
 
 /// A Rust equivalent of the ternary operator in C/C++.
-/// cpp: bool ? yes : no ||| rust: check!(bool => yes ; no)
+/// cpp: bool ? yes : no ||| rust: tern!(bool => yes ; no)
 #[macro_export]
-macro_rules! check {
+macro_rules! tern {
     ($test:expr => $true_expr:expr ; $false_expr:expr) => {
         if $test {
             $true_expr
@@ -34,7 +34,7 @@ macro_rules! check {
 const BLANK_TOKEN_KIND: RTLToken = RTLToken::EOF;
 
 /// A generic, blank token (freuqently to be used as a default value or
-/// an example for documentatino purposes)
+/// an example for documentation purposes)
 pub const GENERIC_BLANK_TOKEN: Token = Token::new(BLANK_TOKEN_KIND, String::new(), None, 0);
 
 /// The maximum length of a Rattle keyword (in this case, "greater
@@ -194,6 +194,13 @@ pub(crate) enum CursorError {
     SemanticError(#[from] crate::static_analysis::analyzer::SemanticError),
     #[error("Please save your file before running it")]
     UnnamedFile,
+}
+
+#[macro_export]
+macro_rules! throw {
+    ($variant:ident => $($arg:tt)*) => {
+        return Err(CursorError::$variant($($arg)*))
+    };
 }
 
 impl From<std::num::ParseFloatError> for CursorError {
