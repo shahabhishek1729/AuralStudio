@@ -346,6 +346,11 @@ impl Canvas {
                 NodeKind::PENDING => "pretend",
             };
 
+            if _node.kind == NodeKind::PENDING {
+                _rtl.push_str("pretend\n");
+                return;
+            }
+
             if _node.kind != NodeKind::CONDTLY {
                 _rtl.push_str(&format!(
                     "{starter}{}\n",
