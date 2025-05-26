@@ -45,8 +45,6 @@ pub(super) enum Command<'a> {
     ChainLt,
     ChainGe,
     ChainLe,
-    ChainAnd,
-    ChainOr,
     ChainNot,
     ChainIn,
     ChainDot,
@@ -58,6 +56,7 @@ pub(super) enum Command<'a> {
     CommitChunk,
     DeleteNode,
     Run,
+    Walkthrough,
     SaveFile,
     NULL,
     TryBracket,
@@ -73,6 +72,7 @@ const VIEW_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "Backspace" => Command::NavOut,
     "Enter" => Command::EditMode,
     "r" => Command::Run,
+    "w" => Command::Walkthrough,
     "s" => Command::SaveFile,
     "i" => Command::InplaceEditMode,
     "d" => Command::DeleteNode,
@@ -103,7 +103,7 @@ const VAL_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "c" => Command::AddCall,
     "l" => Command::AddList,
     "Escape" => Command::Escape,
-    "b" => Command::TryBracket,
+    "a" => Command::TryBracket,
 };
 
 const OP_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
@@ -117,12 +117,10 @@ const OP_KEYMAP: phf::Map<&'static str, Command> = phf_map! {
     "l" => Command::ChainLt,
     "x" => Command::ChainGe,
     "s" => Command::ChainLe,
-    "a" => Command::ChainAnd,
-    "o" => Command::ChainOr,
     "n" => Command::ChainNot,
     "i" => Command::ChainIn,
     "c" => Command::ChainDot,
-    "b" => Command::ChainIdx,
+    "a" => Command::ChainIdx,
     "Escape" => Command::Escape,
     "Enter" => Command::CommitChunk,
 };
