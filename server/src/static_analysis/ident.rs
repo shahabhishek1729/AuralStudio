@@ -5,7 +5,8 @@ use crate::digraph::{
 };
 use std::{
     cell::RefCell,
-    collections::HashMap,
+    collections::{BTreeMap, HashMap},
+    ops,
     rc::{Rc, Weak},
 };
 
@@ -417,18 +418,18 @@ impl IDGraph {
         let node = node.borrow();
         if let Ident::Fun { children, .. } = &*node {
             for child in children {
-                Self::update_valid_idents(child.clone())
+                Self::update_valid_idents(child.clone(), Some(&*node))
             }
         }
     }
 
-    pub(super) fn get_hash(&self) -> (HashMap<Address, Ident>, HashMap<String, usize>) {
-        let mut hm: HashMap<Address, Ident> = HashMap::new();
+    pub(super) fn get_hash(&self) -> (BTreeMap<Address, Ident>, HashMap<String, usize>) {
+        let mut hm: BTreeMap<Address, Ident> = BTreeMap::new();
         let mut args_hm: HashMap<String, usize> = HashMap::new();
         // Recursively traverse the graph, adding each node to the map and handling its subtree.
         fn _inner(
             node: Child<Ident>,
-            _hm: &mut HashMap<Address, Ident>,
+            _hm: &mut BTreeMap<Address, Ident>,
             _args_hm: &mut HashMap<String, usize>,
         ) {
             let node = node.borrow().clone();

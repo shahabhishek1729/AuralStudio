@@ -1,7 +1,8 @@
 use crate::digraph::parser::{Node, Piece};
 use crate::digraph::{address::Addressable, parser::NodeKind, state::Canvas};
-use crate::static_analysis::ident::IDGraph;
+use crate::static_analysis::ident::{IDGraph, Ident};
 use serde_derive::{Deserialize, Serialize};
+use std::ops;
 use thiserror::Error;
 
 pub(crate) struct Analyzer;
@@ -50,13 +51,30 @@ impl Analyzer {
                             // the scanner will crash.
                             break 'inner;
                         }
-                        let Some(ident) = hash.get(&state.block_loc) else {
+
+                        if let Some((_, ident)) = hash
+                            .range((
+                                ops::Bound::Unbounded,
+                                ops::Bound::Included(&state.block_loc),
+                            ))
+                            .next_back()
+                        {
+                            // Check that any one of 3 things is true:
+                            // 1. The most recent ident is a FNDEF whose args contains this name.
+                            // 2. The most recent ident is a VARDCEL which created this name.
+                            // 3. The most recent ident's valid_idents contains this name.
+                            if let Ident::Fun { args, .. } = ident {
+                                if args.contains(&name) {
+                                    break 'inner;
+                                }
+                            }
+                            // If none of the above are true, this ident is invalid.
+                            if !ident.is_valid(name) && ident.get_name() != name {
+                                return Err(SemanticError::UseBeforeDef(name.into()));
+                            }
+                        } else {
                             return Err(SemanticError::UseBeforeDef(name.into()));
                         };
-
-                        if !ident.is_valid(name) {
-                            return Err(SemanticError::UseBeforeDef(name.into()));
-                        }
                     }
                     crate::digraph::parser::Piece::FNCALL(pieces) => {
                         _analyze_piecewise(pieces, curr_node, id_graph, state)?;
@@ -137,6 +155,7 @@ mod tests {
             graph: nodes.to_vec(),
             piece_ix: None,
             output: None,
+            err: None,
         };
 
         let dag = IDGraph::from_state(&state);
@@ -161,6 +180,7 @@ mod tests {
             graph: nodes.to_vec(),
             piece_ix: None,
             output: None,
+            err: None,
         };
 
         let dag = IDGraph::from_state(&state);
@@ -188,6 +208,7 @@ mod tests {
             graph: nodes.to_vec(),
             piece_ix: None,
             output: None,
+            err: None,
         };
 
         let dag = IDGraph::from_state(&state);
@@ -212,6 +233,7 @@ mod tests {
             graph: nodes.to_vec(),
             piece_ix: None,
             output: None,
+            err: None,
         };
 
         let dag = IDGraph::from_state(&state);
