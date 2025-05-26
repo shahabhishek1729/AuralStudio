@@ -50,3 +50,20 @@ textarea {
     resize: none; /*remove the resize handle on the bottom right*/
 	background: #333333;
 }
+
+input::-webkit-input-placeholder { /* WebKit browsers */
+    color:    #fff;
+	font-weight: 400;
+}
+input:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+    color:    #fff;
+	font-weight: 400;
+}
+input::-moz-placeholder { /* Mozilla Firefox 19+ */
+    color:    #fff;
+	font-weight: 400;
+}
+input:-ms-input-placeholder { /* Internet Explorer 10+ */
+    color:    #fff;
+	font-weight: 400;
+}
