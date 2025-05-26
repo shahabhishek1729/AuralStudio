@@ -5,7 +5,7 @@ CMD   : Move left       | h    | ✅   |
 CMD   : Move right      | l    | ✅   |
 CMD   : Move up         | k    | ✅   |
 CMD   : Move down       | j    | ✅   |
-CMD   : Move in         |      | ✅   |
+CMD   : Move in         | ␣    | ✅   |
 CMD   : Move out        | ⌫    | ✅   |
 CMD   : Run program     | r    | ✅   |
 CMD   : Save file       | s    | ✅   |
@@ -47,12 +47,10 @@ OP    : >				| g	   | ✅   |
 OP    : <				| l	   | ✅   |					
 OP    : >=				| x    | ✅   |								
 OP    : <=				| s	   | ✅   |					
-OP    : &&				| a    | ✅   |					
-OP    : ||				| o    | ✅   |							
 OP    : !				| n    | ✅   |						
 OP    : in				| i    | ✅   |					
 OP    : .				| c    | ✅   |						
-OP    : []				| b	   | ✅   |				
+OP    : []				| a	   | ✅   |				
 OP    : ->				| AUTO | ✅   |						
 ---------------------------------------
 
