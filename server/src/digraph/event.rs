@@ -427,19 +427,24 @@ impl KeyboardEvent {
                     panic!("Found an unreadable filename which shouldn't be possible")
                 };
 
-                let _ = crate::runner::compile(rtl, filename.to_string());
-                let process = std::process::Command::new("python")
+                match crate::runner::compile(rtl, filename.to_string()) {
+                    Ok(_) => {}
+                    Err(s) => state.err = Some(s),
+                }
+                let process = std::process::Command::new("python3")
                     .arg(to_py(filename))
                     .output()?;
 
                 let out = String::from_utf8(process.stdout).expect("stdout conversion can't fail");
                 let mut err =
                     String::from_utf8(process.stderr).expect("stdout conversion can't fail");
+
                 if !err.is_empty() {
                     err = format!("\n\nError:\n{}", err);
+                    state.err = Some(err);
                 }
 
-                state.output = Some(format!("{}{}", out, err));
+                state.output = Some(out);
             }
             Command::SaveFile => {
                 let rtl = state.to_rtl();

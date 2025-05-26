@@ -272,6 +272,7 @@ pub(crate) struct Canvas {
     pub(crate) graph: Vec<Node>,
     pub(crate) piece_ix: Option<Vec<usize>>,
     pub(crate) output: Option<String>,
+    pub(crate) err: Option<String>,
 }
 
 impl Default for Canvas {
@@ -284,6 +285,7 @@ impl Default for Canvas {
             mode: ADMode::VIEW,
             piece_ix: None,
             output: None,
+            err: None,
         }
     }
 }
@@ -471,6 +473,7 @@ mod tests {
                 graph: nodes.to_vec(),
                 piece_ix: None,
                 output: None,
+                err: None,
             };
             let mut failed = false;
             $(
@@ -500,6 +503,7 @@ mod tests {
                 graph: nodes.to_vec(),
                 piece_ix: None,
                 output: None,
+                err: None,
             };
             $(
                 let coerced = state.block_loc.coerce(&(state.graph).get_hash()).expect("Coercion should work");
