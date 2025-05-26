@@ -396,7 +396,15 @@ impl KeyboardEvent {
                                 // If deleting the only sub-function there is, go back to the parent.
                                 // Otherwise, go to the last function.
                                 state.block_loc = if i == 0 {
-                                    parent_addr
+                                    let pl = parent_addr.len();
+                                    if pl == 2 {
+                                        // Root function parents don't need modified addrs
+                                        parent_addr
+                                    } else {
+                                        // When this child function was created, we appended a 0
+                                        // onto the parent's address. We must undo this.
+                                        Address::new(parent_addr[..pl - 1].into())
+                                    }
                                 } else {
                                     parent_children[i - 1].addr.clone()
                                 };
