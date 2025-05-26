@@ -382,8 +382,6 @@ impl Canvas {
                         crate::digraph::parser::OpKind::GE => "greater than equals".into(),
                         crate::digraph::parser::OpKind::LE => "less than equals".into(),
                         crate::digraph::parser::OpKind::ASSN => "be".into(),
-                        crate::digraph::parser::OpKind::AND => "and".into(),
-                        crate::digraph::parser::OpKind::OR => "or".into(),
                         crate::digraph::parser::OpKind::NOT => "not".into(),
                         crate::digraph::parser::OpKind::IN => "in".into(),
                         crate::digraph::parser::OpKind::DOT => "dot".into(),
@@ -457,7 +455,7 @@ mod tests {
     use crate::addr;
     use crate::digraph::address::Addressable;
     use crate::digraph::parser::Parser;
-    use crate::digraph::state::{CursorError::InvalidMotion, Canvas};
+    use crate::digraph::state::{Canvas, CursorError::InvalidMotion};
 
     macro_rules! move_cursor {
         // Move sequences that result in an attempted move "off the graph" should return errors
