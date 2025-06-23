@@ -19,13 +19,13 @@ use std::io::prelude::*;
 use std::path;
 
 /// Compiles a set of Rattle code into a Python script.
-pub(crate) fn compile(code: String, path: String) -> Result<String, ()> {
+pub(crate) fn compile(code: String, path: String) -> Result<String, String> {
     let compiler = Decompiler::new(&code);
     match compiler {
         Ok(mut compiler_) => {
             match compiler_.decompile() {
                 Ok(_) => (),
-                Err(msg) => return Ok(format!("Failed: {}", msg)),
+                Err(msg) => return Err(format!("Failed: {}", msg)),
             }
 
             compiler_
@@ -33,7 +33,7 @@ pub(crate) fn compile(code: String, path: String) -> Result<String, ()> {
                 .push_str("\nif __name__ == '__main__':\n\tstart([])");
 
             if &path[path.len() - 7..] != ".rattle" {
-                return Ok("Failed: Rattle files must end in .rattle".to_string());
+                unreachable!("rattle files must end in .rattle");
             }
 
             let py_fn = format!("{}.py", &path[..path.len() - 7]);
