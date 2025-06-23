@@ -37,6 +37,7 @@ pub(crate) enum StackAction {
     DRILL(usize),
     // Used with FNCALL, jumps into another function.
     JUMP(String),
+    // To create a new function definition, just pass in a few endpoints to create
 }
 
 impl StackAction {
@@ -270,9 +271,6 @@ mod tests {
         act.execute(&mut debugger).unwrap();
         idg.populate_valid_idents();
 
-        let json = serde_json::to_string_pretty(&idg).unwrap();
-        dbg!(json);
-
         let (expl, act) = debugger.explain(&mut idg);
         assert_eq!(
             expl,
@@ -285,7 +283,41 @@ mod tests {
         assert_eq!(expl, "Is result equal to 10? Yes");
         act.execute(&mut debugger).unwrap();
         idg.populate_valid_idents();
-        assert!(false);
+    }
+
+    #[test]
+    fn explain_out() {
+        let SOURCE =
+            "define start of args\nlet a be string hello world done\noutput a\ndone define";
+        let mut parser = Parser::new(String::from(SOURCE)).unwrap();
+        let mut nodes = parser.parse().unwrap();
+        (&mut nodes[..]).fill_addr();
+
+        let state = Canvas {
+            filename: "".into(),
+            block_loc: addr!(0, 0, 1),
+            node_loc: addr!(0, 0, 1)
+                .coerce(&nodes.get_hash())
+                .expect("Coercion should work"),
+            mode: ADMode::VIEW,
+            graph: nodes.to_vec(),
+            piece_ix: None,
+            output: None,
+            err: None,
+        };
+
+        let mut idg = IDGraph::from_state(&state);
+        idg.populate_valid_idents();
+
+        let mut debugger = Debugger::new(state);
+
+        let (expl, act) = debugger.explain(&mut idg);
+        assert_eq!(expl, "Set variable a equal to string hello world done");
+        act.execute(&mut debugger).unwrap();
+        idg.populate_valid_idents();
+
+        let (expl, _) = debugger.explain(&mut idg);
+        assert_eq!(expl, "Wrote on the screen a, which is 'hello world'");
     }
 
     // #[test]

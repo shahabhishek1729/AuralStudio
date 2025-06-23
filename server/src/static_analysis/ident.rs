@@ -432,6 +432,7 @@ impl IDGraph {
             valid_idents.extend_from_slice(p_valid_idents);
             valid_idents.push((p_name.to_string(), p_val));
 
+            // XXX: NOTE: Optimization possible
             // If parent is a function, find this node's left siblings
             if let Ident::Fun { args, children, .. } = &*parent {
                 valid_idents.extend(args.iter().map(|v| (v.clone(), None)));
@@ -658,7 +659,7 @@ pub(super) fn eval_expr(state: &Canvas, expr: &[Piece], graph: &IDGraph) -> Stri
     let expr = serialize_expr(state, expr, graph);
     let Ok(process) = std::process::Command::new("python3")
         .arg("-c")
-        .arg(format!("print(eval('{expr}'))"))
+        .arg(format!("print(repr(eval('{expr}')))"))
         .output()
     else {
         panic!()
@@ -676,10 +677,11 @@ pub(super) fn eval_expr(state: &Canvas, expr: &[Piece], graph: &IDGraph) -> Stri
 pub(super) fn format_expr(state: &Canvas, expr: &[Piece], graph: &IDGraph) -> String {
     let angl = anglicize_expr(expr);
     let eval = eval_expr(state, expr, graph);
+    let el = eval.len() - 1;
     format!(
         "{}{}",
         angl,
-        if angl == eval {
+        if angl == eval || angl == format!("string {} done", &eval[1..el]) {
             "".into()
         } else {
             format!(", which is {eval}")
