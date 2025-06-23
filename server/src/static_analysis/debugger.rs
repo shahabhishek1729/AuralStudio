@@ -132,7 +132,8 @@ impl Debugger {
             NodeKind::FNDEF => todo!(),
             NodeKind::VARDECL => {
                 let result = format_expr(&self.state, &node.pieces[2..], graph);
-                let evaled = eval_expr(&self.state, &node.pieces[2..], graph);
+                let evaled = format_strings(eval_expr(&self.state, &node.pieces[2..], graph));
+
                 let curr_ident = graph.get_hash_mut();
                 let Some(curr_ident) = curr_ident.get(&self.state.node_loc) else {
                     panic!();
@@ -223,6 +224,7 @@ mod tests {
         },
         static_analysis::{debugger::Debugger, ident::IDGraph},
     };
+
     #[test]
     fn explain_var() {
         let SOURCE = "define start of args\nlet a be 1\nlet b be 2\nlet c be 3\nlet d be 4\nlet result be a plus b plus c plus d\nif result equals 10\ndone if\notherwise\ndone otherwise\ndone define";
@@ -362,4 +364,14 @@ mod tests {
     //     assert_eq!(expl, "Entered the right branch");
     //     act.execute(&mut debugger).unwrap();
     // }
+}
+
+// Takes in a string of the form "'...'", and outputs a string of the form "\"...\""
+fn format_strings(input: String) -> String {
+    if input.len() >= 2 && input.starts_with('\'') && input.ends_with('\'') {
+        let result = &input[1..input.len() - 1];
+        format!("\"{result}\"")
+    } else {
+        input
+    }
 }
