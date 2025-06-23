@@ -317,7 +317,10 @@ impl Decompiler {
                 )));
             }
             RTLToken::PENDING => {
-                return Err(Box::new(UnimplementedSE::new(next.line)));
+                if self.curr > 0 && Self::resolves_to_val_(&self.tokens[self.curr - 1]) {
+                    return Err(Box::new(UnimplementedSE::new(next.line)));
+                }
+                self.push_str("...");
             }
             _ => {
                 return Err(Box::new(MiscellaneousSE::new(
@@ -960,6 +963,11 @@ impl Decompiler {
                         expr.push_str(&self.parse_idx(false)?.unwrap_or(String::new()));
                         broken = true;
                         break;
+                    }
+                    RTLToken::PENDING => {
+                        return Err(Box::new(UnimplementedSE {
+                            line_num: self._line,
+                        }))
                     }
                     _ => {
                         broken = true;

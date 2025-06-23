@@ -271,6 +271,30 @@ fn test_asserts() {
 }
 
 #[test]
+fn test_pretend() {
+    let source = "define f of x\npretend\ndone define";
+    let mut decompiler = Decompiler::new(source).unwrap();
+    decompiler.decompile().unwrap();
+    assert_eq!(decompiler.py, "def f(x):\n    ...\n    ");
+}
+
+#[test]
+fn test_pretend_val() {
+    let source = "define f of x\nlet x be pretend\ndone define";
+    let mut decompiler = Decompiler::new(source).unwrap();
+    decompiler.decompile().unwrap();
+    assert_eq!(decompiler.py, "def f(x):\n    x = ...\n    ");
+}
+
+#[test]
+#[should_panic]
+fn test_pretend_infix() {
+    let source = "define f of x\nlet x be 1 pretend 2\ndone define";
+    let mut decompiler = Decompiler::new(source).unwrap();
+    decompiler.decompile().unwrap();
+}
+
+#[test]
 fn test_linalg() {
     let source = "define inverse of m
 define determinant of m
