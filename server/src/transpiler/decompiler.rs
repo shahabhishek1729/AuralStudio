@@ -259,23 +259,23 @@ impl Decompiler {
                 let dict = self.decompile_dicts(false)?;
                 self.push_str(&dict);
             }
-            RTLToken::DotOperator => self.push_str(&String::from(".")),
-            RTLToken::AddOperation => self.push_str(&String::from(" + ")),
-            RTLToken::SubOperation => self.push_str(&String::from(" - ")),
-            RTLToken::MulOperation => self.push_str(&String::from(" * ")),
-            RTLToken::DivOperation => self.push_str(&String::from(" / ")),
-            RTLToken::ModOperation => self.push_str(&String::from(" % ")),
-            RTLToken::IntDivOperation => self.push_str(&String::from(" // ")),
-            RTLToken::AndLogical => self.push_str(&String::from(" and ")),
-            RTLToken::OrLogical => self.push_str(&String::from(" or ")),
-            RTLToken::NotLogical => self.push_str(&String::from(" not ")),
-            RTLToken::Unpack => self.push_str(&String::from("*")),
-            RTLToken::EqComparator => self.push_str(&String::from(" == ")),
-            RTLToken::NeComparator => self.push_str(&String::from(" != ")),
-            RTLToken::GtComparator => self.push_str(&String::from(" > ")),
-            RTLToken::GtEqComparator => self.push_str(&String::from(" >= ")),
-            RTLToken::LtComparator => self.push_str(&String::from(" <= ")),
-            RTLToken::LtEqComparator => self.push_str(&String::from(" <= ")),
+            RTLToken::DotOperator => self.push_str("."),
+            RTLToken::AddOperation => self.push_str(" + "),
+            RTLToken::SubOperation => self.push_str(" - "),
+            RTLToken::MulOperation => self.push_str(" * "),
+            RTLToken::DivOperation => self.push_str(" / "),
+            RTLToken::ModOperation => self.push_str(" % "),
+            RTLToken::IntDivOperation => self.push_str(" // "),
+            RTLToken::AndLogical => self.push_str(" and "),
+            RTLToken::OrLogical => self.push_str(" or "),
+            RTLToken::NotLogical => self.push_str(" not "),
+            RTLToken::Unpack => self.push_str("*"),
+            RTLToken::EqComparator => self.push_str(" == "),
+            RTLToken::NeComparator => self.push_str(" != "),
+            RTLToken::GtComparator => self.push_str(" > "),
+            RTLToken::GtEqComparator => self.push_str(" >= "),
+            RTLToken::LtComparator => self.push_str(" <= "),
+            RTLToken::LtEqComparator => self.push_str(" <= "),
             RTLToken::IdxOperator => {
                 self.parse_idx(true)?;
             }
@@ -907,55 +907,55 @@ impl Decompiler {
             if Self::resolves_to_val_(&prev) {
                 match curr.rtl_token {
                     RTLToken::AddOperation => {
-                        expr.push_str(&&String::from(" + "));
+                        expr.push_str(" + ");
                     }
                     RTLToken::SubOperation => {
-                        expr.push_str(&&String::from(" - "));
+                        expr.push_str(" - ");
                     }
                     RTLToken::MulOperation => {
-                        expr.push_str(&&String::from(" * "));
+                        expr.push_str(" * ");
                     }
                     RTLToken::ModOperation => {
-                        expr.push_str(&&String::from(" % "));
+                        expr.push_str(" % ");
                     }
                     RTLToken::DivOperation => {
-                        expr.push_str(&&String::from(" / "));
+                        expr.push_str(" / ");
                     }
                     RTLToken::IntDivOperation => {
-                        expr.push_str(&&String::from(" // "));
+                        expr.push_str(" // ");
                     }
                     RTLToken::AndLogical => {
-                        expr.push_str(&&String::from(" and "));
+                        expr.push_str(" and ");
                     }
                     RTLToken::OrLogical => {
-                        expr.push_str(&&String::from(" or "));
+                        expr.push_str(" or ");
                     }
                     RTLToken::EqComparator => {
-                        expr.push_str(&&String::from(" == "));
+                        expr.push_str(" == ");
                     }
                     RTLToken::NeComparator => {
-                        expr.push_str(&&String::from(" != "));
+                        expr.push_str(" != ");
                     }
                     RTLToken::GtComparator => {
-                        expr.push_str(&&String::from(" > "));
+                        expr.push_str(" > ");
                     }
                     RTLToken::GtEqComparator => {
-                        expr.push_str(&&String::from(" >= "));
+                        expr.push_str(" >= ");
                     }
                     RTLToken::LtComparator => {
-                        expr.push_str(&&String::from(" < "));
+                        expr.push_str(" < ");
                     }
                     RTLToken::LtEqComparator => {
-                        expr.push_str(&&String::from(" <= "));
+                        expr.push_str(" <= ");
                     }
                     RTLToken::MembershipOperator => {
-                        expr.push_str(&&String::from(" in "));
+                        expr.push_str(" in ");
                     }
                     RTLToken::IdentityOperator => {
-                        expr.push_str(&&String::from(" is "));
+                        expr.push_str(" is ");
                     }
                     RTLToken::AssnEq => {
-                        expr.push_str(&&String::from(" = "));
+                        expr.push_str(" = ");
                     }
                     RTLToken::ExprEnd => {}
                     RTLToken::IdxOperator => {
