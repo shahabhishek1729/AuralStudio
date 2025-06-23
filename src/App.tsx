@@ -72,7 +72,7 @@ function App() {
       audioContext.resume();
     }
 
-    playAudio();
+    // playAudio();
 
     return () => {
       if (audioContext.state !== "closed") {
@@ -130,12 +130,9 @@ function App() {
       }
 
       // 2. "s" in view mode on an unnamed file to give it a name
-      if (
-        payload.mode === "VIEW" &&
-        e.key === "s" &&
-        payload.filename === "unnamed"
-      ) {
+      if (payload.mode === "VIEW" && e.key === "s") {
         setEditingFilename(true);
+        payload.blockLoc = "";
         return;
       }
 
@@ -143,8 +140,7 @@ function App() {
       if (
         payload.mode === "TYPE" &&
         e.key === "Enter" &&
-        payload.blockLoc === "" &&
-        editingFilename
+        (payload.blockLoc === "" || editingFilename)
       ) {
         // Save the entered filename and continue
         const elem = document.getElementById("edit_filename");
