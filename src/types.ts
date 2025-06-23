@@ -84,7 +84,7 @@ interface IdentFun {
 }
 
 // Either we are viewing or editing the digraph; if editing, we might be expecting a certain piece
-type ADMode = "VIEW" | "TYPE" | { "EDIT": _ExpectingPiece };
+export type ADMode = "VIEW" | "TYPE" | { "EDIT": _ExpectingPiece };
 /**
  * The kind of piece we're expecting to see next in the digraph.
  * When pieces are pending, there are three possibilities of the next piece we're expecting
@@ -144,35 +144,35 @@ export function extractPieceValue(piece: RTLPiece): string | undefined | RTLPiec
 }
 
 export interface symbol_metadata {
-  constant: [string, string, number, number];
-  number: [string, string, number, number];
-  bool: [string, string, number, number];
-  arrow: [string, string, number, number];
-  operator: [string, string, number, number];
-  text: [string, string, number, number];
-  ident: [string, string, number, number];
-  fncall: [string, string, number, number];
-  list: [string, string, number, number];
-  PendingVal: [string, string, number, number];
-  PendingOp: [string, string, number, number];
+  constant: [string, string, number, number, string];
+  number: [string, string, number, number, string];
+  bool: [string, string, number, number, string];
+  arrow: [string, string, number, number, string];
+  operator: [string, string, number, number, string];
+  text: [string, string, number, number, string];
+  ident: [string, string, number, number, string];
+  fncall: [string, string, number, number, string];
+  list: [string, string, number, number, string];
+  PendingVal: [string, string, number, number, string];
+  PendingOp: [string, string, number, number, string];
 }
 
 export interface token_metadata {
-  file: [string, string];
-  function: [string, null];
-  variable: [string, null];
-  conditional: [string, null];
-  yes: [string, null];
-  no: [string, null];
-  for: [string, null];
-  while: [string, null];
-  library: [string, null];
-  output: [string, null];
-  return: [string, null];
-  list: [string, null];
-  pending: [string, null];
-  continue: [string, null];
-  break: [string, null];
+  file: [string, string, string];
+  function: [string, null, string];
+  variable: [string, null, string];
+  conditional: [string, null, string];
+  yes: [string, null, string];
+  no: [string, null, string];
+  for: [string, null, string];
+  while: [string, null, string];
+  library: [string, null, string];
+  output: [string, null, string];
+  return: [string, null, string];
+  list: [string, null, string];
+  pending: [string, null, string];
+  continue: [string, null, string];
+  break: [string, null, string];
 }
 
 export interface op_kind {

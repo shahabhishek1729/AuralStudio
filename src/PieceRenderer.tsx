@@ -4,7 +4,6 @@
  */
 
 import rattle_icon from "./assets/rattle_icon.png";
-import output from "./assets/output_icon.png";
 import function_arrow from "./assets/function_arrow.png";
 import {
   RTLPiece,
@@ -246,13 +245,13 @@ export function RenderIdent({
         width: "fit-content",
         minWidth: `${SYMBOL_MAP["ident"][3] - 10}px`,
         borderRadius:
-          puzzle_color === "transparent" ? "10px" : "0px 10px 10px 0px",
+          puzzle_color === "transparent" ? "25px" : "0px 25px 25px 0px",
         display: "flex",
         flexDirection: "row",
         justifyContent: "center", //Centered vertically
         alignItems: "center", //Centered horizontally
-        paddingLeft: "5px",
-        paddingRight: "5px",
+        paddingLeft: "10px",
+        paddingRight: "10px",
       }}
     >
       {selected ? (
@@ -386,7 +385,9 @@ export function RenderArgs(
             {elementDone(pieces, i + 1) ? (
               <div
                 style={{
-                  height: piece === "PendingOp" ? "25px" : "36px",
+                  height: (piece === "PendingOp"
+                    ? SYMBOL_MAP["PendingOp"]
+                    : SYMBOL_MAP["constant"])[3],
                   width: "1px",
                   backgroundColor:
                     SYMBOL_MAP[colorKind as keyof symbol_metadata][0],
@@ -436,37 +437,37 @@ export function RenderPending({ chained, selected, kind }: PendingProps) {
   );
 }
 
-const TOKEN_MAP: token_metadata = {
-  file: ["#FFFFFF", rattle_icon],
-  function: ["#FE4949", null],
-  variable: ["#49A7FE", null],
-  conditional: ["#06975A", null],
-  yes: ["#06975A", null],
-  no: ["#06975A", null],
-  for: ["#06975A", null],
-  while: ["#06975A", null],
-  library: ["#B140B4", null],
-  output: ["#FF7A00", null],
-  return: ["#B140B4", null],
-  list: ["#06975A", null],
-  pending: ["transparent", null],
-  continue: ["#06975A", null],
-  break: ["#06975A", null],
+export const TOKEN_MAP: token_metadata = {
+  file: ["#FFFFFF", rattle_icon, ""],
+  function: ["#FE4949", null, "#982C2C"],
+  variable: ["#49A7FE", null, "#2C6498"],
+  conditional: ["#E5A500", null, "#7F5B00"],
+  yes: ["#E5A500", null, "#7F5B00"],
+  no: ["#E5A500", null, "#7F5B00"],
+  for: ["#E5A500", null, "#7F5B00"],
+  while: ["#E5A500", null, "#7F5B00"],
+  library: ["#B140B4", null, ""],
+  output: ["#FF4197", null, "#99275A"],
+  return: ["#A838AB", null, "#441745"],
+  list: ["#FF8A00", null, "#995300"],
+  pending: ["#FFFFFF", null, "#9C9C9C"],
+  continue: ["#06975A", null, ""],
+  break: ["#06975A", null, ""],
 };
 
 // ["IDENT", "NUMBER", "OP", "TEXT", "BOOL", "FNCALL", "LIST"];
 export const SYMBOL_MAP: symbol_metadata = {
-  constant: ["#FF8A00", "#FFFFFF", 16, 36],
-  number: ["#FF8A00", "#FFFFFF", 16, 36],
-  bool: ["#FF8A00", "#FFFFFF", 16, 36],
-  arrow: ["transparent", "#FFCD4E", 20, 36],
-  operator: ["#701490", "#FFFFFF", 20, 25],
-  text: ["#374f40", "#FFFFFF", 16, 36],
-  ident: ["#333333", "#FFFFFF", 16, 36],
-  fncall: ["#179c8a", "#FFFFFF", 16, 36],
-  list: ["#FF8A00", "#FFFFFF", 16, 36],
-  PendingVal: ["transparent", "#FFFFFF", 16, 36],
-  PendingOp: ["transparent", "#FFFFFF", 16, 25],
+  constant: ["#FF8A00", "#FFFFFF", 16, 36, "#995300"],
+  number: ["#FF8A00", "#FFFFFF", 16, 36, "#995300"],
+  bool: ["#FF8A00", "#FFFFFF", 16, 36, "#995300"],
+  arrow: ["transparent", "#FFCD4E", 20, 36, "transparent"],
+  operator: ["#330634", "#DB6BDE", 20, 25, "#441745"],
+  text: ["#374f40", "#FFFFFF", 16, 36, "#374f40"],
+  ident: ["#333333", "#FFFFFF", 16, 36, "#333333"],
+  fncall: ["#179187", "#FFFFFF", 16, 36, "#072B28"],
+  list: ["#FF8A00", "#FFFFFF", 16, 36, "#995300"],
+  PendingVal: ["#333333", "#FFFFFF", 16, 36, "#333333"],
+  PendingOp: ["#333333", "#FFFFFF", 16, 25, "#333333"],
 };
 
 const OP_TO_NAME: op_kind = {
@@ -498,14 +499,14 @@ export function ChainSymbol(
   pieceIx: number[],
   symbol?: string,
 ) {
-  let radii = "10px 0px 0px 10px";
+  let radii = "25px 0px 0px 25px";
   if (chained && !start) radii = "0px 0px 0px 0px";
-  else if (start) radii = "0px 10px 10px 0px";
+  else if (start) radii = "0px 25px 25px 0px";
 
   const selected = pieceIx[pieceIx.length - 1] === 0;
   const background = selected
     ? "white"
-    : SYMBOL_MAP[type as keyof symbol_metadata][0];
+    : `linear-gradient(${start ? "90deg" : "270deg"}, ${SYMBOL_MAP[type as keyof symbol_metadata][0]}, ${SYMBOL_MAP[type as keyof symbol_metadata][4]}`;
   const foreground = selected
     ? "black"
     : SYMBOL_MAP[type as keyof symbol_metadata][1];
@@ -516,7 +517,7 @@ export function ChainSymbol(
     <div
       style={{
         background: background,
-        height: `${SYMBOL_MAP[type as keyof symbol_metadata][3]}px`,
+        height: `${SYMBOL_MAP[type as keyof symbol_metadata][3] + 2}px`,
         width: "fit-content",
         minWidth: `${SYMBOL_MAP[type as keyof symbol_metadata][3] - 10}px`,
         borderRadius: radii,
@@ -524,10 +525,8 @@ export function ChainSymbol(
         flexDirection: "row",
         justifyContent: "center", //Centered vertically
         alignItems: "center", //Centered horizontally
-        paddingLeft: "5px",
-        paddingRight: "5px",
-        paddingTop: "1px",
-        paddingBottom: "1px",
+        paddingLeft: "12px",
+        paddingRight: "12px",
       }}
     >
       {selected ? (
@@ -573,7 +572,7 @@ export function Symbol(
 ) {
   const background = selected
     ? "white"
-    : SYMBOL_MAP[type as keyof symbol_metadata][0];
+    : `linear-gradient(90deg, ${SYMBOL_MAP[type as keyof symbol_metadata][0]}, ${SYMBOL_MAP[type as keyof symbol_metadata][4]}`;
   const foreground = selected
     ? "black"
     : SYMBOL_MAP[type as keyof symbol_metadata][1];
@@ -588,14 +587,13 @@ export function Symbol(
         width: "fit-content",
         minWidth: `${SYMBOL_MAP[type as keyof symbol_metadata][3] - 10}px`,
         borderRadius:
-          puzzle_color === "transparent" ? "10px" : "0px 10px 10px 0px",
+          puzzle_color === "transparent" ? "25px" : "0px 25px 25px 0px",
         display: "flex",
         flexDirection: "row",
         justifyContent: "center", //Centered vertically
         alignItems: "center", //Centered horizontally
-        paddingLeft: "5px",
-        paddingRight: "5px",
-        filter: `drop-shadow(4px 4px 16px ${background})`,
+        paddingLeft: "10px",
+        paddingRight: "10px",
       }}
     >
       {selected && ["text", "constant", "ident", "fncall"].includes(type) ? (
@@ -694,18 +692,17 @@ export function Token({
         ) : (
           <div
             style={{
-              backgroundColor: TOKEN_MAP[token_type as keyof token_metadata][0],
+              background: `linear-gradient(90deg, ${TOKEN_MAP[token_type as keyof token_metadata][0]}, ${TOKEN_MAP[token_type as keyof token_metadata][2]}`,
               height: "36px",
               width: token_type === "pending" ? "100%" : "fit-content",
               borderRadius:
-                puzzle_color === "transparent" ? "10px" : "10px 0px 0px 10px",
-              border: token_type === "pending" ? "1px dashed white" : "",
+                puzzle_color === "transparent" ? "25px" : "25px 0px 0px 25px",
               display: "flex",
               flexDirection: "row",
               justifyContent: "center", //Centered vertically
               alignItems: "center", //Centered horizontally
-              paddingLeft: token_type === "pending" ? "0px" : "8px",
-              filter: `drop-shadow(-8px 2px 16px ${TOKEN_MAP[token_type as keyof token_metadata][0]})`,
+              paddingLeft: token_type === "pending" ? "0px" : "12px",
+              // filter: `drop-shadow(-8px 2px 16px ${TOKEN_MAP[token_type as keyof token_metadata][0]})`,
             }}
             onClick={() => {
               setClicked(true);
@@ -726,7 +723,7 @@ export function Token({
               {token_type === "conditional"
                 ? "is"
                 : token_type === "pending"
-                  ? "    +    "
+                  ? "       "
                   : token_type}
             </span>
             {puzzle_color !== "transparent" ? (
