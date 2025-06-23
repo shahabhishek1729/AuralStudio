@@ -1,5 +1,5 @@
 export type IDisplay = "HOME" | "PROJECTS" | "EDITOR";
-
+export type RDisplay = "FLOAT" | "PANEL" | "MAX";
 
 export interface RTLNode {
 	line: number,
@@ -12,6 +12,7 @@ export interface RTLNode {
 	note: string | null,
 	err: SemanticError | null
 }
+
 interface SemanticError {
     UnreachableCode: string,
     UseBeforeDef: string,
