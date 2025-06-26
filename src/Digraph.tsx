@@ -15,7 +15,7 @@ import ReactFlow, {
   useUpdateNodeInternals,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { Canvas, RTLNode } from "./types";
+import { Canvas, RTLNode, RTLPiece } from "./types";
 import { FLEX_COL, FLEX_ROW } from "./styles";
 import { RenderNode, FileNodeComponent } from "./components/Nodes";
 import function_arrow from "./assets/function_arrow.png";
@@ -146,13 +146,9 @@ export function DAG(
   }, []);
 
   // Calculate positions with proper spacing
-  const calculateNodePositions = (
-    nodes: RTLNode[],
-    level: number,
-    startX: number = 0,
-  ) => {
+  const calculateNodePositions = (nodes: RTLNode[], startX: number = 0) => {
     const positionedNodes: Node[] = [];
-    let currentX = startX;
+    //let currentX = startX;
     const HORIZONTAL_PADDING = 50; // Minimum padding between nodes
     const VERTICAL_PADDING = 100; // Minimum padding between levels
     const MIN_NODE_WIDTH = 200; // Minimum assumed width for nodes
@@ -165,23 +161,38 @@ export function DAG(
       // Base width for the node container
       width += 80; // Padding and borders
 
+      const getPieceWidth = (piece: RTLPiece): number => {
+        switch (piece) {
+          case "NOTHING":
+            return 8 * piece.length;
+          case "PendingVal":
+            return 40;
+          case "PendingOp":
+            return 40;
+          default:
+            if (piece.IDENT) {
+              return (piece.IDENT as string).length * 8; // ~8px per character
+            } else if (piece.NUMBER) {
+              return 40; // Fixed width for numbers
+            } else if (piece.TEXT) {
+              return (piece.TEXT as string).length * 8; // ~8px per character
+            } else if (piece.OP) {
+              return 30; // Fixed width for operators
+            } else if (piece.BOOL) {
+              return 40; // Fixed width for booleans
+            } else if (piece.LIST || piece.FNCALL) {
+              return 60; // Fixed width for lists/functions
+            }
+        }
+
+        return 0;
+      };
+
       // Add width based on node pieces
       if (node.pieces && node.pieces.length > 0) {
         // Estimate width for each piece type
-        node.pieces.forEach((piece: any) => {
-          if (piece.IDENT) {
-            width += (piece.IDENT as string).length * 8; // ~8px per character
-          } else if (piece.NUMBER) {
-            width += 40; // Fixed width for numbers
-          } else if (piece.TEXT) {
-            width += (piece.TEXT as string).length * 8; // ~8px per character
-          } else if (piece.OP) {
-            width += 30; // Fixed width for operators
-          } else if (piece.BOOL) {
-            width += 40; // Fixed width for booleans
-          } else if (piece.LIST || piece.FNCALL) {
-            width += 60; // Fixed width for lists/functions
-          }
+        node.pieces.forEach((piece: RTLPiece) => {
+          width += getPieceWidth(piece);
         });
       }
 
@@ -201,13 +212,13 @@ export function DAG(
       return Math.max(width, MIN_NODE_WIDTH);
     };
 
-    nodes.forEach((node) => {
+    const runNode = (node: RTLNode, currentX: { x: number }, level: number) => {
       // Estimate node dimensions based on content
       const estimatedWidth = estimateNodeWidth(node);
 
       // Position the node
       const nodePosition = {
-        x: currentX,
+        x: currentX.x,
         y: level * (VERTICAL_PADDING + MIN_NODE_HEIGHT),
       };
 
@@ -226,8 +237,14 @@ export function DAG(
       });
 
       // Update currentX for next node with padding
-      currentX += estimatedWidth + HORIZONTAL_PADDING;
-    });
+      currentX.x += estimatedWidth + HORIZONTAL_PADDING;
+      node.children
+        .filter((child) => child.kind === "FNDEF")
+        .forEach((child) => runNode(child, { x: 0 }, level + 1));
+    };
+
+    let currX = { x: startX };
+    nodes.forEach((node) => runNode(node, currX, 1));
 
     return positionedNodes;
   };
@@ -250,7 +267,7 @@ export function DAG(
     });
 
     // Position all RTL nodes with proper spacing
-    const positionedRTLNodes = calculateNodePositions(source, 1);
+    const positionedRTLNodes = calculateNodePositions(source);
     flowNodes.push(...positionedRTLNodes);
 
     // Store positions for potential future use
