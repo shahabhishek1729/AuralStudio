@@ -13,18 +13,13 @@ import ReactFlow, {
   Handle,
   Position,
   useUpdateNodeInternals,
+  Edge,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { Canvas, RTLNode, RTLPiece } from "./types";
 import { FLEX_COL, FLEX_ROW } from "./styles";
 import { RenderNode, FileNodeComponent } from "./components/Nodes";
 import function_arrow from "./assets/function_arrow.png";
-
-// The kinds of nodes that would require an arrow to be drawn towards them.
-// Currently includes:
-//  - 'yes' branch of if-statements
-//  - 'no' branch of if-statements
-const ARROW_NODES = ["CONDTLY", "CONDTLN"];
 
 // Custom node component for RTL nodes
 const RTLNodeComponent = ({ data }: { data: any }) => {
@@ -93,17 +88,19 @@ const RTLNodeComponent = ({ data }: { data: any }) => {
             src={function_arrow}
           />
           <div style={{ ...FLEX_COL, gap: "0.3rem" }}>
-            {node.children.map((child: RTLNode) =>
-              RenderNode(
-                child,
-                child.address,
-                renderedAddr,
-                selectedAddr,
-                parentIndents,
-                pieceIx,
-                node,
-              ),
-            )}
+            {node.children
+              .filter((child: RTLNode) => child.kind != "FNDEF")
+              .map((child: RTLNode) =>
+                RenderNode(
+                  child,
+                  child.address,
+                  renderedAddr,
+                  selectedAddr,
+                  parentIndents,
+                  pieceIx,
+                  node,
+                ),
+              )}
           </div>
         </div>
       </div>
@@ -334,7 +331,7 @@ export function DAG(
   );
 }
 
-const nodeToNode = (parentAddr: string, child: RTLNode) => {
+const nodeToNode = (parentAddr: string, child: RTLNode): Edge => {
   return {
     id: `${parentAddr}-${child.address}`,
     source: parentAddr,
@@ -346,9 +343,13 @@ const nodeToNode = (parentAddr: string, child: RTLNode) => {
   };
 };
 
-const parentToEdge = (node: RTLNode) => {
+const parentToEdge = (node: RTLNode): Edge[] => {
   const parentToNode = (child: RTLNode) => nodeToNode(node.address, child);
-  return node.children
-    .filter((child: RTLNode) => ARROW_NODES.includes(child.kind))
-    .map(parentToNode);
+  let fnChildren = node.children.filter(
+    (child: RTLNode) => child.kind === "FNDEF",
+  );
+  return [
+    ...fnChildren.map(parentToNode),
+    ...fnChildren.flatMap((child: RTLNode) => parentToEdge(child)),
+  ];
 };
