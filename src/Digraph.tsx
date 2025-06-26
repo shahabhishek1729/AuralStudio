@@ -3,279 +3,44 @@
  * individual pieces, nodes, blocks and subtrees.
  */
 
-import { useEffect, useRef, useState } from "react";
-import {
-  ArcherContainer,
-  ArcherContainerRef,
-  ArcherElement,
-} from "react-archer";
-import { ReactNode } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import ReactFlow, {
+  Node,
+  Controls,
+  Background,
+  NodeTypes,
+  ReactFlowProvider,
+  Handle,
+  Position,
+  useUpdateNodeInternals,
+} from "reactflow";
+import "reactflow/dist/style.css";
 import { Canvas, RTLNode } from "./types";
-import { ROW_STYLE, FLEX_COL, FLEX_ROW, BORDER_ANIMATION } from "./styles";
-import { Token, RenderPiece, TOKEN_MAP } from "./PieceRenderer";
-import { arrEq, getColor } from "./utils";
-import ReactCardFlip from "react-card-flip";
-import { CheckmarkIcon, ErrorIcon, MessageIcon } from "./Components";
+import { FLEX_COL, FLEX_ROW } from "./styles";
+import { RenderNode, FileNodeComponent } from "./components/Nodes";
+import function_arrow from "./assets/function_arrow.png";
 
-const token_type = {
-  FNDEF: "function",
-  OUTPUT: "output",
-  VARDECL: "variable",
-  CONDTL: "conditional",
-  CONDTLY: "yes",
-  CONDTLN: "no",
-  RETURN: "return",
-  PENDING: "pending",
-  FORLOOP: "for",
-  WHLLOOP: "while",
-  BREAK: "break",
-  CONTINUE: "continue",
-};
+const INDENT_SHIFT_X = 50;
+const NODE_SHIFT_Y = 25e-2;
 
 // The kinds of nodes that would require an arrow to be drawn towards them.
 // Currently includes:
 //  - 'yes' branch of if-statements
 //  - 'no' branch of if-statements
-const ARROW_NODES = [token_type.CONDTLY, token_type.CONDTLN];
-const GLOBAL_BLOCK_NODES = ["FNDEF"];
-const LOCAL_BLOCK_NODES = ["CONDTL"];
-const INDENT_NODES = GLOBAL_BLOCK_NODES.concat(["FORLOOP", "WHLLOOP"]);
+const ARROW_NODES = ["CONDTLY", "CONDTLN"];
 
-const isBlock = (c: RTLNode) => GLOBAL_BLOCK_NODES.includes(c.kind);
-const hasBlocks = (c: RTLNode) => !!c.children.find(isBlock);
-const getBlocks = (c: RTLNode) => c.children.filter(isBlock);
-const excludeBlocks = (c: RTLNode) => c.children.filter((c_) => !isBlock(c_));
-
-/**
- * Move an address one space forward (e.g., 1.0.2.1.0 => 1.0.2.1.1)
- * @param addr The address to be moved forward from (typically the parent addr)
- * @param n The number of steps to move forward (typically the child's position)
- * @returns {string} The new address, equivalent to moving forward `n` spaces
- *					 from `addr`.
- */
-function addrStep(addr: string, n: number = 1): string {
-  let splits = addr.split(".");
-  let prefix = splits.slice(0, -1);
-  let suffix = parseInt(splits[splits.length - 1]);
-  suffix += n;
-  prefix.push(suffix.toString());
-  return prefix.join(".");
-}
-
-// TODO: When editing, we need to render text boxes for strings + identifiers.
-export function DAG(
-  payload: Canvas,
-  hide: boolean,
-  editFname: boolean,
-  flipped: string,
-) {
-  const source = payload.graph;
-  const selectedAddr = payload.blockLoc || "filenode";
-  const [renderedAddr, setRenderedAddr] = useState("");
-  const [fname, setFname] = useState(payload.filename);
-
-  const borderRef = useRef<HTMLDivElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  const archerRef = useRef<ArcherContainerRef | null>(null);
-
-  // Builds a sliding border around selected nodes within the graph
-  // TODO: Scale when resizing windows (moving border when selecting groups)
-  useEffect(() => {
-    // const removeBorder = () => {
-    //   setRenderedAddr(selectedAddr);
-    // };
-    console.log(`Re rendered with address ${selectedAddr}`);
-
-    const updateBorder = () => {
-      if (selectedAddr !== null && borderRef.current && containerRef.current) {
-        // setRenderedAddr("");
-        const activeElement = document.getElementById(selectedAddr);
-        const containerElement = containerRef.current;
-
-        if (activeElement) {
-          const activeRect = activeElement.getBoundingClientRect();
-          const containerRect = containerElement.getBoundingClientRect();
-
-          const top = activeRect.top - containerRect.top;
-          const left = activeRect.left - containerRect.left;
-
-          const width = activeRect.width - 5;
-          const height = activeRect.height - 5;
-
-          borderRef.current.style.transform = `translate(${left}px, ${top}px)`;
-          borderRef.current.style.width = `${width}px`;
-          borderRef.current.style.height = `${height}px`;
-          borderRef.current.style.visibility = "visible";
-
-          // borderRef.current.addEventListener("transitionend", removeBorder);
-
-          document.getElementById(selectedAddr)?.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-
-          let selectedId = `${selectedAddr === "filenode" ? "" : "selected_"}${selectedAddr}`;
-          document.getElementById(selectedId)?.focus();
-          document.getElementById(selectedAddr)?.focus();
-        }
-      }
-      // return () => {
-      //   if (borderRef.current)
-      //     borderRef.current.removeEventListener("transitionend", removeBorder);
-      // };
-    };
-
-    updateBorder();
-    window.addEventListener("resize", updateBorder);
-
-    return () => {
-      window.removeEventListener("resize", updateBorder);
-    };
-  }, [source, selectedAddr]);
+// Custom node component for RTL nodes
+const RTLNodeComponent = ({ data }: { data: any }) => {
+  const { node, selectedAddr, renderedAddr, pieceIx, parentIndents } = data;
+  const address = node.address;
+  const updateNodeInternals = useUpdateNodeInternals();
 
   useEffect(() => {
-    if (borderRef.current) {
-      // Show the border only as it transitions, and hide it once done
-      // (so that static border can take over).
-      if (renderedAddr === "") borderRef.current.style.visibility = "visible";
-      else borderRef.current.style.visibility = "hidden";
-    }
-  }, [renderedAddr]);
+    updateNodeInternals(address);
+  }, [address, updateNodeInternals]);
 
-  const onScroll = () => {
-    if (archerRef.current) archerRef.current.refreshScreen();
-  };
-
-  useEffect(() => {
-    scrollRef.current?.addEventListener("scroll", onScroll);
-    return () => scrollRef.current?.removeEventListener("scroll", onScroll);
-  }, []);
-
-  return (
-    <div style={{ display: hide ? "none" : "" }}>
-      <div className="relative">
-        <ArcherContainer
-          ref={archerRef}
-          strokeColor="white"
-          lineStyle="curve"
-          endShape={{ arrow: { arrowLength: 6, arrowThickness: 5 } }}
-          endMarker={true}
-          offset={5}
-          style={{ zIndex: 5 }}
-        >
-          <div
-            style={{
-              justifyContent: "center",
-              ...FLEX_ROW,
-            }}
-          >
-            <ArcherElement
-              id="root"
-              relations={source.map((d) => {
-                return {
-                  targetId: d.address,
-                  targetAnchor: "top",
-                  sourceAnchor: "bottom",
-                };
-              })}
-            >
-              {FileNode(
-                fname,
-                setFname,
-                selectedAddr === "filenode",
-                editFname,
-              )}
-            </ArcherElement>
-          </div>
-
-          <div
-            ref={containerRef}
-            style={{ position: "relative", overflow: "scroll" }}
-          >
-            <div
-              id={`selected_${selectedAddr}`}
-              ref={borderRef}
-              style={BORDER_ANIMATION}
-            />
-            <div ref={scrollRef} style={{ ...ROW_STYLE, overflow: "scroll" }}>
-              {source.map((subtree, i) =>
-                RenderSubtree(
-                  i.toString(),
-                  subtree,
-                  selectedAddr,
-                  renderedAddr,
-                  payload.pieceIx,
-                  flipped,
-                ),
-              )}
-            </div>
-          </div>
-        </ArcherContainer>
-      </div>
-    </div>
-  );
-}
-
-function RenderSubtree(
-  addr: string,
-  subtreeRoot: RTLNode,
-  selectedAddr: string,
-  renderedAddr: string,
-  pieceIx: number[] | null,
-  flipped: string,
-): ReactNode {
-  return (
-    <div key={addr} className="z-[1]">
-      <div className="flex flex-col mb-10">
-        {RenderBlock(
-          addr,
-          subtreeRoot,
-          selectedAddr,
-          renderedAddr,
-          pieceIx,
-          addr.includes(".") ? subtreeRoot : undefined,
-          flipped,
-        )}
-      </div>
-      {hasBlocks(subtreeRoot) ? (
-        <div
-          id={`${addr}.1`}
-          style={{
-            gap: "30px",
-            ...FLEX_ROW,
-          }}
-        >
-          {getBlocks(subtreeRoot).map((sub, i) =>
-            RenderSubtree(
-              `${addr}.1.${i}`,
-              sub,
-              selectedAddr,
-              renderedAddr,
-              pieceIx,
-              flipped,
-            ),
-          )}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function RenderBlock(
-  address: string,
-  subtreeRoot: RTLNode,
-  selectedAddr: string,
-  renderedAddr: string,
-  pieceIx: number[] | null,
-  subtreeParent?: RTLNode,
-  flipped: string = "",
-): ReactNode {
-  const blockAddr =
-    hasBlocks(subtreeRoot) || !subtreeParent ? `${address}.0` : address;
   return (
     <div
-      id={address.length === 1 ? `${address}.0` : blockAddr} // Handle root blocks differently
       key={address}
       style={{
         background:
@@ -287,342 +52,304 @@ function RenderBlock(
       }}
     >
       <div
+        id={address.slice(0, address.length - 2)}
         style={{
           height: "100%",
           background:
             "radial-gradient(ellipse 60% 70% at center top, #292B4C, #18191B)",
           borderRadius: "23px",
+          padding: "40px",
         }}
       >
-        <div style={{ height: "30px" }} />
-        <ArcherElement
-          id={blockAddr}
-          relations={getBlocks(subtreeRoot).map((c) => {
-            return {
-              targetId: c.address,
-              sourceAnchor: "bottom",
-              targetAnchor: "top",
-            };
-          })}
-        >
-          <div
+        {/* Source handle for outgoing edges */}
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          id={`${address}-source`}
+          style={{ background: "transparent", color: "transparent" }}
+        />
+
+        {/* Target handle for incoming edges */}
+        <Handle
+          type="target"
+          position={Position.Top}
+          id={`${address}-target`}
+          style={{ background: "white" }}
+        />
+
+        {RenderNode(
+          node,
+          node.address,
+          renderedAddr,
+          selectedAddr,
+          parentIndents,
+          pieceIx,
+          undefined,
+        )}
+
+        <div style={{ ...FLEX_ROW, marginTop: "0.5rem" }}>
+          <img
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              paddingLeft: "10px",
-              paddingRight: "10px",
-              paddingBottom: "5px",
+              height: "24px",
+              marginRight: "5px",
             }}
-          >
-            {RenderNode(
-              subtreeRoot,
-              blockAddr,
-              selectedAddr,
-              renderedAddr,
-              pieceIx,
-              subtreeParent,
-              0,
-              false,
-              undefined,
-              flipped,
+            src={function_arrow}
+          />
+          <div style={{ ...FLEX_COL, gap: "0.3rem" }}>
+            {node.children.map((child: RTLNode) =>
+              RenderNode(
+                child,
+                child.address,
+                renderedAddr,
+                selectedAddr,
+                parentIndents,
+                pieceIx,
+                node,
+              ),
             )}
           </div>
-        </ArcherElement>
-        <div style={{ height: "25px" }} />
+        </div>
       </div>
     </div>
   );
-}
+};
 
-function RenderNode(
-  node: RTLNode, // The current node to be rendered
-  address: string, // The address at which to render it (for div IDs)
-  selectedAddr: string, // The address with the cursor (is it this one?)
-  renderedAddr: string, // Address state that only updates after border moves
-  pieceIx: number[] | null, // The piece being edited (not necessarily in `node`)
-  parent?: RTLNode, // This node's parent
-  parentIndents: number = 0, // How many times the parent node was indented
-  check_blocks: boolean = true, // Used on recursive calls
-  recursive: boolean = true, // Used on recursive calls
-  flipped: string = "",
+// Custom node types
+const nodeTypes: NodeTypes = {
+  rtlNode: RTLNodeComponent,
+  fileNode: FileNodeComponent,
+};
+
+// TODO: When editing, we need to render text boxes for strings + identifiers.
+export function DAG(
+  payload: Canvas,
+  hide: boolean,
+  editFname: boolean,
+  flipped: string,
 ) {
-  if (LOCAL_BLOCK_NODES.includes(node.kind) && check_blocks) {
-    return (
-      <div
-        key={address}
-        id={address}
-        style={{
-          ...FLEX_COL,
-          border:
-            renderedAddr === address && selectedAddr === address
-              ? "2px solid #f7dc28"
-              : "",
-          borderRadius: "25px",
-        }}
-      >
-        <div id={`${address}.0`}>
-          {RenderNode(
-            node,
-            `${address}.0`,
-            selectedAddr,
-            renderedAddr,
-            pieceIx,
-            parent,
-            parentIndents,
-            false,
-            false,
-            flipped,
-          )}
-        </div>
-        <div style={{ height: "50px" }} />
-        <div
-          id={`${address}.1`}
-          style={{
-            gap: "20px",
-            ...FLEX_ROW,
-          }}
-        >
-          {node.children.map((n, i) => (
-            <div key={i} id={`${address}.1.${i}`}>
-              {RenderNode(
-                n,
-                `${address}.1.${i}`,
-                selectedAddr,
-                renderedAddr,
-                pieceIx,
-                node,
-                undefined,
-                undefined,
-                undefined,
-                flipped,
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const source = payload.graph;
+  const selectedAddr = payload.blockLoc || "filenode";
+  const [renderedAddr, _] = useState("");
+  const [fname, setFname] = useState(payload.filename);
+  const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map());
 
-  if (GLOBAL_BLOCK_NODES.includes(node.kind) && check_blocks) {
-    return;
-  }
+  // Handle node position changes (when nodes are dragged)
+  const onNodesChange = useCallback((changes: any) => {
+    changes.forEach((change: any) => {
+      if (change.type === 'position' && change.position) {
+        setNodePositions(prev => {
+          const newPositions = new Map(prev);
+          newPositions.set(change.id, change.position);
+          return newPositions;
+        });
+      }
+    });
+  }, []);
 
-  // If this node is part of a block (and is not one itself), indent.
-  const indent = +(
-    !!parent &&
-    !!parent.kind &&
-    INDENT_NODES.includes(parent.kind) &&
-    !isBlock(node)
-  );
+  // Calculate positions with proper spacing
+  const calculateNodePositions = (nodes: RTLNode[], level: number, startX: number = 0) => {
+    const positionedNodes: Node[] = [];
+    let currentX = startX;
+    const HORIZONTAL_PADDING = 50; // Minimum padding between nodes
+    const VERTICAL_PADDING = 100; // Minimum padding between levels
+    const MIN_NODE_WIDTH = 200; // Minimum assumed width for nodes
+    const MIN_NODE_HEIGHT = 150; // Minimum assumed height for nodes
+    
+    // Helper function to estimate node width based on content
+    const estimateNodeWidth = (node: RTLNode): number => {
+      let width = MIN_NODE_WIDTH;
+      
+      // Base width for the node container
+      width += 80; // Padding and borders
+      
+      // Add width based on node pieces
+      if (node.pieces && node.pieces.length > 0) {
+        // Estimate width for each piece type
+        node.pieces.forEach((piece: any) => {
+          if (piece.IDENT) {
+            width += (piece.IDENT as string).length * 8; // ~8px per character
+          } else if (piece.NUMBER) {
+            width += 40; // Fixed width for numbers
+          } else if (piece.TEXT) {
+            width += (piece.TEXT as string).length * 8; // ~8px per character
+          } else if (piece.OP) {
+            width += 30; // Fixed width for operators
+          } else if (piece.BOOL) {
+            width += 40; // Fixed width for booleans
+          } else if (piece.LIST || piece.FNCALL) {
+            width += 60; // Fixed width for lists/functions
+          }
+        });
+      }
+      
+      // Add width for children
+      if (node.children && node.children.length > 0) {
+        // Estimate space needed for child nodes
+        const childWidth = node.children.length * 100; // Base width per child
+        width = Math.max(width, childWidth);
+      }
+      
+      // Add extra space for complex nodes
+      if (node.kind === 'CONDTLY' || node.kind === 'CONDTLN') {
+        width += 100; // Conditional nodes need more space
+      }
+      
+      // Ensure minimum width
+      return Math.max(width, MIN_NODE_WIDTH);
+    };
+
+    // Helper function to estimate node height based on content
+    const estimateNodeHeight = (node: RTLNode): number => {
+      let height = MIN_NODE_HEIGHT;
+      
+      // Base height for the node container
+      height += 80; // Padding and borders
+      
+      // Add height for children
+      if (node.children && node.children.length > 0) {
+        height += node.children.length * 50; // Additional height per child
+      }
+      
+      // Add extra height for complex nodes
+      if (node.kind === 'CONDTLY' || node.kind === 'CONDTLN') {
+        height += 50; // Conditional nodes need more height
+      }
+      
+      return Math.max(height, MIN_NODE_HEIGHT);
+    };
+    
+    nodes.forEach((node, index) => {
+      // Estimate node dimensions based on content
+      const estimatedWidth = estimateNodeWidth(node);
+      const estimatedHeight = estimateNodeHeight(node);
+      
+      // Position the node
+      const nodePosition = {
+        x: currentX,
+        y: level * (VERTICAL_PADDING + MIN_NODE_HEIGHT),
+      };
+      
+      positionedNodes.push({
+        id: node.address,
+        type: "rtlNode",
+        position: nodePosition,
+        data: {
+          node,
+          selectedAddr,
+          renderedAddr,
+          pieceIx: payload.pieceIx,
+          parentIndents: 0,
+          flipped,
+        },
+      });
+      
+      // Update currentX for next node with padding
+      currentX += estimatedWidth + HORIZONTAL_PADDING;
+    });
+    
+    return positionedNodes;
+  };
+
+  // Convert RTL nodes to reactflow nodes
+  const nodes = useMemo(() => {
+    const flowNodes: Node[] = [];
+
+    // Add file node
+    flowNodes.push({
+      id: "filenode",
+      type: "fileNode",
+      position: { x: 400, y: 50 },
+      data: {
+        fname,
+        setFname,
+        includeBorder: selectedAddr === "filenode",
+        editing: editFname,
+      },
+    });
+
+    // Position all RTL nodes with proper spacing
+    const positionedRTLNodes = calculateNodePositions(source, 1);
+    flowNodes.push(...positionedRTLNodes);
+
+    // Store positions for potential future use
+    const newPositions = new Map<string, { x: number; y: number }>();
+    positionedRTLNodes.forEach(node => {
+      newPositions.set(node.id, node.position);
+    });
+    setNodePositions(newPositions);
+
+    return flowNodes;
+  }, [
+    source,
+    selectedAddr,
+    renderedAddr,
+    payload.pieceIx,
+    flipped,
+    fname,
+    setFname,
+    editFname,
+  ]);
+
+  // Convert RTL relationships to reactflow edges
+  const edges = useMemo(() => {
+    const flowEdges = [
+      ...source.map((node: RTLNode) => nodeToNode("filenode", node)),
+      ...source.flatMap(parentToEdge),
+    ];
+
+    return flowEdges;
+  }, [source]);
 
   return (
-    <div
-      key={address}
-      id={node.kind === "FNDEF" ? `fn_${address}` : address}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "10px",
-        padding: node.kind === "FNDEF" ? "10px" : "",
-        border:
-          node.kind !== "FNDEF" &&
-          renderedAddr === address &&
-          selectedAddr === address
-            ? "2px solid #f7dc28"
-            : "",
-        borderRadius: "25px",
-        alignItems: ARROW_NODES.includes(
-          token_type[node.kind as keyof typeof token_type],
-        )
-          ? "start" // TODO: Center or keep alignment as-is?
-          : "start",
-      }}
-    >
-      <ArcherElement
-        id={node.address}
-        relations={node.children
-          .filter((c) =>
-            ARROW_NODES.includes(token_type[c.kind as keyof typeof token_type]),
-          )
-          .map((c) => {
-            return {
-              targetId: c.address,
-              targetAnchor: "top",
-              sourceAnchor: "bottom",
-            };
-          })}
-      >
-        <div
-          id={node.children.length > 0 ? `${address}.0` : ""}
-          style={{ ...FLEX_ROW, alignItems: "center", gap: "8px" }}
-        >
-          <ReactCardFlip
-            isFlipped={
-              node.children.length > 0
-                ? flipped === `${address}.0`
-                : flipped === address
-            }
-            flipDirection="vertical"
+    <div style={{ display: hide ? "none" : "" }}>
+      <div className="relative" style={{ height: "100vh" }}>
+        <ReactFlowProvider>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            fitView
+            fitViewOptions={{
+              padding: 0.1, // Add 10% padding around the view
+              includeHiddenNodes: false,
+            }}
+            style={{ background: "transparent" }}
+            defaultEdgeOptions={{
+              type: "default",
+              style: { stroke: "white", strokeWidth: 2 },
+            }}
+            proOptions={{ hideAttribution: true }}
+            nodesDraggable={true}
+            nodesConnectable={false}
+            elementsSelectable={true}
+            minZoom={0.1}
+            maxZoom={2}
+            onNodesChange={onNodesChange}
           >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                width: "fit-content",
-                justifyContent: "center",
-                alignItems: "center",
-                border:
-                  renderedAddr === `${address}.0` &&
-                  selectedAddr === `${address}.0`
-                    ? "2px solid #f7dc28"
-                    : "",
-                borderRadius: "25px",
-              }}
-            >
-              <Token
-                token_type={token_type[node.kind as keyof typeof token_type]}
-                puzzle_color={
-                  node.address === selectedAddr && arrEq(pieceIx ?? [1], [0])
-                    ? "white"
-                    : node.pieces.length > 0
-                      ? getColor(node.pieces[0])
-                      : "transparent"
-                }
-                first={
-                  !!(
-                    indent &&
-                    parent &&
-                    excludeBlocks(parent)[0].address === node.address
-                  )
-                }
-                indent={parentIndents + indent}
-                addr={address}
-              />
-              {node.pieces.map((_, ix) =>
-                RenderPiece(
-                  node.pieces,
-                  [ix],
-                  node.address === selectedAddr ? pieceIx ?? [-1] : [-1],
-                  node.address,
-                ),
-              )}
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                width: "fit-content",
-                height: "fit-content",
-                justifyContent: "center",
-                alignItems: "center",
-                background: "#333",
-              }}
-            >
-              <textarea
-                id={
-                  node.children.length > 0
-                    ? `note_${address}.0`
-                    : `note_${address}`
-                }
-                onKeyUp={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = "0px";
-                  target.style.height = -8 + target.scrollHeight + "px";
-                }}
-                style={{
-                  width: "100%",
-                  height: "fit-content",
-                  textAlign: "start",
-                  color: "#CCCCCC",
-                  fontSize: "12px",
-                  padding: "5px",
-                }}
-                placeholder="Enter note here..."
-              />
-            </div>
-          </ReactCardFlip>
-          {node.note ? <MessageIcon /> : null}
-          {node.err ? (
-            <ErrorIcon />
-          ) : !["FNDEF", "PENDING"].includes(node.kind) ? (
-            <CheckmarkIcon />
-          ) : null}
-        </div>
-      </ArcherElement>
-
-      {recursive
-        ? node.children
-            .filter((c) => !GLOBAL_BLOCK_NODES.includes(c.kind))
-            .map((n, i) =>
-              RenderNode(
-                n,
-                addrStep(`${address}.0`, i + 1),
-                selectedAddr,
-                renderedAddr,
-                pieceIx,
-                node,
-                parentIndents + indent,
-                undefined,
-                undefined,
-                flipped,
-              ),
-            )
-        : null}
+            <Controls />
+            <Background />
+          </ReactFlow>
+        </ReactFlowProvider>
+      </div>
     </div>
   );
 }
 
-function FileNode(
-  fname: string,
-  setFname: (arg0: string) => void,
-  includeBorder: boolean,
-  editing: boolean,
-) {
-  return (
-    <div
-      id="filenode"
-      style={{
-        background: `linear-gradient(45deg, #5C89FD, #00D1FF)`,
-        height: "40px",
-        width: "fit-content",
-        border: includeBorder ? "2px solid #EEEEFFAA" : "",
-        borderRadius: "10px",
-        justifyContent: "center", //Centered vertically
-        alignItems: "center", //Centered horizontally
-        paddingLeft: "10px",
-        paddingRight: "10px",
-        // filter: `drop-shadow(-8px 2px 16px #5C89FD)`,
-        ...FLEX_ROW,
-      }}
-    >
-      {editing ? (
-        <input
-          id={`edit_filename`}
-          style={{
-            fontFamily: "JetBrains Mono",
-            textAlign: "start",
-            color: "black",
-            background: "white",
-            padding: "0px",
-            width: `${fname.length + 2}ch`,
-          }}
-          value={fname}
-          onChange={(e) => setFname(e.target.value.replace(" ", "_"))}
-          onFocus={(e) => e.target.select()}
-        />
-      ) : (
-        <p
-          style={{
-            fontFamily: "JetBrains Mono",
-            textAlign: "start",
-            color: "white",
-          }}
-        >
-          {fname}
-        </p>
-      )}
-    </div>
-  );
-}
+const nodeToNode = (parentAddr: string, child: RTLNode) => {
+  return {
+    id: `${parentAddr}-${child.address}`,
+    source: parentAddr,
+    target: child.address,
+    sourceHandle: `${parentAddr}-source`,
+    targetHandle: `${child.address}-target`,
+    type: "default",
+    style: { stroke: "white", strokeWidth: 2 },
+  };
+};
+
+const parentToEdge = (node: RTLNode) => {
+  const parentToNode = (child: RTLNode) => nodeToNode(node.address, child);
+  return node.children
+    .filter((child: RTLNode) => ARROW_NODES.includes(child.kind))
+    .map(parentToNode);
+};
