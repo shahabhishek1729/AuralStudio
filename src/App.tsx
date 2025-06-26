@@ -77,7 +77,7 @@ function App() {
       audioContext.resume();
     }
 
-    // playAudio();
+    playAudio();
 
     return () => {
       if (audioContext.state !== "closed") {

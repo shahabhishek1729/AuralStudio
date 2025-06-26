@@ -3,7 +3,7 @@
  * individual pieces, nodes, blocks and subtrees.
  */
 
-import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import ReactFlow, {
   Node,
   Controls,
@@ -19,9 +19,6 @@ import { Canvas, RTLNode } from "./types";
 import { FLEX_COL, FLEX_ROW } from "./styles";
 import { RenderNode, FileNodeComponent } from "./components/Nodes";
 import function_arrow from "./assets/function_arrow.png";
-
-const INDENT_SHIFT_X = 50;
-const NODE_SHIFT_Y = 25e-2;
 
 // The kinds of nodes that would require an arrow to be drawn towards them.
 // Currently includes:
@@ -131,13 +128,15 @@ export function DAG(
   const selectedAddr = payload.blockLoc || "filenode";
   const [renderedAddr, _] = useState("");
   const [fname, setFname] = useState(payload.filename);
-  const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map());
+  const [_nodePositions, setNodePositions] = useState<
+    Map<string, { x: number; y: number }>
+  >(new Map());
 
   // Handle node position changes (when nodes are dragged)
   const onNodesChange = useCallback((changes: any) => {
     changes.forEach((change: any) => {
-      if (change.type === 'position' && change.position) {
-        setNodePositions(prev => {
+      if (change.type === "position" && change.position) {
+        setNodePositions((prev) => {
           const newPositions = new Map(prev);
           newPositions.set(change.id, change.position);
           return newPositions;
@@ -147,21 +146,25 @@ export function DAG(
   }, []);
 
   // Calculate positions with proper spacing
-  const calculateNodePositions = (nodes: RTLNode[], level: number, startX: number = 0) => {
+  const calculateNodePositions = (
+    nodes: RTLNode[],
+    level: number,
+    startX: number = 0,
+  ) => {
     const positionedNodes: Node[] = [];
     let currentX = startX;
     const HORIZONTAL_PADDING = 50; // Minimum padding between nodes
     const VERTICAL_PADDING = 100; // Minimum padding between levels
     const MIN_NODE_WIDTH = 200; // Minimum assumed width for nodes
     const MIN_NODE_HEIGHT = 150; // Minimum assumed height for nodes
-    
+
     // Helper function to estimate node width based on content
     const estimateNodeWidth = (node: RTLNode): number => {
       let width = MIN_NODE_WIDTH;
-      
+
       // Base width for the node container
       width += 80; // Padding and borders
-      
+
       // Add width based on node pieces
       if (node.pieces && node.pieces.length > 0) {
         // Estimate width for each piece type
@@ -181,54 +184,33 @@ export function DAG(
           }
         });
       }
-      
+
       // Add width for children
       if (node.children && node.children.length > 0) {
         // Estimate space needed for child nodes
         const childWidth = node.children.length * 100; // Base width per child
         width = Math.max(width, childWidth);
       }
-      
+
       // Add extra space for complex nodes
-      if (node.kind === 'CONDTLY' || node.kind === 'CONDTLN') {
+      if (node.kind === "CONDTLY" || node.kind === "CONDTLN") {
         width += 100; // Conditional nodes need more space
       }
-      
+
       // Ensure minimum width
       return Math.max(width, MIN_NODE_WIDTH);
     };
 
-    // Helper function to estimate node height based on content
-    const estimateNodeHeight = (node: RTLNode): number => {
-      let height = MIN_NODE_HEIGHT;
-      
-      // Base height for the node container
-      height += 80; // Padding and borders
-      
-      // Add height for children
-      if (node.children && node.children.length > 0) {
-        height += node.children.length * 50; // Additional height per child
-      }
-      
-      // Add extra height for complex nodes
-      if (node.kind === 'CONDTLY' || node.kind === 'CONDTLN') {
-        height += 50; // Conditional nodes need more height
-      }
-      
-      return Math.max(height, MIN_NODE_HEIGHT);
-    };
-    
-    nodes.forEach((node, index) => {
+    nodes.forEach((node) => {
       // Estimate node dimensions based on content
       const estimatedWidth = estimateNodeWidth(node);
-      const estimatedHeight = estimateNodeHeight(node);
-      
+
       // Position the node
       const nodePosition = {
         x: currentX,
         y: level * (VERTICAL_PADDING + MIN_NODE_HEIGHT),
       };
-      
+
       positionedNodes.push({
         id: node.address,
         type: "rtlNode",
@@ -242,11 +224,11 @@ export function DAG(
           flipped,
         },
       });
-      
+
       // Update currentX for next node with padding
       currentX += estimatedWidth + HORIZONTAL_PADDING;
     });
-    
+
     return positionedNodes;
   };
 
@@ -273,7 +255,7 @@ export function DAG(
 
     // Store positions for potential future use
     const newPositions = new Map<string, { x: number; y: number }>();
-    positionedRTLNodes.forEach(node => {
+    positionedRTLNodes.forEach((node) => {
       newPositions.set(node.id, node.position);
     });
     setNodePositions(newPositions);
