@@ -18,6 +18,7 @@ import {
   ErrorIcon,
   WindowButton,
 } from "./components/Components.tsx";
+import { SlidingBorder } from "./components/SlidingBorder.tsx";
 
 export const FAIL_SOUND = new Audio("./src/assets/Blow.aiff");
 
@@ -303,6 +304,12 @@ function App() {
             <div className="z-[2] relative">
               {DAG(payload, display !== "EDITOR", editingFilename, activeNote)}
             </div>
+
+            {/* Sliding border overlay */}
+            <SlidingBorder
+              selectedAddr={payload.blockLoc}
+              pieceIx={payload.pieceIx}
+            />
 
             <div className="absolute bottom-10 right-10 z-[10]">
               {RunPanel(
