@@ -13,7 +13,11 @@ import {
 import { Dashboard } from "./Dashboard.tsx";
 import { DAG } from "./Digraph.tsx";
 import { speak } from "./speechUtils.ts";
-import { CheckmarkIcon, ErrorIcon, WindowButton } from "./Components.tsx";
+import {
+  CheckmarkIcon,
+  ErrorIcon,
+  WindowButton,
+} from "./components/Components.tsx";
 
 export const FAIL_SOUND = new Audio("./src/assets/Blow.aiff");
 
