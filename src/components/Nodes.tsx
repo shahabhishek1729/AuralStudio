@@ -6,7 +6,7 @@ import { FLEX_COL, FLEX_ROW } from "../styles";
 import { Token, RenderPiece } from "../PieceRenderer";
 import { arrEq, getColor } from "../utils";
 import { CheckmarkIcon, ErrorIcon, MessageIcon } from "./Components";
-import function_arrow from "./assets/function_arrow.png";
+import function_arrow from "../assets/function_arrow.png";
 
 const token_type = {
   FNDEF: "function",
