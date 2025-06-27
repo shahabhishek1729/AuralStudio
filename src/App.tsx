@@ -302,7 +302,14 @@ function App() {
         <div className="overflow-scroll bg-gray-900 h-screen w-screen resize-x flex flex-col">
           <div className="overflow-hidden w-[100vw] h-screen">
             <div className="z-[2] relative">
-              {DAG(payload, display !== "EDITOR", editingFilename, activeNote)}
+              {payload.graph.length > 0
+                ? DAG(
+                    payload,
+                    display !== "EDITOR",
+                    editingFilename,
+                    activeNote,
+                  )
+                : null}
             </div>
 
             {/* Sliding border overlay */}
