@@ -140,24 +140,7 @@ export function SlidingBorder({ selectedAddr, pieceIx }: SlidingBorderProps) {
         height,
         opacity: 1,
       }));
-
-      // Debug logging (can be removed in production)
-      if (process.env.NODE_ENV === "development") {
-        console.log(
-          `SlidingBorder: Found element with pattern "${foundPattern}" for selectedAddr "${selectedAddr}" at (${left}, ${top}) size (${width}, ${height})`,
-        );
-      }
-    } else {
-      setBorderStyle((prev) => ({ ...prev, opacity: 0 }));
-
-      // Debug logging (can be removed in production)
-      if (process.env.NODE_ENV === "development") {
-        console.log(
-          `SlidingBorder: No element found for selectedAddr "${selectedAddr}" with pieceIx`,
-          pieceIx,
-        );
-      }
-    }
+    } else setBorderStyle((prev) => ({ ...prev, opacity: 0 }));
   };
 
   useEffect(() => {
