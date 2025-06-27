@@ -58,7 +58,6 @@ function ChildDAG({
 
   const elk = new ELK();
 
-  // TODO: Update options
   const elkOptions = {
     "elk.algorithm": "layered",
     "elk.layered.spacing.nodeNodeBetweenLayers": "100",
@@ -256,7 +255,6 @@ function ChildDAG({
   );
 }
 
-// TODO: When editing, we need to render text boxes for strings + identifiers.
 export function DAG(
   payload: Canvas,
   hide: boolean,
