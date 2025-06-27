@@ -77,7 +77,7 @@ function ChildDAG({
     };
   }, []);
 
-  const getLayoutedElements = (
+  const getLayoutedElements = async (
     nodes: Node[],
     edges: Edge[],
     options: any = {},
