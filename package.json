@@ -27,6 +27,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "d3": "^7.8.5",
+    "elkjs": "^0.10.0",
     "framer-motion": "^12.10.5",
     "lucide-react": "^0.487.0",
     "rc-util": "^5.39.1",

@@ -3,126 +3,98 @@
  * individual pieces, nodes, blocks and subtrees.
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useLayoutEffect } from "react";
 import ReactFlow, {
   Node,
   Controls,
   Background,
   ReactFlowProvider,
   Edge,
+  useReactFlow,
+  useEdgesState,
+  useNodesState,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { Canvas, RTLNode, RTLPiece, nodeTypes } from "./types";
+import { Canvas, RTLNode, nodeTypes } from "./types";
+import ELK from "elkjs/lib/elk.bundled";
 
-// TODO: When editing, we need to render text boxes for strings + identifiers.
-export function DAG(
-  payload: Canvas,
-  hide: boolean,
-  editFname: boolean,
-  flipped: string,
-) {
+function ChildDAG({ payload, editFname, flipped }: { 
+  payload: any; 
+  editFname: any; 
+  flipped: any; 
+}) {
   const source = payload.graph;
   const selectedAddr = payload.blockLoc || "filenode";
   const [renderedAddr, _] = useState("");
   const [fname, setFname] = useState(payload.filename);
-  const [_nodePositions, setNodePositions] = useState<
-    Map<string, { x: number; y: number }>
-  >(new Map());
 
-  // Handle node position changes (when nodes are dragged)
-  const onNodesChange = useCallback((changes: any) => {
-    changes.forEach((change: any) => {
-      if (change.type === "position" && change.position) {
-        setNodePositions((prev) => {
-          const newPositions = new Map(prev);
-          newPositions.set(change.id, change.position);
-          return newPositions;
-        });
-      }
-    });
+  const elk = new ELK();
+
+  // TODO: Update options
+  const elkOptions = {
+    "elk.algorithm": "layered",
+    "elk.layered.spacing.nodeNodeBetweenLayers": "100",
+    "elk.spacing.nodeNode": "80",
+  };
+
   }, []);
 
-  // Calculate positions with proper spacing
-  const calculateNodePositions = (nodes: RTLNode[], startX: number = 0) => {
-    const positionedNodes: Node[] = [];
-    //let currentX = startX;
-    const HORIZONTAL_PADDING = 50; // Minimum padding between nodes
-    const VERTICAL_PADDING = 100; // Minimum padding between levels
-    const MIN_NODE_WIDTH = 200; // Minimum assumed width for nodes
-    const MIN_NODE_HEIGHT = 150; // Minimum assumed height for nodes
+  const getLayoutedElements = (nodes: Node[], edges: Edge[], options: any = {}) => {
+    const isHorizontal = options?.["elk.direction"] === "RIGHT";
+    const graph = {
+      id: "root",
+      layoutOptions: options,
+      children: nodes.map((node) => {
+        // Get dynamic size from ResizeObserver, fallback to defaults
+        const dynamicSize = nodeSizes.get(node.id) || { width: 150, height: 50 };
+        
+        return {
+          ...node,
+          // Adjust the target and source handle positions based on the layout
+          // direction.
+          targetPosition: isHorizontal ? "left" : "top",
+          sourcePosition: isHorizontal ? "right" : "bottom",
 
-    // Helper function to estimate node width based on content
-    const estimateNodeWidth = (node: RTLNode): number => {
-      let width = MIN_NODE_WIDTH;
-
-      // Base width for the node container
-      width += 80; // Padding and borders
-
-      const getPieceWidth = (piece: RTLPiece): number => {
-        switch (piece) {
-          case "NOTHING":
-            return 8 * piece.length;
-          case "PendingVal":
-            return 40;
-          case "PendingOp":
-            return 40;
-          default:
-            if (piece.IDENT) {
-              return (piece.IDENT as string).length * 8; // ~8px per character
-            } else if (piece.NUMBER) {
-              return 40; // Fixed width for numbers
-            } else if (piece.TEXT) {
-              return (piece.TEXT as string).length * 8; // ~8px per character
-            } else if (piece.OP) {
-              return 30; // Fixed width for operators
-            } else if (piece.BOOL) {
-              return 40; // Fixed width for booleans
-            } else if (piece.LIST || piece.FNCALL) {
-              return 60; // Fixed width for lists/functions
-            }
-        }
-
-        return 0;
-      };
-
-      // Add width based on node pieces
-      if (node.pieces && node.pieces.length > 0) {
-        // Estimate width for each piece type
-        node.pieces.forEach((piece: RTLPiece) => {
-          width += getPieceWidth(piece);
-        });
-      }
-
-      // Add width for children
-      if (node.children && node.children.length > 0) {
-        // Estimate space needed for child nodes
-        const childWidth = node.children.length * 100; // Base width per child
-        width = Math.max(width, childWidth);
-      }
-
-      // Add extra space for complex nodes
-      if (node.kind === "CONDTLY" || node.kind === "CONDTLN") {
-        width += 100; // Conditional nodes need more space
-      }
-
-      // Ensure minimum width
-      return Math.max(width, MIN_NODE_WIDTH);
+          // Use dynamic width and height from ResizeObserver
+          width: dynamicSize.width,
+          height: dynamicSize.height,
+        };
+      }),
+      edges: edges.map(edge => ({
+        ...edge,
+        sources: [edge.source],
+        targets: [edge.target],
+      })),
     };
 
-    const runNode = (node: RTLNode, currentX: { x: number }, level: number) => {
-      // Estimate node dimensions based on content
-      const estimatedWidth = estimateNodeWidth(node);
+    return elk
+      .layout(graph)
+      .then((layoutedGraph) => ({
+        nodes: layoutedGraph.children?.map((node) => ({
+          id: node.id,
+          type: node.type,
+          position: { x: node.x || 0, y: node.y || 0 },
+          data: node.data,
+          style: node.style,
+        })) || [],
 
-      // Position the node
-      const nodePosition = {
-        x: currentX.x,
-        y: level * (VERTICAL_PADDING + MIN_NODE_HEIGHT),
-      };
+        edges: layoutedGraph.edges || [],
+      }))
+      .catch(console.error);
+  };
 
+  const [nodes_, setNodes_, onNodesChange_] = useNodesState([]);
+  const [edges_, setEdges_, onEdgesChange_] = useEdgesState([]);
+  const { fitView } = useReactFlow();
+
+  // Calculate positions with proper spacing
+  const calculateNodePositions = (source: RTLNode[]) => {
+    const positionedNodes: Node[] = [];
+    const runNode = (node: RTLNode) => {
       positionedNodes.push({
         id: node.address,
         type: "rtlNode",
-        position: nodePosition,
+        position: { x: 0, y: 0 },
         data: {
           node,
           selectedAddr,
@@ -133,22 +105,18 @@ export function DAG(
         },
       });
 
-      // Update currentX for next node with padding
-      currentX.x += estimatedWidth + HORIZONTAL_PADDING;
       node.children
         .filter((child) => child.kind === "FNDEF")
-        .forEach((child) => runNode(child, { x: 0 }, level + 1));
+        .forEach((child) => runNode(child));
     };
 
-    let currX = { x: startX };
-    nodes.forEach((node) => runNode(node, currX, 1));
-
+    source.forEach((node) => runNode(node));
     return positionedNodes;
   };
 
   // Convert RTL nodes to reactflow nodes
   const nodes = useMemo(() => {
-    const flowNodes: Node[] = [];
+    const flowNodes: Node[] = calculateNodePositions(source);
 
     // Add file node
     flowNodes.push({
@@ -162,17 +130,6 @@ export function DAG(
         editing: editFname,
       },
     });
-
-    // Position all RTL nodes with proper spacing
-    const positionedRTLNodes = calculateNodePositions(source);
-    flowNodes.push(...positionedRTLNodes);
-
-    // Store positions for potential future use
-    const newPositions = new Map<string, { x: number; y: number }>();
-    positionedRTLNodes.forEach((node) => {
-      newPositions.set(node.id, node.position);
-    });
-    setNodePositions(newPositions);
 
     return flowNodes;
   }, [
@@ -194,35 +151,76 @@ export function DAG(
     ];
   }, [source]);
 
+  const onLayout = useCallback(
+    ({ direction, useInitialNodes = false }: { direction: string; useInitialNodes?: boolean }) => {
+      const opts = { "elk.direction": direction, ...elkOptions };
+      console.log(`Using initialNodes? ${useInitialNodes}`);
+      console.log(nodes);
+      const ns = useInitialNodes ? nodes : nodes_;
+      const es = useInitialNodes ? edges : edges_;
+
+      getLayoutedElements(ns, es, opts).then(
+        (result) => {
+          if (result) {
+            const { nodes: layoutedNodes, edges: layoutedEdges } = result;
+            console.log("The nodes were:");
+            console.log(layoutedNodes);
+            setNodes_(layoutedNodes);
+            setEdges_(layoutedEdges);
+            fitView();
+          }
+        },
+      );
+    },
+    [nodes, edges],
+  );
+
+  useLayoutEffect(() => {
+    onLayout({ direction: "DOWN", useInitialNodes: true });
+  }, [layoutVersion, onLayout]);
+
+  return (
+    <ReactFlow
+      nodes={nodes_}
+      edges={edges_}
+      nodeTypes={nodeTypes}
+      fitView
+      fitViewOptions={{
+        padding: 0.1, // Add 10% padding around the view
+        includeHiddenNodes: false,
+      }}
+      style={{ background: "transparent" }}
+      defaultEdgeOptions={{
+        type: "default",
+        style: { stroke: "white", strokeWidth: 2 },
+      }}
+      proOptions={{ hideAttribution: true }}
+      nodesDraggable={true}
+      nodesConnectable={false}
+      elementsSelectable={true}
+      minZoom={0.1}
+      maxZoom={2}
+      onNodesChange={onNodesChange_}
+      onEdgesChange={onEdgesChange_}
+    >
+      <Controls />
+      <Background />
+    </ReactFlow>
+  );
+}
+
+// TODO: When editing, we need to render text boxes for strings + identifiers.
+export function DAG(
+  payload: Canvas,
+  hide: boolean,
+  editFname: boolean,
+  flipped: string,
+) {
   return (
     <div style={{ display: hide ? "none" : "" }}>
       <div className="relative" style={{ height: "100vh" }}>
         <ReactFlowProvider>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            fitView
-            fitViewOptions={{
-              padding: 0.1, // Add 10% padding around the view
-              includeHiddenNodes: false,
-            }}
-            style={{ background: "transparent" }}
-            defaultEdgeOptions={{
-              type: "default",
-              style: { stroke: "white", strokeWidth: 2 },
-            }}
-            proOptions={{ hideAttribution: true }}
-            nodesDraggable={true}
-            nodesConnectable={false}
-            elementsSelectable={true}
-            minZoom={0.1}
-            maxZoom={2}
-            onNodesChange={onNodesChange}
-          >
-            <Controls />
-            <Background />
-          </ReactFlow>
+          <ChildDAG payload={payload} editFname={editFname} flipped={flipped} />
         </ReactFlowProvider>
       </div>
     </div>
