@@ -2,10 +2,11 @@ import { useEffect } from "react";
 import { Handle, Position, useUpdateNodeInternals } from "reactflow";
 import "reactflow/dist/style.css";
 import { RTLNode } from "../types";
-import { FLEX_ROW } from "../styles";
+import { FLEX_COL, FLEX_ROW } from "../styles";
 import { Token, RenderPiece } from "../PieceRenderer";
 import { arrEq, getColor } from "../utils";
 import { CheckmarkIcon, ErrorIcon, MessageIcon } from "./Components";
+import function_arrow from "./assets/function_arrow.png";
 
 const token_type = {
   FNDEF: "function",
@@ -26,72 +27,158 @@ const GLOBAL_BLOCK_NODES = ["FNDEF"];
 const isBlock = (c: RTLNode) => GLOBAL_BLOCK_NODES.includes(c.kind);
 const excludeBlocks = (c: RTLNode) => c.children.filter((c_) => !isBlock(c_));
 
-export function RenderNode(
-  node: RTLNode,
-  address: string,
-  renderedAddr: string,
-  selectedAddr: string,
-  parentIndents: number,
-  pieceIx: number[] | null,
-  parent?: RTLNode,
-) {
+export const RTLNodeComponent = ({ data }: { data: any }) => {
+  function RenderNode(
+    node: RTLNode,
+    address: string,
+    renderedAddr: string,
+    selectedAddr: string,
+    parentIndents: number,
+    pieceIx: number[] | null,
+    parent?: RTLNode,
+  ) {
+    return (
+      <div
+        id={address}
+        key={address}
+        style={{ ...FLEX_ROW, alignItems: "center", gap: "8px" }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            width: "fit-content",
+            justifyContent: "center",
+            alignItems: "center",
+            border:
+              renderedAddr === `${address}.0` && selectedAddr === `${address}.0`
+                ? "2px solid #f7dc28"
+                : "",
+            borderRadius: "25px",
+          }}
+        >
+          <Token
+            token_type={token_type[node.kind as keyof typeof token_type]}
+            puzzle_color={
+              node.address === selectedAddr && arrEq(pieceIx ?? [1], [0])
+                ? "white"
+                : node.pieces.length > 0
+                  ? getColor(node.pieces[0])
+                  : "transparent"
+            }
+            first={
+              !!(
+                parentIndents &&
+                parent &&
+                excludeBlocks(parent)[0]?.address === node.address
+              )
+            }
+            indent={parentIndents || 0}
+            addr={address}
+          />
+          {node.pieces.map((_: any, ix: number) =>
+            RenderPiece(
+              node.pieces,
+              [ix],
+              node.address === selectedAddr ? pieceIx ?? [-1] : [-1],
+              node.address,
+            ),
+          )}
+        </div>
+        {node.note ? <MessageIcon /> : null}
+        {node.err ? (
+          <ErrorIcon />
+        ) : !["FNDEF", "PENDING"].includes(node.kind) ? (
+          <CheckmarkIcon />
+        ) : null}
+      </div>
+    );
+  }
+
+  const { node, selectedAddr, renderedAddr, pieceIx, parentIndents } = data;
+  const address = node.address;
+  const updateNodeInternals = useUpdateNodeInternals();
+
+  useEffect(() => {
+    updateNodeInternals(address);
+  }, [address, updateNodeInternals]);
+
   return (
     <div
-      id={address}
       key={address}
-      style={{ ...FLEX_ROW, alignItems: "center", gap: "8px" }}
+      style={{
+        background:
+          renderedAddr === `${address}.0` && selectedAddr === `${address}.0`
+            ? "#f7dc28"
+            : "linear-gradient(#FFFFFF2A, #191A1B99)",
+        borderRadius: "25px",
+        padding: "2px",
+      }}
     >
       <div
+        id={address.slice(0, address.length - 2)}
         style={{
-          display: "flex",
-          flexDirection: "row",
-          width: "fit-content",
-          justifyContent: "center",
-          alignItems: "center",
-          border:
-            renderedAddr === `${address}.0` && selectedAddr === `${address}.0`
-              ? "2px solid #f7dc28"
-              : "",
-          borderRadius: "25px",
+          height: "100%",
+          background:
+            "radial-gradient(ellipse 60% 70% at center top, #292B4C, #18191B)",
+          borderRadius: "23px",
+          padding: "40px",
         }}
       >
-        <Token
-          token_type={token_type[node.kind as keyof typeof token_type]}
-          puzzle_color={
-            node.address === selectedAddr && arrEq(pieceIx ?? [1], [0])
-              ? "white"
-              : node.pieces.length > 0
-                ? getColor(node.pieces[0])
-                : "transparent"
-          }
-          first={
-            !!(
-              parentIndents &&
-              parent &&
-              excludeBlocks(parent)[0]?.address === node.address
-            )
-          }
-          indent={parentIndents || 0}
-          addr={address}
+        {/* Source handle for outgoing edges */}
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          id={`${address}-source`}
+          style={{ background: "transparent", color: "transparent" }}
         />
-        {node.pieces.map((_: any, ix: number) =>
-          RenderPiece(
-            node.pieces,
-            [ix],
-            node.address === selectedAddr ? pieceIx ?? [-1] : [-1],
-            node.address,
-          ),
+
+        {/* Target handle for incoming edges */}
+        <Handle
+          type="target"
+          position={Position.Top}
+          id={`${address}-target`}
+          style={{ background: "white" }}
+        />
+
+        {RenderNode(
+          node,
+          node.address,
+          renderedAddr,
+          selectedAddr,
+          parentIndents,
+          pieceIx,
+          undefined,
         )}
+
+        <div style={{ ...FLEX_ROW, marginTop: "0.5rem" }}>
+          <img
+            style={{
+              height: "24px",
+              marginRight: "5px",
+            }}
+            src={function_arrow}
+          />
+          <div style={{ ...FLEX_COL, gap: "0.3rem" }}>
+            {node.children
+              .filter((child: RTLNode) => child.kind != "FNDEF")
+              .map((child: RTLNode) =>
+                RenderNode(
+                  child,
+                  child.address,
+                  renderedAddr,
+                  selectedAddr,
+                  parentIndents,
+                  pieceIx,
+                  node,
+                ),
+              )}
+          </div>
+        </div>
       </div>
-      {node.note ? <MessageIcon /> : null}
-      {node.err ? (
-        <ErrorIcon />
-      ) : !["FNDEF", "PENDING"].includes(node.kind) ? (
-        <CheckmarkIcon />
-      ) : null}
     </div>
   );
-}
+};
 
 // Custom file node component for reactflow
 export const FileNodeComponent = ({ data }: { data: any }) => {

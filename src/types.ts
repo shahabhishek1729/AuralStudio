@@ -1,5 +1,15 @@
+import { NodeTypes } from "reactflow";
+import { RTLNodeComponent, FileNodeComponent } from "./components/Nodes";
+
 export type IDisplay = "HOME" | "PROJECTS" | "EDITOR";
 export type RDisplay = "FLOAT" | "PANEL" | "MAX";
+
+// Custom node types
+export const nodeTypes: NodeTypes = {
+  rtlNode: RTLNodeComponent,
+  fileNode: FileNodeComponent,
+};
+
 
 export interface RTLNode {
 	line: number,

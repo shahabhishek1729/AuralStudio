@@ -3,116 +3,16 @@
  * individual pieces, nodes, blocks and subtrees.
  */
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import ReactFlow, {
   Node,
   Controls,
   Background,
-  NodeTypes,
   ReactFlowProvider,
-  Handle,
-  Position,
-  useUpdateNodeInternals,
   Edge,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { Canvas, RTLNode, RTLPiece } from "./types";
-import { FLEX_COL, FLEX_ROW } from "./styles";
-import { RenderNode, FileNodeComponent } from "./components/Nodes";
-import function_arrow from "./assets/function_arrow.png";
-
-// Custom node component for RTL nodes
-const RTLNodeComponent = ({ data }: { data: any }) => {
-  const { node, selectedAddr, renderedAddr, pieceIx, parentIndents } = data;
-  const address = node.address;
-  const updateNodeInternals = useUpdateNodeInternals();
-
-  useEffect(() => {
-    updateNodeInternals(address);
-  }, [address, updateNodeInternals]);
-
-  return (
-    <div
-      key={address}
-      style={{
-        background:
-          renderedAddr === `${address}.0` && selectedAddr === `${address}.0`
-            ? "#f7dc28"
-            : "linear-gradient(#FFFFFF2A, #191A1B99)",
-        borderRadius: "25px",
-        padding: "2px",
-      }}
-    >
-      <div
-        id={address.slice(0, address.length - 2)}
-        style={{
-          height: "100%",
-          background:
-            "radial-gradient(ellipse 60% 70% at center top, #292B4C, #18191B)",
-          borderRadius: "23px",
-          padding: "40px",
-        }}
-      >
-        {/* Source handle for outgoing edges */}
-        <Handle
-          type="source"
-          position={Position.Bottom}
-          id={`${address}-source`}
-          style={{ background: "transparent", color: "transparent" }}
-        />
-
-        {/* Target handle for incoming edges */}
-        <Handle
-          type="target"
-          position={Position.Top}
-          id={`${address}-target`}
-          style={{ background: "white" }}
-        />
-
-        {RenderNode(
-          node,
-          node.address,
-          renderedAddr,
-          selectedAddr,
-          parentIndents,
-          pieceIx,
-          undefined,
-        )}
-
-        <div style={{ ...FLEX_ROW, marginTop: "0.5rem" }}>
-          <img
-            style={{
-              height: "24px",
-              marginRight: "5px",
-            }}
-            src={function_arrow}
-          />
-          <div style={{ ...FLEX_COL, gap: "0.3rem" }}>
-            {node.children
-              .filter((child: RTLNode) => child.kind != "FNDEF")
-              .map((child: RTLNode) =>
-                RenderNode(
-                  child,
-                  child.address,
-                  renderedAddr,
-                  selectedAddr,
-                  parentIndents,
-                  pieceIx,
-                  node,
-                ),
-              )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Custom node types
-const nodeTypes: NodeTypes = {
-  rtlNode: RTLNodeComponent,
-  fileNode: FileNodeComponent,
-};
+import { Canvas, RTLNode, RTLPiece, nodeTypes } from "./types";
 
 // TODO: When editing, we need to render text boxes for strings + identifiers.
 export function DAG(
@@ -286,14 +186,12 @@ export function DAG(
     editFname,
   ]);
 
-  // Convert RTL relationships to reactflow edges
+  // An edge represents a connection between blocks
   const edges = useMemo(() => {
-    const flowEdges = [
+    return [
       ...source.map((node: RTLNode) => nodeToNode("filenode", node)),
       ...source.flatMap(parentToEdge),
     ];
-
-    return flowEdges;
   }, [source]);
 
   return (
