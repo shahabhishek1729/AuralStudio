@@ -114,9 +114,12 @@ pub(crate) enum SemanticError {
     /// XXX: Doesn't strictly need to be an error, yet likely accidental on the programmer's part.
     #[error("code right below a {0} will never be run.")]
     UnreachableCode(String),
-    /// When a variable doesn't have a valid name (e.g., uses a keyword, starts with #, etc.)
+    /// When a variable doesn't have a valid name (e.g. starts with #, etc.)
     #[error("your variable {0} has an invalid name. Please rename it.")]
     InvalidVarName(String),
+    /// When a variable doesn't have a valid name (i.e., uses a keyword)
+    #[error("your variable cannot be named {0}, as that is a keyword with special meaning in Rattle. Please rename it.")]
+    KeywordVarName(String),
     /// When a variable is used in an expression or a function is called where the identifier does
     /// not match a valid entry in the identifier digraph.
     #[error("can't find the variable or function named {0}")]
