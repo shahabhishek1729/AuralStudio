@@ -53,53 +53,45 @@ export function SlidingBorder({ selectedAddr, pieceIx }: SlidingBorderProps) {
 
     // Try to find the element by various ID patterns
     let targetElement: HTMLElement | null = null;
-    let foundPattern = "";
 
     // Pattern 1: Direct selectedAddr match
     targetElement = document.getElementById(selectedAddr);
-    if (targetElement) foundPattern = "direct";
 
     // Pattern 2: selectedAddr with pieceIx (for input elements)
     if (!targetElement && pieceIx) {
       const pieceIxStr = pieceIx.join(",");
       const id = `${selectedAddr},${pieceIxStr}`;
       targetElement = document.getElementById(id);
-      if (targetElement) foundPattern = "with pieceIx string";
     }
 
     // Pattern 3: selectedAddr with pieceIx array (alternative format)
     if (!targetElement && pieceIx) {
       const id = `${selectedAddr},${pieceIx}`;
       targetElement = document.getElementById(id);
-      if (targetElement) foundPattern = "with pieceIx array";
     }
 
     // Pattern 4: selectedAddr with index (for RenderIdent)
     if (!targetElement) {
       const id = `${selectedAddr},0`;
       targetElement = document.getElementById(id);
-      if (targetElement) foundPattern = "with index 0";
     }
 
     // Pattern 5: selectedAddr with .0 suffix (for nodes)
     if (!targetElement) {
       const id = `${selectedAddr}.0`;
       targetElement = document.getElementById(id);
-      if (targetElement) foundPattern = "with .0 suffix";
     }
 
     // Pattern 6: selectedAddr without .0 suffix (for parent nodes)
     if (!targetElement && selectedAddr.includes(".")) {
       const id = selectedAddr.slice(0, selectedAddr.length - 2);
       targetElement = document.getElementById(id);
-      if (targetElement) foundPattern = "without .0 suffix";
     }
 
     // Pattern 7: selectedAddr with selected_ prefix (existing system)
     if (!targetElement) {
       const id = `selected_${selectedAddr}`;
       targetElement = document.getElementById(id);
-      if (targetElement) foundPattern = "with selected_ prefix";
     }
 
     if (targetElement) {
