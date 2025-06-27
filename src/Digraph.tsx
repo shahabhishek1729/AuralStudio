@@ -22,7 +22,11 @@ import ELK from "elkjs/lib/elk.bundled";
 const nodeSizes = new Map<string, { width: number; height: number }>();
 
 // Function to update node size (will be called from node components)
-export const updateNodeSize = (nodeId: string, width: number, height: number) => {
+export const updateNodeSize = (
+  nodeId: string,
+  width: number,
+  height: number,
+) => {
   nodeSizes.set(nodeId, { width, height });
   // Trigger a layout update when sizes change
   if (window.layoutUpdateCallback) {
@@ -37,10 +41,14 @@ declare global {
   }
 }
 
-function ChildDAG({ payload, editFname, flipped }: { 
-  payload: any; 
-  editFname: any; 
-  flipped: any; 
+function ChildDAG({
+  payload,
+  editFname,
+  flipped,
+}: {
+  payload: any;
+  editFname: any;
+  flipped: any;
 }) {
   const source = payload.graph;
   const selectedAddr = payload.blockLoc || "filenode";
@@ -62,23 +70,30 @@ function ChildDAG({ payload, editFname, flipped }: {
   // Set up global callback for layout updates
   useLayoutEffect(() => {
     window.layoutUpdateCallback = () => {
-      setLayoutVersion(prev => prev + 1);
+      setLayoutVersion((prev) => prev + 1);
     };
-    
+
     return () => {
       delete window.layoutUpdateCallback;
     };
   }, []);
 
-  const getLayoutedElements = (nodes: Node[], edges: Edge[], options: any = {}) => {
+  const getLayoutedElements = (
+    nodes: Node[],
+    edges: Edge[],
+    options: any = {},
+  ) => {
     const isHorizontal = options?.["elk.direction"] === "RIGHT";
     const graph = {
       id: "root",
       layoutOptions: options,
       children: nodes.map((node) => {
         // Get dynamic size from ResizeObserver, fallback to defaults
-        const dynamicSize = nodeSizes.get(node.id) || { width: 150, height: 50 };
-        
+        const dynamicSize = nodeSizes.get(node.id) || {
+          width: 150,
+          height: 50,
+        };
+
         return {
           ...node,
           // Adjust the target and source handle positions based on the layout
@@ -91,7 +106,7 @@ function ChildDAG({ payload, editFname, flipped }: {
           height: dynamicSize.height,
         };
       }),
-      edges: edges.map(edge => ({
+      edges: edges.map((edge) => ({
         ...edge,
         sources: [edge.source],
         targets: [edge.target],
@@ -101,13 +116,14 @@ function ChildDAG({ payload, editFname, flipped }: {
     return elk
       .layout(graph)
       .then((layoutedGraph) => ({
-        nodes: layoutedGraph.children?.map((node) => ({
-          id: node.id,
-          type: node.type,
-          position: { x: node.x || 0, y: node.y || 0 },
-          data: node.data,
-          style: node.style,
-        })) || [],
+        nodes:
+          layoutedGraph.children?.map((node) => ({
+            id: node.id,
+            type: node.type,
+            position: { x: node.x || 0, y: node.y || 0 },
+            data: node.data,
+            style: node.style,
+          })) || [],
 
         edges: layoutedGraph.edges || [],
       }))
@@ -183,25 +199,25 @@ function ChildDAG({ payload, editFname, flipped }: {
   }, [source]);
 
   const onLayout = useCallback(
-    ({ direction, useInitialNodes = false }: { direction: string; useInitialNodes?: boolean }) => {
+    ({
+      direction,
+      useInitialNodes = false,
+    }: {
+      direction: string;
+      useInitialNodes?: boolean;
+    }) => {
       const opts = { "elk.direction": direction, ...elkOptions };
-      console.log(`Using initialNodes? ${useInitialNodes}`);
-      console.log(nodes);
       const ns = useInitialNodes ? nodes : nodes_;
       const es = useInitialNodes ? edges : edges_;
 
-      getLayoutedElements(ns, es, opts).then(
-        (result) => {
-          if (result) {
-            const { nodes: layoutedNodes, edges: layoutedEdges } = result;
-            console.log("The nodes were:");
-            console.log(layoutedNodes);
-            setNodes_(layoutedNodes);
-            setEdges_(layoutedEdges);
-            fitView();
-          }
-        },
-      );
+      getLayoutedElements(ns, es, opts).then((result) => {
+        if (result) {
+          const { nodes: layoutedNodes, edges: layoutedEdges } = result;
+          setNodes_(layoutedNodes);
+          setEdges_(layoutedEdges);
+          fitView();
+        }
+      });
     },
     [nodes, edges],
   );
