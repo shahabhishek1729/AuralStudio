@@ -18,6 +18,25 @@ import "reactflow/dist/style.css";
 import { Canvas, RTLNode, nodeTypes } from "./types";
 import ELK from "elkjs/lib/elk.bundled";
 
+// Global state to store node sizes from ResizeObserver
+const nodeSizes = new Map<string, { width: number; height: number }>();
+
+// Function to update node size (will be called from node components)
+export const updateNodeSize = (nodeId: string, width: number, height: number) => {
+  nodeSizes.set(nodeId, { width, height });
+  // Trigger a layout update when sizes change
+  if (window.layoutUpdateCallback) {
+    window.layoutUpdateCallback();
+  }
+};
+
+// Add callback to window for global access
+declare global {
+  interface Window {
+    layoutUpdateCallback?: () => void;
+  }
+}
+
 function ChildDAG({ payload, editFname, flipped }: { 
   payload: any; 
   editFname: any; 
@@ -27,6 +46,7 @@ function ChildDAG({ payload, editFname, flipped }: {
   const selectedAddr = payload.blockLoc || "filenode";
   const [renderedAddr, _] = useState("");
   const [fname, setFname] = useState(payload.filename);
+  const [layoutVersion, setLayoutVersion] = useState(0);
 
   const elk = new ELK();
 
@@ -35,8 +55,19 @@ function ChildDAG({ payload, editFname, flipped }: {
     "elk.algorithm": "layered",
     "elk.layered.spacing.nodeNodeBetweenLayers": "100",
     "elk.spacing.nodeNode": "80",
+    "elk.layered.considerModelOrder.strategy": "PREFER_EDGES",
+    "elk.layered.considerModelOrder": "true",
   };
 
+  // Set up global callback for layout updates
+  useLayoutEffect(() => {
+    window.layoutUpdateCallback = () => {
+      setLayoutVersion(prev => prev + 1);
+    };
+    
+    return () => {
+      delete window.layoutUpdateCallback;
+    };
   }, []);
 
   const getLayoutedElements = (nodes: Node[], edges: Edge[], options: any = {}) => {

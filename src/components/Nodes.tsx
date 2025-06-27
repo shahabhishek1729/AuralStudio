@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Handle, Position, useUpdateNodeInternals } from "reactflow";
 import "reactflow/dist/style.css";
 import { RTLNode } from "../types";
@@ -7,6 +7,7 @@ import { Token, RenderPiece } from "../PieceRenderer";
 import { arrEq, getColor } from "../utils";
 import { CheckmarkIcon, ErrorIcon, MessageIcon } from "./Components";
 import function_arrow from "../assets/function_arrow.png";
+import { updateNodeSize } from "../Digraph";
 
 const token_type = {
   FNDEF: "function",
@@ -95,6 +96,24 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
     );
   }
 
+  const ref = useRef(null);
+  const [_, setSize] = useState({ width: 150, height: 50 }); // defaults
+
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setSize({ width, height });
+
+      // Update global node size state
+      updateNodeSize(data.node.address, width, height);
+
+      console.log(`Width was ${width}, height was ${height}`);
+    });
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [ref, data.node.address]);
+
   const { node, selectedAddr, renderedAddr, pieceIx, parentIndents } = data;
   const address = node.address;
   const updateNodeInternals = useUpdateNodeInternals();
@@ -106,6 +125,7 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
   return (
     <div
       key={address}
+      ref={ref}
       style={{
         background:
           renderedAddr === `${address}.0` && selectedAddr === `${address}.0`
@@ -184,13 +204,29 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
 export const FileNodeComponent = ({ data }: { data: any }) => {
   const { fname, setFname, includeBorder, editing } = data;
   const updateNodeInternals = useUpdateNodeInternals();
+  const ref = useRef(null);
 
   useEffect(() => {
     updateNodeInternals("filenode");
   }, [updateNodeInternals]);
 
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+
+      // Update global node size state for filenode
+      updateNodeSize("filenode", width, height);
+
+      console.log(`FileNode width was ${width}, height was ${height}`);
+    });
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [ref]);
+
   return (
     <div
+      ref={ref}
       id="filenode"
       style={{
         background: `linear-gradient(45deg, #5C89FD, #00D1FF)`,
