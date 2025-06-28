@@ -1,8 +1,9 @@
 # Suggestions for Future Improvements
 
-> **_NOTE:_**  These are some rough outlines of things to be fixed or improved, which
+> [!NOTE]  
+These are some rough outlines of things to be fixed or improved, which
 don't have a natural place in code as either `todo!()` macros or `//
-TODO` comments**
+TODO` comments
 
 
 ## UX Improvements
@@ -23,7 +24,10 @@ This is a list of improvements to the overall user experience:
 + Code mini-map
     + Display a mini-map of the digraph at the top right corner of the
       screen, similar to VSCode maps for more efficient navigation. 
-    + This also prevents excessive zoom outs when a new node is added.
+> [!TIP]
+> This also prevents excessive zoom outs when a new node is added.
+
+![Excessively zoomed out UI][./public/ZoomedOutUI.png]
 
 ## Feature Ideas
 This is a list of currently unplanned, unscheduled features:
