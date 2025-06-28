@@ -16,7 +16,7 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { Canvas, RTLNode, nodeTypes } from "./types";
-import ELK from "elkjs/lib/elk.bundled";
+import { ELK, ELK_OPTIONS } from "./constants";
 
 // Global state to store node sizes from ResizeObserver
 const nodeSizes = new Map<string, { width: number; height: number }>();
@@ -55,16 +55,6 @@ function ChildDAG({
   const [renderedAddr, _] = useState("");
   const [fname, setFname] = useState(payload.filename);
   const [layoutVersion, setLayoutVersion] = useState(0);
-
-  const elk = new ELK();
-
-  const elkOptions = {
-    "elk.algorithm": "layered",
-    "elk.layered.spacing.nodeNodeBetweenLayers": "100",
-    "elk.spacing.nodeNode": "80",
-    "elk.layered.considerModelOrder.strategy": "PREFER_EDGES",
-    "elk.layered.considerModelOrder": "true",
-  };
 
   // Set up global callback for layout updates
   useLayoutEffect(() => {
@@ -112,8 +102,7 @@ function ChildDAG({
       })),
     };
 
-    return elk
-      .layout(graph)
+    return ELK.layout(graph)
       .then((layoutedGraph) => ({
         nodes:
           layoutedGraph.children?.map((node) => ({
@@ -205,7 +194,7 @@ function ChildDAG({
       direction: string;
       useInitialNodes?: boolean;
     }) => {
-      const opts = { "elk.direction": direction, ...elkOptions };
+      const opts = { "elk.direction": direction, ...ELK_OPTIONS };
       const ns = useInitialNodes ? nodes : nodes_;
       const es = useInitialNodes ? edges : edges_;
 
