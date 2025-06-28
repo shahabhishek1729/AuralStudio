@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Handle, Position, useUpdateNodeInternals } from "reactflow";
 import "reactflow/dist/style.css";
-import { RTLNode } from "../types";
 import { FLEX_COL, FLEX_ROW } from "../styles";
+import { RTLNode } from "../typing/digraph";
 import { Token, RenderPiece } from "../PieceRenderer";
 import { arrEq, getColor } from "../utils";
 import { CheckmarkIcon, ErrorIcon, MessageIcon } from "./Components";

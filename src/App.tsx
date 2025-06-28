@@ -5,12 +5,13 @@ import { invoke } from "@tauri-apps/api/tauri";
 import {
   Canvas,
   Debugger,
+  IDGraph,
+  _ExpectingPiece,
+} from "./typing/digraph";
+import {
   IDisplay,
   RDisplay,
-  _ExpectingPiece,
-  IDGraph,
-} from "./types.ts";
-import { Dashboard } from "./Dashboard.tsx";
+} from "./typing/display";
 import { DAG } from "./Digraph.tsx";
 import { speak } from "./speechUtils.ts";
 import {

@@ -5,15 +5,13 @@
 
 import rattle_icon from "./assets/rattle_icon.png";
 import function_arrow from "./assets/function_arrow.png";
-import {
-  RTLPiece,
-  extractPieceType,
+import { RTLPiece, _PieceInterface } from "./typing/digraph";
+import { extractPieceType, extractPieceValue } from "./typing/utils";
+import type {
   symbol_metadata,
   op_kind,
   token_metadata,
-  extractPieceValue,
-  _PieceInterface,
-} from "./types";
+} from "./typing/metadata";
 import { useState } from "react";
 import { arrEq } from "./utils";
 import { TokenMenu } from "./MenuTemplates";

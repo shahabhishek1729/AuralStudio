@@ -5,18 +5,18 @@
 
 import { useState, useMemo, useCallback, useLayoutEffect } from "react";
 import ReactFlow, {
-  Node,
   Controls,
   Background,
   ReactFlowProvider,
-  Edge,
   useReactFlow,
   useEdgesState,
   useNodesState,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { Canvas, RTLNode, nodeTypes } from "./types";
+import { Canvas, RTLNode } from "./typing/digraph";
+import { nodeTypes } from "./typing/nodeTypes";
 import { ELK, ELK_OPTIONS } from "./constants";
+import type { Node, Edge } from "./typing/reactflow";
 
 // Global state to store node sizes from ResizeObserver
 const nodeSizes = new Map<string, { width: number; height: number }>();
