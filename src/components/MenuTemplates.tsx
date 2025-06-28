@@ -8,8 +8,8 @@ import {
   RenderOperator,
   RenderPending,
   Token,
-} from "./PieceRenderer";
-import { getColor } from "./utils";
+} from "../PieceRenderer";
+import { getColor } from "../utils/utils";
 
 export function TokenMenu({ onClick }: { onClick: () => void }) {
   return (

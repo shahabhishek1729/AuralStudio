@@ -1,4 +1,4 @@
-import { FLEX_ROW, FLEX_COL, BUTTON_STYLE } from "./styles";
+import { FLEX_ROW, FLEX_COL, BUTTON_STYLE } from "../styles/styles";
 
 export function Dashboard() {
   return (

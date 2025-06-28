@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Handle, Position, useUpdateNodeInternals } from "reactflow";
 import "reactflow/dist/style.css";
-import { FLEX_COL, FLEX_ROW } from "../styles";
 import { RTLNode } from "../typing/digraph";
+import { FLEX_COL, FLEX_ROW } from "../styles/styles";
 import { Token, RenderPiece } from "../PieceRenderer";
-import { arrEq, getColor } from "../utils";
+import { arrEq, getColor } from "../utils/utils";
 import { CheckmarkIcon, ErrorIcon, MessageIcon } from "./Components";
 import function_arrow from "../assets/function_arrow.png";
 import { updateNodeSize } from "../Digraph";

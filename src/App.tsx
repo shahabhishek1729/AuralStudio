@@ -12,8 +12,9 @@ import {
   IDisplay,
   RDisplay,
 } from "./typing/display";
+import { Dashboard } from "./components/Dashboard.tsx";
 import { DAG } from "./Digraph.tsx";
-import { speak } from "./speechUtils.ts";
+import { speak } from "./utils/speechUtils.ts";
 import {
   CheckmarkIcon,
   ErrorIcon,

@@ -1,5 +1,7 @@
-import { SYMBOL_MAP } from "./PieceRenderer";
-import { RTLPiece, extractPieceType, symbol_metadata } from "./types";
+import { SYMBOL_MAP } from "../PieceRenderer";
+import { RTLPiece } from "../typing/digraph";
+import { extractPieceType } from "../typing/utils";
+import type { symbol_metadata } from "../typing/metadata";
 
 export function getColor(piece: RTLPiece): string {
   if (piece === "NOTHING") return "";

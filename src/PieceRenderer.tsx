@@ -13,8 +13,8 @@ import type {
   token_metadata,
 } from "./typing/metadata";
 import { useState } from "react";
-import { arrEq } from "./utils";
-import { TokenMenu } from "./MenuTemplates";
+import { arrEq } from "./utils/utils";
+import { TokenMenu } from "./components/MenuTemplates";
 import { FAIL_SOUND } from "./App";
 
 const OP_TYPES = ["OP", "PendingOp"];
