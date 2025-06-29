@@ -6,12 +6,10 @@ import {
   Canvas,
   Debugger,
   IDGraph,
+  RTLNode,
   _ExpectingPiece,
 } from "./typing/digraph";
-import {
-  IDisplay,
-  RDisplay,
-} from "./typing/display";
+import { IDisplay, RDisplay } from "./typing/display";
 import { Dashboard } from "./components/Dashboard.tsx";
 import { DAG } from "./Digraph.tsx";
 import { speak } from "./utils/speechUtils.ts";
@@ -30,7 +28,7 @@ function App() {
   const [debugger_, setDebugger_] = useState<Debugger | null>(null);
   let [payload, setPayload] = useState<Canvas>({
     filename: "unnamed",
-    graph: [],
+    graph: [] as RTLNode[],
     blockLoc: "",
     nodeLoc: "",
     mode: "VIEW",
@@ -90,7 +88,7 @@ function App() {
 
   useEffect(() => {
     let initial_source = `define start of args\npretend\ndone define`;
-    invoke("parse_file", { source: initial_source }).then((o: any) => {
+    invoke<RTLNode[]>("parse_file", { source: initial_source }).then((o) => {
       setPayload({
         filename: "unnamed",
         graph: o,
@@ -127,8 +125,7 @@ function App() {
         const elem = document.getElementById(`note_${payload.blockLoc}`);
         if (elem) {
           elem.focus();
-          invoke("fetch_note", { payload: payload }).then((result: unknown) => {
-            const text = result as string;
+          invoke<string>("fetch_note", { payload: payload }).then((text) => {
             const _elem = elem as HTMLInputElement;
             _elem.value = text;
           });
@@ -160,11 +157,10 @@ function App() {
       if (payload.mode === "TYPE" && e.key === "Enter" && activeNote) {
         // Save the entered filename and continue
         const elem = document.getElementById(`note_${payload.blockLoc}`);
-        invoke("save_note", {
+        invoke<Canvas>("save_note", {
           note: (elem as HTMLInputElement).value.trimEnd(),
           payload: payload,
-        }).then((result: unknown) => {
-          const new_payload = result as Canvas;
+        }).then((new_payload) => {
           if (new_payload !== payload) setPayload(new_payload);
         });
         setActiveNote("");
@@ -173,8 +169,7 @@ function App() {
 
       // 5. "e" on a node with an error
       if (payload.mode === "VIEW" && e.key == "e") {
-        invoke("fetch_err", { payload: payload }).then((result: unknown) => {
-          const err = result as string;
+        invoke<string>("fetch_err", { payload: payload }).then((err) => {
           if (err) speak(err);
           else FAIL_SOUND.play();
         });
@@ -192,24 +187,23 @@ function App() {
           setDebugger_(dbg);
         }
 
-        invoke("runWalkthrough", { debugger: dbg, idg: idg }).then(
-          (result: unknown) => {
-            //                        [DBG,      expl,   IDGraph, exit code]
-            const new_dbg = result as [Debugger, string, IDGraph, number];
-            setPayload(new_dbg[0].state);
-            setDebugger_(new_dbg[0]);
-            speak(new_dbg[1]);
-            setIdg(new_dbg[2]);
+        invoke<[Debugger, string, IDGraph, number]>("runWalkthrough", {
+          debugger: dbg,
+          idg: idg,
+        }).then((new_dbg) => {
+          setPayload(new_dbg[0].state);
+          setDebugger_(new_dbg[0]);
+          speak(new_dbg[1]);
+          setIdg(new_dbg[2]);
 
-            if (new_dbg[3] === 1) {
-              setDebugger_(null);
-              speak("Program terminated successfully");
-            } else if (new_dbg[3] === -1) {
-              setDebugger_(null);
-              speak("Walkthrough terminated, program failure");
-            }
-          },
-        );
+          if (new_dbg[3] === 1) {
+            setDebugger_(null);
+            speak("Program terminated successfully");
+          } else if (new_dbg[3] === -1) {
+            setDebugger_(null);
+            speak("Walkthrough terminated, program failure");
+          }
+        });
         return;
       }
 
@@ -221,17 +215,13 @@ function App() {
       if (elem && elem instanceof HTMLInputElement)
         value = (elem as HTMLInputElement).value;
 
-      invoke("handle_event", {
+      invoke<[boolean, string, Canvas]>("handle_event", {
         event: JSON.stringify({ key: e.key }),
         payload: payload,
         // (optimization) only send in a value when a value is committed.
         value: e.key === "Enter" ? value : null,
-      }).then((result: unknown) => {
-        const [succeeded, err, new_payload] = result as [
-          boolean,
-          string,
-          Canvas,
-        ];
+      }).then((result) => {
+        const [succeeded, err, new_payload] = result;
 
         if (!succeeded) {
           FAIL_SOUND.play();
@@ -255,10 +245,9 @@ function App() {
       );
       if (elem && payload.mode === "TYPE") elem.focus();
 
-      invoke("sync_idents", { payload: payload }).then((res: unknown) => {
-        let idg_ = res as IDGraph;
-        setIdg(idg_);
-      });
+      invoke<IDGraph>("sync_idents", { payload: payload }).then((idg_) =>
+        setIdg(idg_),
+      );
 
       window.addEventListener("keyup", onKeyUp);
       return () => {
