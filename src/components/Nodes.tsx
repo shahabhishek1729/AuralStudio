@@ -39,7 +39,7 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
     parent?: RTLNode,
   ) {
     return (
-      <div>
+      <div id={outerBlockId(node)}>
         <div
           id={address}
           key={address}
@@ -249,6 +249,16 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
     </div>
   );
 };
+
+function outerBlockId(node: RTLNode): string | undefined {
+  let offset =
+    node.kind === "CONDTL"
+      ? -4
+      : ["FORLOOP", "WHLLOOP", "CONDTLY", "CONDTLN"].includes(node.kind)
+        ? -2
+        : undefined;
+  if (offset) return node.address.substring(0, node.address.length + offset);
+}
 
 // Custom file node component for reactflow
 export const FileNodeComponent = ({ data }: { data: any }) => {
