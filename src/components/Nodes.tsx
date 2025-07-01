@@ -39,58 +39,88 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
     parent?: RTLNode,
   ) {
     return (
-      <div
-        id={address}
-        key={address}
-        style={{ ...FLEX_ROW, alignItems: "center", gap: "8px" }}
-      >
+      <div>
         <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            width: "fit-content",
-            justifyContent: "center",
-            alignItems: "center",
-            border:
-              renderedAddr === `${address}.0` && selectedAddr === `${address}.0`
-                ? "2px solid #f7dc28"
-                : "",
-            borderRadius: "25px",
-          }}
+          id={address}
+          key={address}
+          style={{ ...FLEX_ROW, alignItems: "center", gap: "8px" }}
         >
-          <Token
-            token_type={token_type[node.kind as keyof typeof token_type]}
-            puzzle_color={
-              node.address === selectedAddr && arrEq(pieceIx ?? [1], [0])
-                ? "white"
-                : node.pieces.length > 0
-                  ? getColor(node.pieces[0])
-                  : "transparent"
-            }
-            first={
-              !!(
-                parentIndents &&
-                parent &&
-                excludeBlocks(parent)[0]?.address === node.address
-              )
-            }
-            indent={parentIndents || 0}
-            addr={address}
-          />
-          {node.pieces.map((_: any, ix: number) =>
-            RenderPiece(
-              node.pieces,
-              [ix],
-              node.address === selectedAddr ? pieceIx ?? [-1] : [-1],
-              node.address,
-            ),
-          )}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              width: "fit-content",
+              justifyContent: "center",
+              alignItems: "center",
+              border:
+                renderedAddr === `${address}.0` &&
+                selectedAddr === `${address}.0`
+                  ? "2px solid #f7dc28"
+                  : "",
+              borderRadius: "25px",
+            }}
+          >
+            <Token
+              token_type={token_type[node.kind as keyof typeof token_type]}
+              puzzle_color={
+                node.address === selectedAddr && arrEq(pieceIx ?? [1], [0])
+                  ? "white"
+                  : node.pieces.length > 0
+                    ? getColor(node.pieces[0])
+                    : "transparent"
+              }
+              first={
+                !!(
+                  parentIndents &&
+                  parent &&
+                  excludeBlocks(parent)[0]?.address === node.address
+                )
+              }
+              indent={parentIndents || 0}
+              addr={address}
+            />
+            {node.pieces.map((_: any, ix: number) =>
+              RenderPiece(
+                node.pieces,
+                [ix],
+                node.address === selectedAddr ? pieceIx ?? [-1] : [-1],
+                node.address,
+              ),
+            )}
+          </div>
+          {node.note ? <MessageIcon /> : null}
+          {node.err ? (
+            <ErrorIcon />
+          ) : !["FNDEF", "PENDING"].includes(node.kind) ? (
+            <CheckmarkIcon />
+          ) : null}
         </div>
-        {node.note ? <MessageIcon /> : null}
-        {node.err ? (
-          <ErrorIcon />
-        ) : !["FNDEF", "PENDING"].includes(node.kind) ? (
-          <CheckmarkIcon />
+        {["FORLOOP", "CONDTL"].includes(node.kind) ? (
+          <div style={{ ...FLEX_ROW }}>
+            <img
+              style={{
+                height: "24px",
+                marginRight: "5px",
+              }}
+              src={function_arrow}
+            />
+            <div style={FLEX_COL}>
+              <div style={{ height: "8px" }} />
+              {node.children.map((child) => (
+                <>
+                  {RenderNode(
+                    child,
+                    child.address,
+                    renderedAddr,
+                    selectedAddr,
+                    parentIndents,
+                    pieceIx,
+                  )}
+                  <div style={{ height: "8px" }} />
+                </>
+              ))}
+            </div>
+          </div>
         ) : null}
       </div>
     );
