@@ -95,15 +95,17 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
             <CheckmarkIcon />
           ) : null}
         </div>
-        {["FORLOOP", "CONDTL"].includes(node.kind) ? (
+        {["FORLOOP", "CONDTLY", "CONDTLN"].includes(node.kind) ? (
           <div style={{ ...FLEX_ROW }}>
-            <img
-              style={{
-                height: "24px",
-                marginRight: "5px",
-              }}
-              src={function_arrow}
-            />
+            {node.kind === "FORLOOP" ? (
+              <img
+                style={{
+                  height: "24px",
+                  marginRight: "5px",
+                }}
+                src={function_arrow}
+              />
+            ) : null}
             <div style={FLEX_COL}>
               <div style={{ height: "8px" }} />
               {node.children.map((child) => (
@@ -120,6 +122,24 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
                 </>
               ))}
             </div>
+          </div>
+        ) : null}
+        {node.kind === "CONDTL" ? (
+          <div style={{ ...FLEX_ROW }}>
+            {/* NOTE: Should ony have 2 children (CONDTLY, CONDTLN) */}
+            {node.children.map((child) => (
+              <>
+                {RenderNode(
+                  child,
+                  child.address,
+                  renderedAddr,
+                  selectedAddr,
+                  parentIndents,
+                  pieceIx,
+                )}
+                <div style={{ height: "8px" }} />
+              </>
+            ))}
           </div>
         ) : null}
       </div>
