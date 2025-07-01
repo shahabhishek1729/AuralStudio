@@ -594,18 +594,6 @@ mod tests {
             move_cursor!(D, R, L, R, U _in_ SOURCE ||);
             move_cursor!(D, R, D, R, U, L, U _in_ SOURCE ||);
         }
-
-        #[test]
-        fn local_blocks() {
-            const LOCAL_SOURCE: &'static str = "define f of x\npretend\nfor i in l\npretend\ndone for\ndone define";
-            move_cursor!(I, D, D _in_ LOCAL_SOURCE -> <0, 0, 2>);
-        }
-
-        #[test]
-        fn local_blocks_first() {
-            const LOCAL_SOURCE: &'static str = "define f of x\nfor i in l\npretend\ndone for\ndone define";
-            move_cursor!(I, D _in_ LOCAL_SOURCE -> <0, 0, 1>);
-        }
     }
 
     mod local {
@@ -633,6 +621,39 @@ mod tests {
             move_cursor!(R, I, D, D, U, U, O _in_ SOURCE ##);
             move_cursor!(R, I, D, D, U, U, O _in_ SOURCE ##);
             move_cursor!(R, I, D, D, O _in_ SOURCE ##);
+        }
+
+        /// Ensure for loops can be navigated to at the block level (i.e., without tunneling into
+        /// the root iterator node).
+        #[test]
+        fn local_blocks() {
+            let mut source = "define f of x\npretend\nfor i in l\npretend\ndone for\ndone define";
+            move_cursor!(I, D, D _in_ source -> <0, 0, 2>);
+
+            // Test it as the first child of a function
+            source = "define f of x\nfor i in l\npretend\ndone for\ndone define";
+            move_cursor!(I, D _in_ source -> <0, 0, 1>);
+        }
+
+        /// Conditionals are the trickiest to navigate into and out of, since there are some extra
+        /// steps to be taken (e.g., navigating OUT twice from an inner branch and twice from the
+        /// main condition since it has an extra `0.0` for address consistency). 
+        #[test]
+        fn conditionals() {
+            const LOCAL_SOURCE: &'static str = "define f of x\nif x equals 3\npretend\ndone if\notherwise\npretend\ndone otherwise\ndone define";
+            
+            // Moving all the way into the "yes" label, and all the way back out
+            move_cursor!(I, D _in_ LOCAL_SOURCE -> <0, 0, 1>);
+            move_cursor!(I, D, I _in_ LOCAL_SOURCE -> <0, 0, 1, 0, 0>);
+            move_cursor!(I, D, I, D _in_ LOCAL_SOURCE -> <0, 0, 1, 1, 0, 0>);
+            move_cursor!(I, D, I, D, O _in_ LOCAL_SOURCE -> <0, 0, 1, 1, 0>);
+            move_cursor!(I, D, I, D, O, O _in_ LOCAL_SOURCE -> <0, 0, 1>);
+            move_cursor!(I, D, I, D, O, O, O _in_ LOCAL_SOURCE -> <0, 0>);
+
+            // Moving all the way into the "no" label, and partially back out
+            move_cursor!(I, D, I, D, R _in_ LOCAL_SOURCE -> <0, 0, 1, 1, 1, 0>);
+            move_cursor!(I, D, I, D, R, O _in_ LOCAL_SOURCE -> <0, 0, 1, 1, 1>);
+            move_cursor!(I, D, I, D, R, O, O _in_ LOCAL_SOURCE -> <0, 0, 1>);
         }
     }
 }
