@@ -687,6 +687,38 @@ impl Parser {
                     );
                 }
 
+                RTLToken::WhileIdentifier => {
+                    // 'for ...'
+                    let line = curr_token.line;
+                    let (pieces, rtl) = self._collect_line()?;
+
+                    let node = Node {
+                        kind: NodeKind::WHLLOOP,
+                        line,
+                        children: vec![],
+                        pieces,
+                        addr: Address::new(vec![]),
+                        rtl: Some(format!("while {}", rtl)),
+                        ..Default::default()
+                    };
+                    self.push_node(node, &mut nodes)?;
+                    let insert_loc = self._get_insert_loc(&mut nodes)?;
+
+                    let Some(last) = self.waiting_parents.peek() else {
+                        anyhow::bail!(
+                            "Found nothing in the stack when trying to push `while` loop"
+                        );
+                    };
+
+                    let last = last.clone();
+                    self.waiting_parents.push(
+                        last.iter()
+                            .chain(&[insert_loc.len() - 1])
+                            .map(|&x| x)
+                            .collect::<Vec<_>>(),
+                    );
+                }
+
                 RTLToken::BlockEnd => {
                     // 'done ...'
                     let ended_str = curr_token.lexeme.clone();
