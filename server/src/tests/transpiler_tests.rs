@@ -295,6 +295,28 @@ fn test_pretend_infix() {
 }
 
 #[test]
+fn test_for() {
+    let source = "define f of x\nfor i in l\npretend\ndone for\ndone define";
+    let mut decompiler = Decompiler::new(source).unwrap();
+    decompiler.decompile().unwrap();
+    assert_eq!(
+        decompiler.py,
+        "def f(x):\n    for i in l:\n        ...\n        \n    "
+    )
+}
+
+#[test]
+fn test_while() {
+    let source = "define f of x\nwhile i greater than 0\npretend\ndone while\ndone define";
+    let mut decompiler = Decompiler::new(source).unwrap();
+    decompiler.decompile().unwrap();
+    assert_eq!(
+        decompiler.py,
+        "def f(x):\n    while i > 0:\n        ...\n        \n    "
+    )
+}
+
+#[test]
 fn test_linalg() {
     let source = "define inverse of m
 define determinant of m
