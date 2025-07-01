@@ -173,8 +173,7 @@ impl CursorDir {
                 };
 
                 // We either need to go to a child node or to the following sibling.
-                if N_ROOT_CHILDREN.contains_key(&format!("{:?}", node.kind)[..]) && state._at_node()
-                {
+                if N_ROOT_CHILDREN.contains_key(&format!("{:?}", node.kind)[..]) && state._at_node() {
                     let Some(n_) = node
                         .children
                         .iter()
@@ -184,7 +183,17 @@ impl CursorDir {
                         return Err(CursorError::InvalidMotion(CursorDir::DOWN));
                     };
 
-                    return Ok(n_.addr.clone());
+                    let mut src = n_.addr.clone();
+
+                    // For children which are local blocks, we must move out one layer.
+                    if let Some(child_node) = graph_hash.get(&src) {
+                        if [NodeKind::FORLOOP, NodeKind::WHLLOOP].contains(&child_node.kind) {
+                            let _ = src.addr.pop();
+                        }
+                    }
+
+
+                    return Ok(src);
                 }
 
                 let (parent, i) = self._find_parent_child(state, src)?;
@@ -544,6 +553,7 @@ mod tests {
                           x equals 3\noutput x\ndone if\notherwise\noutput y\ndone otherwise\ndone \
                           define";
 
+
     mod global {
         use super::*;
 
@@ -569,6 +579,18 @@ mod tests {
             move_cursor!(D, R, U _in_ SOURCE ||);
             move_cursor!(D, R, L, R, U _in_ SOURCE ||);
             move_cursor!(D, R, D, R, U, L, U _in_ SOURCE ||);
+        }
+
+        #[test]
+        fn local_blocks() {
+            const LOCAL_SOURCE: &'static str = "define f of x\npretend\nfor i in l\npretend\ndone for\ndone define";
+            move_cursor!(I, D, D _in_ LOCAL_SOURCE -> <0, 0, 2>);
+        }
+
+        #[test]
+        fn local_blocks_first() {
+            const LOCAL_SOURCE: &'static str = "define f of x\nfor i in l\npretend\ndone for\ndone define";
+            move_cursor!(I, D _in_ LOCAL_SOURCE -> <0, 0, 1>);
         }
     }
 
