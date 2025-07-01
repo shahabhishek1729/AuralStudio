@@ -9,12 +9,12 @@ TODO` comments
 + Sliding window around local blocks
     + Currently only hovers around the node, even after moving outward
       (in loops), or expands out to the entire function (in CONDTL) 
-+ First element insertions
-    + In for loops, a node inserted at the top of the loop is not
-      rendered in its correct spot (appears above the entire loop itself)
-    + In conditionals, a node rendered right below the "yes" or "no"
++ ~First element insertions~
+    + ~In for loops, a node inserted at the top of the loop is not
+      rendered in its correct spot (appears above the entire loop itself)~
+    + ~In conditionals, a node rendered right below the "yes" or "no"
       labels is not rendered in its correct spot (appears to the left of
-      the label).
+      the label)~.
 
 ## UX Improvements
 This is a list of improvements to the overall user experience:
