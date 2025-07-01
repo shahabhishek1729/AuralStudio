@@ -28,7 +28,9 @@ export interface RTLNode {
   /** Child nodes (functions, blocks, etc.) */
   children: RTLNode[];
   /** Kind of node (e.g., 'FNDEF', 'BLOCK', etc.) */
-  kind: string;
+  kind: "FNDEF" | "VARDECL" | "OUTPUT" | "CONDTL" | "CONDTLY" | "CONDTLN" | 
+     	"FORLOOP" | "WHLLOOP" | "BREAK" | "CONTINUE" | "RETURN" | "FNCALL" | 
+	    "GRABPKG" | "PENDING";
   /** Pieces (tokens, expressions, etc.) attached to this node */
   pieces: RTLPiece[];
   /** Unique address for this node */
@@ -154,4 +156,4 @@ export type _ExpectingPiece = "ExprPiece" | "Token";
 /**
  * Address type (IPv4-style string in JSON).
  */
-export type Address = string; 
+export type Address = string;
