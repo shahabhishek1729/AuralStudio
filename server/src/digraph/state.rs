@@ -190,6 +190,13 @@ impl CursorDir {
                         if [NodeKind::FORLOOP, NodeKind::WHLLOOP].contains(&child_node.kind) {
                             let _ = src.addr.pop();
                         }
+
+                        // For conditionals, we must move out twice since there's an extra
+                        // `0.0` in the address (there can only be one node on level 0)
+                        if child_node.kind == NodeKind::CONDTL {
+                            let _ = src.addr.pop();
+                            let _ = src.addr.pop();
+                        }
                     }
 
 
