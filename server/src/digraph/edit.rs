@@ -167,10 +167,10 @@ impl Canvas {
         let curr_addr = curr_node.addr.clone();
 
         let insert_loc = match curr_node.kind {
-            super::parser::NodeKind::CONDTL if self._at_node() => {
+            NodeKind::CONDTL if self._at_node() => {
                 return Err(CursorError::InsertConditional);
             }
-            super::parser::NodeKind::FNDEF if !self._at_node() => {
+            NodeKind::FNDEF if !self._at_node() => {
                 // On a function block, so we need to know how many global children this block has.
                 let num_blocks = curr_node
                     .children
@@ -201,7 +201,7 @@ impl Canvas {
                 self.piece_ix = Some(vec![0usize]);
                 insert_loc_ // function name must follow
             }
-            super::parser::NodeKind::FNDEF if self._at_node() => {
+            NodeKind::FNDEF if self._at_node() => {
                 // If we're on a node, just make a new node below and as the new `insert_loc`
                 let Some(next_addr) = self.block_loc.next() else {
                     return Err(CursorError::EmptyAddr);
@@ -571,24 +571,27 @@ mod tests {
         macro_rules! ensure_insert {
         // Move sequences that result in an attempted move "off the graph" should return errors
         (@ <$($id:literal),+> _in_ $src:ident -> <$($new_id:literal),+>) => {{
-            let mut parser = Parser::new(String::from($src)).unwrap();
-            let mut nodes = parser.parse().unwrap();
-            (&mut nodes[..]).fill_addr();
+            {
+                let mut parser = Parser::new(String::from($src)).unwrap();
+                let mut nodes = parser.parse().unwrap();
+                (&mut nodes[..]).fill_addr();
 
-            let block_loc = addr!($($id),+);
-            let node_loc = block_loc.coerce(&nodes.get_hash()).expect("Node coercion should work");
-            let mut state = Canvas {
-                filename: "".into(),
-                output: Some("".into()),
-                block_loc,
-                node_loc,
-                mode: ADMode::VIEW,
-                graph: nodes.to_vec(),
-                piece_ix: None,
-                err: None,
-            };
-            state.to_insert().expect("Could not toggle mode");
-            assert_eq!(state.block_loc, addr!($($new_id),+));
+                let block_loc = addr!($($id),+);
+                let node_loc = block_loc.coerce(&nodes.get_hash()).expect("Node coercion should work");
+                let mut state = Canvas {
+                    filename: "".into(),
+                    output: Some("".into()),
+                    block_loc,
+                    node_loc,
+                    mode: ADMode::VIEW,
+                    graph: nodes.to_vec(),
+                    piece_ix: None,
+                    err: None,
+                };
+                state.to_insert().expect("Could not toggle mode");
+                assert_eq!(state.block_loc, addr!($($new_id),+));
+                state
+            }
         }};
     }
 
@@ -603,7 +606,69 @@ mod tests {
 
         #[test]
         fn insert_node() {
-            ensure_insert!(@ <1, 0, 1> _in_ SOURCE -> <1, 0, 2>)
+            ensure_insert!(@ <1, 0, 1> _in_ SOURCE -> <1, 0, 2>);
+        }
+
+        /// Insert a node as the first element of a for loop.
+        #[test]
+        fn insert_to_for() {
+            let LOCAL_SOURCE: &'static str =
+                "define f of x\nfor i in l\npretend\ndone for\ndone define";
+            let state = ensure_insert!(@ <0, 0, 1, 0> _in_ LOCAL_SOURCE -> <0, 0, 1, 1>);
+            assert_eq!(state.graph[0].children.len(), 1);
+
+            let child = &state.graph[0].children[0];
+            assert_eq!(child.kind, NodeKind::FORLOOP);
+
+            assert_eq!(child.children.len(), 2);
+            for (i, subchild) in child.children.iter().enumerate() {
+                assert_eq!(subchild.kind, NodeKind::PENDING);
+                assert_eq!(*subchild.addr, vec![0, 0, 1, i + 1]);
+            }
+        }
+
+        /// Insert a node as the first element of a while loop.
+        #[test]
+        fn insert_to_while() {
+            let LOCAL_SOURCE: &'static str =
+                "define f of x\nwhile i greater than 0\npretend\ndone while\ndone define";
+            let state = ensure_insert!(@ <0, 0, 1, 0> _in_ LOCAL_SOURCE -> <0, 0, 1, 1>);
+            assert_eq!(state.graph[0].children.len(), 1);
+
+            let child = &state.graph[0].children[0];
+            assert_eq!(child.kind, NodeKind::WHLLOOP);
+
+            assert_eq!(child.children.len(), 2);
+            for (i, subchild) in child.children.iter().enumerate() {
+                assert_eq!(subchild.kind, NodeKind::PENDING);
+                assert_eq!(*subchild.addr, vec![0, 0, 1, i + 1]);
+            }
+        }
+
+        /// Insert a node as the first element of a conditional "yes" branch
+        #[test]
+        fn insert_to_condtly() {
+            let LOCAL_SOURCE: &'static str =
+                "define f of x\nif i greater than 0\noutput string yes done\ndone if\notherwise\noutput string no done\ndone otherwise\ndone define";
+            let state =
+                ensure_insert!(@ <0, 0, 1, 1, 0, 0> _in_ LOCAL_SOURCE -> <0, 0, 1, 1, 0, 1>);
+            assert_eq!(state.graph[0].children.len(), 1);
+
+            let child = &state.graph[0].children[0];
+            assert_eq!(child.kind, NodeKind::CONDTL);
+
+            dbg!(&child.children);
+            assert_eq!(child.children.len(), 2);
+
+            let condtly = &child.children[0];
+            let condtln = &child.children[1];
+            assert_eq!(condtly.kind, NodeKind::CONDTLY);
+            assert_eq!(condtln.kind, NodeKind::CONDTLN);
+
+            assert_eq!(*condtly.children[0].addr, vec![0, 0, 1, 1, 0, 1]);
+            assert_eq!(condtly.children[0].kind, NodeKind::PENDING);
+            assert_eq!(*condtly.children[1].addr, vec![0, 0, 1, 1, 0, 2]);
+            assert_eq!(condtly.children[1].kind, NodeKind::OUTPUT);
         }
     }
 
