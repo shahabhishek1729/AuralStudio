@@ -237,10 +237,17 @@ impl CursorDir {
 
                 // For conditionals, go out once more since there's an extra 0.0 (there can only
                 // ever be one node on the first level of a conditional).
-                if let Some(curr_node) = hash.get(&state.block_loc) {
-                    if curr_node.kind == NodeKind::CONDTL {
+                if let Some(curr_node) = hash.get(&state.node_loc) {
+                    if curr_node.kind == NodeKind::CONDTL && state._at_node() {
                         let _ = src.addr.pop();
                     }
+
+                    // Alternatively, if we are on a block-scoped CONDTL[Y/N], we also want to move
+                    // out again to the entire conditional, instead of just isolating the yes/no
+                    // branches and leaving the condition out.
+                    if [NodeKind::CONDTLY, NodeKind::CONDTLN].contains(&curr_node.kind) && !state._at_node() {
+                        let _ = src.addr.pop();
+                    } 
                 }
 
                 Ok(src)
