@@ -210,6 +210,18 @@ impl Canvas {
                 self.mode = ADMode::EDIT(Expecting::Token);
                 next_addr // any possible `Token` could follow
             }
+            NodeKind::FORLOOP | NodeKind::WHLLOOP | NodeKind::CONDTLY | NodeKind::CONDTLN
+                if self._at_node() =>
+            {
+                // If we're on a node, just make a new node below and as the new `insert_loc`
+                let Some(next_addr) = self.block_loc.next() else {
+                    return Err(CursorError::EmptyAddr);
+                };
+
+                self._insert_as_child(&next_addr, curr_addr)?;
+                self.mode = ADMode::EDIT(Expecting::Token);
+                next_addr // any possible `Token` could follow
+            }
             _ => {
                 // If we're on a node, just make a new node below and as the new `insert_loc`
                 let Some(next_addr) = self.block_loc.next() else {
@@ -219,6 +231,7 @@ impl Canvas {
                     .block_loc
                     .last()
                     .expect("child address cannot be empty");
+
                 self._insert_other(&next_addr, parent_addr, child_ix)?;
                 self.mode = ADMode::EDIT(Expecting::Token);
                 next_addr // any possible `Token` could follow
@@ -351,6 +364,37 @@ impl Canvas {
             err: None,
         };
         parent_node.children.insert(recomputed_ix, new_node);
+        Ok(())
+    }
+
+    #[inline]
+    // Update graph with a new node (@ `at_addr`) as the first child of a loop.
+    fn _insert_as_child(
+        &mut self,
+        at_addr: &Address,
+        from_addr: Address,
+    ) -> Result<(), CursorError> {
+        let hash_ = self.graph.get_hash_mut();
+        let Some(curr_node) = hash_.get(&from_addr) else {
+            return Err(CursorError::ParentNotFound(from_addr));
+        };
+
+        // SAFETY: The parent node must be valid because this node is not a root function
+        // (which would be in the FNDEF branch) so `parent_addr` must point to a valid node.
+        let curr_node = unsafe { &mut **curr_node };
+
+        let new_node = Node {
+            line: 0, // TODO: How to increment all subsequent line numbers efficiently?
+            children: vec![],
+            kind: NodeKind::PENDING,
+            pieces: vec![Piece::PendingVal],
+            addr: at_addr.clone(),
+            parent_addr: from_addr,
+            rtl: Some("pretend".into()),
+            note: None,
+            err: None,
+        };
+        curr_node.children.insert(0, new_node);
         Ok(())
     }
 
