@@ -20,6 +20,26 @@ export interface SemanticError {
 }
 
 /**
+ * Nodes can be one of 14 kinds:
+ * FNDEF: A function signature, including its name and arguments
+ * VARDECL: A variable declaration of the form "let [name] be [expr]".
+ * OUTPUT: A print statement to the console.
+ * CONDTL: The condition portition of a conditional ("is [boolean]?").
+ * CONDTLY: The yes branch of a conditional (analogous to if block).
+ * CONDTLN: The no branch of a conditional (analogous to else block).
+ * FORLOOP: A loop which iterates over an "iterable".
+ * WHLLOOP: A loop which iterates until some condition is met.
+ * BREAK: A statement that pulls execution out of a loop.
+ * CONTINUE: A statement that moves execution to the next loop iteration.
+ * RETURN: Returns a value from a function and terminates function execution.
+ * FNCALL: A call to a pre-defined function, filling in required arguments.
+ * GRABPKG: Analogous to an import statement, pulls in external code.
+ * PENDING: A placeholder node that has yet to be filled in.
+ */
+export type NodeKind = "FNDEF" | "VARDECL" | "OUTPUT" | "CONDTL" | "CONDTLY" | 
+	"CONDTLN" | "FORLOOP" | "WHLLOOP" | "BREAK" | "CONTINUE" | "RETURN" | 
+	"FNCALL" | "GRABPKG" | "PENDING";
+/**
  * Represents a node in the digraph (function, block, etc.).
  */
 export interface RTLNode {
@@ -28,9 +48,7 @@ export interface RTLNode {
   /** Child nodes (functions, blocks, etc.) */
   children: RTLNode[];
   /** Kind of node (e.g., 'FNDEF', 'BLOCK', etc.) */
-  kind: "FNDEF" | "VARDECL" | "OUTPUT" | "CONDTL" | "CONDTLY" | "CONDTLN" | 
-     	"FORLOOP" | "WHLLOOP" | "BREAK" | "CONTINUE" | "RETURN" | "FNCALL" | 
-	    "GRABPKG" | "PENDING";
+  kind: NodeKind;
   /** Pieces (tokens, expressions, etc.) attached to this node */
   pieces: RTLPiece[];
   /** Unique address for this node */
