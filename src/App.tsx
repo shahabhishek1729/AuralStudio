@@ -1,6 +1,6 @@
 import "./App.css";
 
-import { SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import {
   Canvas,
@@ -10,14 +10,9 @@ import {
   _ExpectingPiece,
 } from "./typing/digraph";
 import { IDisplay, RDisplay } from "./typing/display";
-import { Dashboard } from "./components/Dashboard.tsx";
+import Dashboard from "./components/Dashboard.tsx";
 import { DAG } from "./Digraph.tsx";
 import { speak } from "./utils/speechUtils.ts";
-import {
-  CheckmarkIcon,
-  ErrorIcon,
-  WindowButton,
-} from "./components/Components.tsx";
 import { SlidingBorder } from "./components/SlidingBorder.tsx";
 import RunPanel from "./components/RunPanel.tsx";
 
