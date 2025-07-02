@@ -10,7 +10,7 @@ use crate::digraph::state::{Canvas, CursorDir};
 use crate::file_utils::{auralstudio_dir, to_py};
 use crate::static_analysis::analyzer::Analyzer;
 use crate::static_analysis::ident::IDGraph;
-use crate::{addr, new_token, play};
+use crate::{addr, new_token, play, throw};
 use crate::{make_node, piece};
 use serde_derive::{Deserialize, Serialize};
 use std::io::Write;
@@ -123,6 +123,7 @@ impl KeyboardEvent {
                         state._move_to_next(curr_node, Some(&mut vec![0usize]), true)?;
                         state.mode = ADMode::TYPE;
                     }
+                    NodeKind::CONDTLY | NodeKind::CONDTLN => throw!(InvalidInsertion),
                     _ => {
                         // Insert a blank node at the end
                         let Some(last) = curr_node.pieces.last() else {

@@ -194,10 +194,15 @@ pub(crate) enum CursorError {
     SemanticError(#[from] crate::static_analysis::analyzer::SemanticError),
     #[error("Please save your file before running it")]
     UnnamedFile,
+    #[error("You can't edit this node")]
+    InvalidInsertion,
 }
 
 #[macro_export]
 macro_rules! throw {
+    ($variant:ident) => {
+        return Err(CursorError::$variant)
+    };
     ($variant:ident => $($arg:tt)*) => {
         return Err(CursorError::$variant($($arg)*))
     };
