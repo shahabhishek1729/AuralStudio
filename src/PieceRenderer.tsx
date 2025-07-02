@@ -440,8 +440,8 @@ export const TOKEN_MAP: token_metadata = {
   function: ["#FE4949", null, "#982C2C"],
   variable: ["#49A7FE", null, "#2C6498"],
   conditional: ["#E5A500", null, "#7F5B00"],
-  yes: ["#E5A500", null, "#7F5B00"],
-  no: ["#E5A500", null, "#7F5B00"],
+  yes: ["transparent", null, ""],
+  no: ["transparent", null, ""],
   for: ["#E5A500", null, "#7F5B00"],
   while: ["#E5A500", null, "#7F5B00"],
   library: ["#B140B4", null, ""],
@@ -691,7 +691,8 @@ export function Token({
           <div
             style={{
               background: `linear-gradient(90deg, ${TOKEN_MAP[token_type as keyof token_metadata][0]}, ${TOKEN_MAP[token_type as keyof token_metadata][2]}`,
-              height: "36px",
+              height:
+                token_type === "yes" || token_type === "no" ? "24px" : "36px",
               width: token_type === "pending" ? "100%" : "fit-content",
               borderRadius:
                 puzzle_color === "transparent" ? "25px" : "25px 0px 0px 25px",
@@ -716,6 +717,10 @@ export function Token({
                 whiteSpace: "pre-wrap",
                 cursor: token_type === "pending" ? "pointer" : "",
                 fontSize: token_type === "pending" ? "28px" : "",
+                color:
+                  token_type === "yes" || token_type === "no"
+                    ? "#E5A500"
+                    : "white",
               }}
             >
               {token_type === "conditional"
