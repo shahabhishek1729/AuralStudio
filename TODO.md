@@ -6,10 +6,10 @@ don't have a natural place in code as either `todo!()` macros or `//
 TODO` comments
 
 ## Known Bugs
-- [x] Sliding window around local blocks
+- [x] ~Sliding window around local blocks~
     + Currently only hovers around the node, even after moving outward
       (in loops), or expands out to the entire function (in CONDTL)
-- [x] First element insertions
+- [x] ~First element insertions~
     + In for loops, a node inserted at the top of the loop is not
       rendered in its correct spot (appears above the entire loop itself)
     + In conditionals, a node rendered right below the "yes" or "no"
