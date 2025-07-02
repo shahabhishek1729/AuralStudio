@@ -168,7 +168,128 @@ impl Canvas {
 
         let insert_loc = match curr_node.kind {
             NodeKind::CONDTL if self._at_node() => {
-                return Err(CursorError::InsertConditional);
+                // TODO: Test
+                match curr_node.children.len() {
+                    0 => unreachable!("Cannot ever delete both 'yes' and 'no' branches"),
+                    1 => {
+                        // NOTE: This is a shortcut to determine which branch we are missing. If
+                        // we're missing the "yes", we want to insert the new node at index 0 and
+                        // append a 0 to the address; otherwise, insert at ix 1 and append a 1.
+                        let insert_ix = if curr_node.children[0].kind == NodeKind::CONDTLN {
+                            0
+                        } else {
+                            1
+                        };
+
+                        let kind = if insert_ix == 0 {
+                            NodeKind::CONDTLY
+                        } else {
+                            NodeKind::CONDTLN
+                        };
+
+                        let hash = self.graph.get_hash_mut();
+                        let Some(curr_node) = hash.get(&self.node_loc) else {
+                            return Err(CursorError::AddrNotFound(self.node_loc.clone()));
+                        };
+
+                        let mut addr_base = curr_addr.clone();
+                        if curr_addr.len() < 2 {
+                            return Err(CursorError::InvalidAddress(addr_base));
+                        }
+                        // Remove the last 0.0
+                        let _ = addr_base.addr.pop();
+                        let _ = addr_base.addr.pop();
+                        // Append a 1 because the yes and no branches are on level 1.
+                        addr_base.addr.push(1);
+
+                        let mut addry = addr_base.clone();
+                        addry.addr.push(insert_ix);
+
+                        let mut pretendy = addry.clone();
+
+                        addry.addr.push(0);
+                        pretendy.addr.push(1);
+
+                        self.block_loc = addry.clone();
+                        self.node_loc = addry.clone();
+
+                        let new_node = Node {
+                            line: 0,
+                            children: vec![Node {
+                                line: 0,
+                                kind: NodeKind::PENDING,
+                                pieces: vec![piece!(..#)],
+                                addr: pretendy,
+                                parent_addr: addry.clone(),
+                                children: vec![],
+                                rtl: Some("pretend".into()),
+                                note: None,
+                                err: None,
+                            }],
+                            kind,
+                            pieces: vec![],
+                            addr: addry,
+                            parent_addr: curr_addr,
+                            rtl: Some("define pretend".into()),
+                            note: None,
+                            err: None,
+                        };
+
+                        let curr_node = unsafe { &mut **curr_node };
+                        curr_node.children.insert(insert_ix, new_node);
+
+                        // Update adddresses for the no branch since it has now been pushed right.
+                        if kind == NodeKind::CONDTLY {
+                            fn _inner(
+                                node: &mut Node,
+                                i: isize,
+                                parent_addr: &Address,
+                                horiz_: bool,
+                            ) {
+                                let mut addr: Vec<usize> = (*parent_addr.clone()).clone();
+                                let horiz = HORIZ_CHILDREN.contains(&node.kind) && horiz_;
+                                if horiz {
+                                    let last_idx = addr.len() - 2;
+                                    // Increment second-to-last since these children are on the level below the parent.
+                                    addr[last_idx] += 1;
+                                    // Increment last for each child's distinct horizontal position within that level.
+                                    addr[last_idx + 1] += i as usize;
+                                } else {
+                                    let last_idx = addr.len() - 1;
+                                    addr[last_idx] += (1 + i) as usize;
+                                }
+
+                                // For FNDEF, CONDTL and other nodes with horizontal children, the first 0 pushed
+                                // references the vertical "level", and the 2nd 0 references the node's horizontal
+                                // position within that level.
+                                if !node.children.is_empty() {
+                                    addr.push(0);
+                                    if node.has_subtree() && horiz_ {
+                                        addr.push(0);
+                                    }
+                                }
+                                node.addr = Address::new(addr);
+                                node.parent_addr = parent_addr.clone();
+
+                                let mut fn_idx: isize = -1;
+                                node.children.iter_mut().enumerate().for_each(|(i_, n_)| {
+                                    match n_.kind {
+                                        NodeKind::FNDEF => {
+                                            fn_idx += 1;
+                                            _inner(n_, fn_idx as isize, &node.addr, true);
+                                        }
+                                        _ => _inner(n_, i_ as isize - fn_idx - 1, &node.addr, true),
+                                    };
+                                });
+                            }
+
+                            _inner(&mut curr_node.children[1], 1, &curr_node.addr, true);
+                        }
+                    }
+                    2 => return Err(CursorError::InsertConditional),
+                    2.. => unreachable!(),
+                }
+                return Ok(());
             }
             NodeKind::FNDEF if !self._at_node() => {
                 // On a function block, so we need to know how many global children this block has.
