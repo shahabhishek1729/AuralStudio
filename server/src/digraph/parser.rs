@@ -118,6 +118,19 @@ macro_rules! make_node {
             }
         }
     };
+    (L $line:literal @ $addr:ident -> $kind:path [$($piece:expr),*]; {$($child:expr),*}) => {
+        {
+            use $crate::digraph::parser::Node;
+            Node {
+                line: $line,
+                children: vec![$($child),*],
+                kind: $kind,
+                pieces: vec![$($piece),*],
+                addr: $addr,
+                ..Default::default()
+            }
+        }
+    };
 }
 
 /// Represents a single line of code, which is rendered in a digraph as a single node.
