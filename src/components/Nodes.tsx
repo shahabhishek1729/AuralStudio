@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Handle, Position, useUpdateNodeInternals } from "reactflow";
 import "reactflow/dist/style.css";
-import { RTLNode } from "../typing/digraph";
+import { NodeKind, RTLNode } from "../typing/digraph";
 import { FLEX_COL, FLEX_ROW } from "../styles/styles";
 import { Token, RenderPiece } from "../PieceRenderer";
 import { arrEq, getColor } from "../utils/utils";
@@ -91,7 +91,7 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
           {node.note ? <MessageIcon /> : null}
           {node.err ? (
             <ErrorIcon />
-          ) : !["FNDEF", "PENDING"].includes(node.kind) ? (
+          ) : showIcon(node.kind) ? (
             <CheckmarkIcon />
           ) : null}
         </div>
@@ -107,7 +107,13 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
               />
             ) : null}
             <div style={FLEX_COL}>
-              <div style={{ height: "8px" }} />
+              <div
+                style={{
+                  height: ["CONDTLY", "CONDTLN"].includes(node.kind)
+                    ? "2px"
+                    : "8px",
+                }}
+              />
               {node.children.map((child) => (
                 <>
                   {RenderNode(
@@ -156,8 +162,6 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
 
       // Update global node size state
       updateNodeSize(data.node.address, width, height);
-
-      console.log(`Width was ${width}, height was ${height}`);
     });
 
     if (ref.current) observer.observe(ref.current);
@@ -260,6 +264,13 @@ function outerBlockId(node: RTLNode): string | undefined {
   if (offset) return node.address.substring(0, node.address.length + offset);
 }
 
+// Certain nodes can never contain errors, either because they are not
+// user-defined or they have not been filled in yet (i.e., placeholders). For
+// these, don't show success/failure icons.
+function showIcon(kind: NodeKind): boolean {
+  return !["CONDTLY", "CONDTLN", "PENDING", "FNDEF"].includes(kind);
+}
+
 // Custom file node component for reactflow
 export const FileNodeComponent = ({ data }: { data: any }) => {
   const { fname, setFname, includeBorder, editing } = data;
@@ -276,8 +287,6 @@ export const FileNodeComponent = ({ data }: { data: any }) => {
 
       // Update global node size state for filenode
       updateNodeSize("filenode", width, height);
-
-      console.log(`FileNode width was ${width}, height was ${height}`);
     });
 
     if (ref.current) observer.observe(ref.current);
