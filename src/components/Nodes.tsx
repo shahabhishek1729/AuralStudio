@@ -8,6 +8,8 @@ import { arrEq, getColor } from "../utils/utils";
 import { CheckmarkIcon, ErrorIcon, MessageIcon } from "./Components";
 import function_arrow from "../assets/function_arrow.png";
 import { updateNodeSize } from "../Digraph";
+import { ArcherContainer, ArcherElement } from "react-archer";
+import { select } from "d3";
 
 const token_type = {
   FNDEF: "function",
@@ -29,7 +31,7 @@ const isBlock = (c: RTLNode) => GLOBAL_BLOCK_NODES.includes(c.kind);
 const excludeBlocks = (c: RTLNode) => c.children.filter((c_) => !isBlock(c_));
 
 export const RTLNodeComponent = ({ data }: { data: any }) => {
-  function RenderNode(
+  function RenderSingleNode(
     node: RTLNode,
     address: string,
     renderedAddr: string,
@@ -39,7 +41,7 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
     parent?: RTLNode,
   ) {
     return (
-      <div id={outerBlockId(node)}>
+      <div style={FLEX_COL}>
         <div
           id={address}
           key={address}
@@ -116,7 +118,7 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
               />
               {node.children.map((child) => (
                 <>
-                  {RenderNode(
+                  {RenderSingleNode(
                     child,
                     child.address,
                     renderedAddr,
@@ -130,25 +132,87 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
             </div>
           </div>
         ) : null}
-        {node.kind === "CONDTL" ? (
-          <div style={{ ...FLEX_ROW }}>
-            {/* NOTE: Should ony have 2 children (CONDTLY, CONDTLN) */}
-            {node.children.map((child) => (
-              <>
-                {RenderNode(
-                  child,
-                  child.address,
-                  renderedAddr,
-                  selectedAddr,
-                  parentIndents,
-                  pieceIx,
-                )}
-                <div style={{ height: "8px" }} />
-              </>
-            ))}
-          </div>
-        ) : null}
       </div>
+    );
+  }
+
+  function RenderNode(
+    node: RTLNode,
+    address: string,
+    renderedAddr: string,
+    selectedAddr: string,
+    parentIndents: number,
+    pieceIx: number[] | null,
+    parent?: RTLNode,
+  ) {
+    return (
+      <>
+        <ArcherContainer
+          strokeColor="white"
+          lineStyle="curve"
+          endShape={{ arrow: { arrowLength: 6, arrowThickness: 5 } }}
+          endMarker={true}
+          offset={5}
+        >
+          <ArcherElement
+            id={address}
+            relations={
+              node.kind === "CONDTL"
+                ? node.children.map((child) => {
+                    console.log(`arrow to ${child.address}`);
+                    return {
+                      targetId: child.address,
+                      targetAnchor: "top",
+                      sourceAnchor: "bottom",
+                      style: { strokeColor: "red", strokeWidth: 2 },
+                    };
+                  })
+                : []
+            }
+          >
+            <div style={{ border: "1px solid white" }}>
+              {RenderSingleNode(
+                node,
+                address,
+                renderedAddr,
+                selectedAddr,
+                parentIndents,
+                pieceIx,
+                parent,
+              )}
+            </div>
+          </ArcherElement>
+
+          {node.kind === "CONDTL" ? (
+            <div style={FLEX_COL}>
+              <div style={{ height: "300px" }} />
+              <div style={FLEX_ROW}>
+                {/* NOTE: Should ony have 2 children (CONDTLY, CONDTLN) */}
+                {node.children.map((child) => {
+                  console.log(`Drawing ${child.address}`);
+                  return (
+                    <>
+                      <ArcherElement id={child.address}>
+                        <div style={{ border: "1px solid white" }}>
+                          {RenderSingleNode(
+                            child,
+                            child.address,
+                            renderedAddr,
+                            selectedAddr,
+                            parentIndents,
+                            pieceIx,
+                          )}
+                        </div>
+                      </ArcherElement>
+                      <div style={{ height: "8px" }} />
+                    </>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+        </ArcherContainer>
+      </>
     );
   }
 
@@ -175,6 +239,37 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
   useEffect(() => {
     updateNodeInternals(address);
   }, [address, updateNodeInternals]);
+
+  // Debug: Log element positions and dimensions
+  useEffect(() => {
+    if (node.kind === "CONDTL") {
+      setTimeout(() => {
+        const sourceElement = document.getElementById(address);
+        if (sourceElement) {
+          const rect = sourceElement.getBoundingClientRect();
+          console.log(`Source element ${address}:`, {
+            top: rect.top,
+            bottom: rect.bottom,
+            height: rect.height,
+            width: rect.width,
+          });
+        }
+
+        node.children.forEach((child: RTLNode) => {
+          const targetElement = document.getElementById(child.address);
+          if (targetElement) {
+            const rect = targetElement.getBoundingClientRect();
+            console.log(`Target element ${child.address}:`, {
+              top: rect.top,
+              bottom: rect.bottom,
+              height: rect.height,
+              width: rect.width,
+            });
+          }
+        });
+      }, 100);
+    }
+  }, [node, address]);
 
   return (
     <div
@@ -215,15 +310,17 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
           style={{ background: "white" }}
         />
 
-        {RenderNode(
-          node,
-          node.address,
-          renderedAddr,
-          selectedAddr,
-          parentIndents,
-          pieceIx,
-          undefined,
-        )}
+        <div id={outerBlockId(node)}>
+          {RenderNode(
+            node,
+            node.address,
+            renderedAddr,
+            selectedAddr,
+            parentIndents,
+            pieceIx,
+            undefined,
+          )}
+        </div>
 
         <div style={{ ...FLEX_ROW, marginTop: "0.5rem" }}>
           <img
