@@ -6,6 +6,10 @@ don't have a natural place in code as either `todo!()` macros or `//
 TODO` comments
 
 ## Known Bugs
+- [ ] Input tags for identifiers and numbers have lag/jitter
+    + The first keystroke is ignored and instead activates the text
+      field, after which rapid successive keystrokes are not all
+      consistently registered.
 - [x] ~Sliding window around local blocks~
     + Currently only hovers around the node, even after moving outward
       (in loops), or expands out to the entire function (in CONDTL)
