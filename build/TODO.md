@@ -7,15 +7,19 @@ TODO` comments
 
 ## Known Bugs
 - [ ] Conditionals are poorly rendered
-    + Te SVG arrows that point to each branch of the conditional have
+    + The SVG arrows that point to each branch of the conditional have
       scaling height, so as the blocks become longer, the arrows grow to
       be massive.
     + The width scaling of the arrows also isn't fully responsive, as
       with longer and longer blocks, the arrows will become less aligned.
-- [ ] Input tags for identifiers and numbers have lag/jitter
+- [x] ~Input tags for identifiers and numbers have lag/jitter~
     + The first keystroke is ignored and instead activates the text
       field, after which rapid successive keystrokes are not all
       consistently registered.
+> [!IMPORTANT]  
+Although this has been fixed, this means `<input />` text fields will no
+longer dynamically scale with the size of their input. Instead, they
+will have a fixed length $8$ characters wide.
 - [x] ~Sliding window around local blocks~
     + Currently only hovers around the node, even after moving outward
       (in loops), or expands out to the entire function (in CONDTL)
