@@ -94,9 +94,9 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
             <CheckmarkIcon />
           ) : null}
         </div>
-        {["FORLOOP", "CONDTLY", "CONDTLN"].includes(node.kind) ? (
+        {["FORLOOP", "WHLLOOP", "CONDTLY", "CONDTLN"].includes(node.kind) ? (
           <div style={{ ...FLEX_ROW }}>
-            {node.kind === "FORLOOP" ? (
+            {node.kind === "FORLOOP" || node.kind === "WHLLOOP" ? (
               <img
                 style={{
                   height: "24px",
