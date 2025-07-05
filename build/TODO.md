@@ -51,7 +51,7 @@ This is a list of improvements to the overall user experience:
 > [!TIP]
 > This also prevents excessive zoom outs when a new node is added.
 
-![Excessively zoomed out UI][./public/ZoomedOutUI.png]
+![ZoomedOutUI](https://github.com/user-attachments/assets/840ff856-376a-4d54-b3e2-42267a6a3dd1)
 
 ## Feature Ideas
 This is a list of currently unplanned, unscheduled features:
