@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useRef, useState } from "react";
 import { Handle, Position, useUpdateNodeInternals } from "reactflow";
 import "reactflow/dist/style.css";
@@ -28,7 +29,7 @@ const GLOBAL_BLOCK_NODES = ["FNDEF"];
 const isBlock = (c: RTLNode) => GLOBAL_BLOCK_NODES.includes(c.kind);
 const excludeBlocks = (c: RTLNode) => c.children.filter((c_) => !isBlock(c_));
 
-export const RTLNodeComponent = ({ data }: { data: any }) => {
+export const RTLNodeComponent = React.memo(({ data }: { data: any }) => {
   function RenderNode(
     node: RTLNode,
     address: string,
@@ -269,7 +270,7 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
       </div>
     </div>
   );
-};
+});
 
 function outerBlockId(node: RTLNode): string | undefined {
   let offset =

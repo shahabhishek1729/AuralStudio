@@ -47,7 +47,7 @@ export function RenderPiece(
 
     switch (kind) {
       case "IDENT":
-        return (
+        const ident = (
           <RenderIdent
             pieces={all_pieces}
             i={i}
@@ -58,6 +58,12 @@ export function RenderPiece(
             pieceIx={pieceIxFull || pieceIx}
           />
         );
+        const elem = document.getElementById(
+          `${parentAddr},${selected ? (pieceIx ?? []).join(",") : i}`,
+        );
+        if (elem) elem.focus();
+
+        return ident;
       case "NUMBER":
         return (
           <RenderNumber
@@ -262,8 +268,8 @@ export function RenderIdent({
             background: "white",
             fontSize: `${SYMBOL_MAP["ident"][2]}px`,
             padding: "0px",
-            width: `${value.length + 2}ch`,
             boxShadow: "none",
+            width: "8ch",
           }}
           value={value}
           onChange={(e) => setValue(e.target.value.replace(" ", "_"))}

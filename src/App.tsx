@@ -203,11 +203,17 @@ function App() {
         return;
       }
 
+      // 7.XXX: For efficiency reasons, we don't want to invoke a server
+      // function when the user is just typing out an ident (we can handle this
+      // entirely on the frontend).
+      if (payload.mode === "TYPE" && e.key !== "Enter" && e.key !== "Escape")
+        return;
+
+      let value = null;
       const elem = document.getElementById(
         `${payload.blockLoc},${payload.pieceIx}`,
       );
 
-      let value = null;
       if (elem && elem instanceof HTMLInputElement)
         value = (elem as HTMLInputElement).value;
 
