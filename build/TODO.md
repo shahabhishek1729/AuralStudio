@@ -6,6 +6,12 @@ don't have a natural place in code as either `todo!()` macros or `//
 TODO` comments
 
 ## Known Bugs
+- [ ] Conditionals are poorly rendered
+    + Te SVG arrows that point to each branch of the conditional have
+      scaling height, so as the blocks become longer, the arrows grow to
+      be massive.
+    + The width scaling of the arrows also isn't fully responsive, as
+      with longer and longer blocks, the arrows will become less aligned.
 - [ ] Input tags for identifiers and numbers have lag/jitter
     + The first keystroke is ignored and instead activates the text
       field, after which rapid successive keystrokes are not all
