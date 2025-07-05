@@ -27,15 +27,11 @@ type parent_id = number | null;
  *				in recursive calls within the function)
  */
 export function* flatten(data: node[], level: number = 1, parent: parent_id = null): IterableIterator<flatnode> {
-  for (let i = 0; i < data.length; i++) {
-    yield {
-      id: data[i].id,
-      level: level,
-      parent: parent,
-    };
-    if (data[i].children.length > 0) {
-      yield* flatten(data[i].children, level + 1, data[i].id);
-    }
+  for (const elem of data) {
+    yield { id: elem.id, level: level, parent: parent };
+	// Recurse over the child nodes
+    if (elem.children.length > 0) 
+		yield* flatten(elem.children, level + 1, elem.id);
   }
 }
 
