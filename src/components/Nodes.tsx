@@ -133,7 +133,7 @@ export const RTLNodeComponent = ({ data }: { data: any }) => {
             <svg
               width="100%"
               preserveAspectRatio="none"
-              viewBox="0 0 7 4"
+              viewBox="0 0.8 7 2.5"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
