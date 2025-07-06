@@ -1,5 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 
+// Add global type declaration
+declare global {
+  interface Window {
+    isAutoScrolling?: boolean;
+  }
+}
+
 interface SlidingBorderProps {
   selectedAddr: string;
   pieceIx: number[] | null;
@@ -48,6 +55,11 @@ export function SlidingBorder({ selectedAddr, pieceIx }: SlidingBorderProps) {
   const updateBorderPosition = () => {
     if (!selectedAddr) {
       setBorderStyle((prev) => ({ ...prev, opacity: 0 }));
+      return;
+    }
+
+    // Don't update position during auto-scroll to prevent overshoot/snap
+    if (window.isAutoScrolling) {
       return;
     }
 
@@ -103,24 +115,12 @@ export function SlidingBorder({ selectedAddr, pieceIx }: SlidingBorderProps) {
         return;
       }
 
-      // Get scroll positions from all possible sources
-      const scrollX =
-        window.scrollX ||
-        document.documentElement.scrollLeft ||
-        document.body.scrollLeft ||
-        0;
-      const scrollY =
-        window.scrollY ||
-        document.documentElement.scrollTop ||
-        document.body.scrollTop ||
-        0;
-
       // Add some padding around the element
       const padding = 4;
 
-      // Calculate position relative to the viewport
-      const top = rect.top + scrollY - padding;
-      const left = rect.left + scrollX - padding;
+      // Use viewport-relative coordinates directly (no need to add scroll offsets)
+      const top = rect.top - padding;
+      const left = rect.left - padding;
       const width = rect.width + padding * 2;
       const height = rect.height + padding * 2;
 

@@ -44,6 +44,7 @@ export const updateNodeSize = (
 declare global {
   interface Window {
     layoutUpdateCallback?: () => void;
+    isAutoScrolling?: boolean;
   }
 }
 
@@ -193,6 +194,9 @@ function ChildDAG({
       const shouldScrollY = elementCenterY < margin || elementCenterY > viewportHeight - margin;
       
       if (shouldScrollX || shouldScrollY) {
+        // Set flag to prevent SlidingBorder updates during scroll
+        window.isAutoScrolling = true;
+        
         // Simple approach: calculate the offset needed to center the element
         const offsetX = elementCenterX - viewportWidth / 2;
         const offsetY = elementCenterY - viewportHeight / 2;
@@ -204,6 +208,11 @@ function ChildDAG({
           y: viewport.y - offsetY,
           zoom: viewport.zoom,
         }, { duration: 300 });
+        
+        // Clear the flag after the animation completes
+        setTimeout(() => {
+          window.isAutoScrolling = false;
+        }, 300);
       }
     }
   }, [selectedAddr, payload.pieceIx, getViewport, setViewport]);
