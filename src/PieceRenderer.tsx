@@ -661,11 +661,18 @@ export function Symbol(
 
   // Auto-focus when selected becomes true
   useEffect(() => {
-    if (selected && inputRef.current && tmp && setTmp) {
+    if (selected && inputRef.current && tmp != undefined && setTmp) {
+      console.log("VAMOS");
       // Use requestAnimationFrame to ensure the DOM is updated
       requestAnimationFrame(() => {
         if (inputRef.current) setTmp(tmp + 1);
       });
+    } else {
+      console.log("vamos");
+      console.log(!!tmp);
+      console.log(!!setTmp);
+      console.log(!!inputRef.current);
+      console.log(selected);
     }
   }, [selected]);
 
