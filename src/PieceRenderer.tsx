@@ -24,9 +24,9 @@ export function RenderPiece(
   i: number[],
   pieceIx: number[],
   parentAddr: string,
-  pieceIxFull?: number[], // Only used in RenderArgs to prevent slicing addrs.
-  tmp?: number,
-  setTmp?: React.Dispatch<React.SetStateAction<number>>,
+  pieceIxFull: number[], // Only used in RenderArgs to prevent slicing addrs.
+  tmp: number,
+  setTmp: React.Dispatch<React.SetStateAction<number>>,
 ) {
   const piece = all_pieces[i[i.length - 1]];
   const kind = extractPieceType(piece);
@@ -72,6 +72,8 @@ export function RenderPiece(
             chained={first}
             selected={selected}
             parentAddr={parentAddr}
+            tmp={tmp}
+            setTmp={setTmp}
           />
         );
       case "OP":
@@ -147,6 +149,8 @@ interface NumberProps {
   chained: boolean;
   selected: boolean;
   parentAddr: string;
+  tmp: number;
+  setTmp: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export function RenderNumber({
@@ -155,6 +159,8 @@ export function RenderNumber({
   chained,
   selected,
   parentAddr,
+  tmp,
+  setTmp,
 }: NumberProps) {
   return Symbol(
     "constant",
@@ -163,6 +169,8 @@ export function RenderNumber({
     num.toString(),
     parentAddr,
     pieceIx,
+    tmp,
+    setTmp,
   );
 }
 
@@ -638,6 +646,8 @@ export function Symbol(
   symbol?: string,
   parentAddr?: string,
   pieceIx?: number[],
+  tmp?: number,
+  setTmp?: React.Dispatch<React.SetStateAction<number>>,
 ) {
   const background = selected
     ? "white"
@@ -651,13 +661,10 @@ export function Symbol(
 
   // Auto-focus when selected becomes true
   useEffect(() => {
-    if (selected && inputRef.current) {
+    if (selected && inputRef.current && tmp && setTmp) {
       // Use requestAnimationFrame to ensure the DOM is updated
       requestAnimationFrame(() => {
-        if (inputRef.current) {
-          inputRef.current.focus();
-          inputRef.current.select();
-        }
+        if (inputRef.current) setTmp(tmp + 1);
       });
     }
   }, [selected]);
