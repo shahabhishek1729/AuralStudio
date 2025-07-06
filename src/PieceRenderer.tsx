@@ -91,6 +91,8 @@ export function RenderPiece(
             chained={first}
             selected={selected}
             parentAddr={parentAddr}
+            tmp={tmp}
+            setTmp={setTmp}
           />
         );
       case "BOOL":
@@ -195,6 +197,8 @@ interface TextProps {
   chained: boolean;
   selected: boolean;
   parentAddr: string;
+  tmp: number;
+  setTmp: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export function RenderText({
@@ -203,6 +207,8 @@ export function RenderText({
   chained,
   selected,
   parentAddr,
+  tmp,
+  setTmp,
 }: TextProps) {
   return Symbol(
     "text",
@@ -211,6 +217,8 @@ export function RenderText({
     text,
     parentAddr,
     pieceIx,
+    tmp,
+    setTmp,
   );
 }
 
