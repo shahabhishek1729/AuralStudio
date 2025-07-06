@@ -3,7 +3,13 @@
  * individual pieces, nodes, blocks and subtrees.
  */
 
-import { useState, useMemo, useCallback, useLayoutEffect } from "react";
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useLayoutEffect,
+  useEffect,
+} from "react";
 import ReactFlow, {
   Controls,
   Background,
@@ -55,6 +61,8 @@ function ChildDAG({
   const [renderedAddr, _] = useState("");
   const [fname, setFname] = useState(payload.filename);
   const [layoutVersion, setLayoutVersion] = useState(0);
+
+  const [initialLaunch, setInitialLaunch] = useState(0);
 
   // Set up global callback for layout updates
   useLayoutEffect(() => {
@@ -203,7 +211,12 @@ function ChildDAG({
           const { nodes: layoutedNodes, edges: layoutedEdges } = result;
           setNodes_(layoutedNodes);
           setEdges_(layoutedEdges);
-          fitView();
+          // Only fit view on initial layout, not on subsequent updates
+          if (initialLaunch < 2) {
+            console.log("Fitting!");
+            fitView();
+            setInitialLaunch(initialLaunch + 1);
+          }
         }
       });
     },
@@ -219,11 +232,6 @@ function ChildDAG({
       nodes={nodes_}
       edges={edges_}
       nodeTypes={nodeTypes}
-      fitView
-      fitViewOptions={{
-        padding: 0.1, // Add 10% padding around the view
-        includeHiddenNodes: false,
-      }}
       style={{ background: "transparent" }}
       defaultEdgeOptions={{
         type: "default",
@@ -235,6 +243,12 @@ function ChildDAG({
       elementsSelectable={true}
       minZoom={0.1}
       maxZoom={2}
+      fitView
+      fitViewOptions={{
+        padding: 0.1,
+        includeHiddenNodes: false,
+        duration: 10,
+      }}
       onNodesChange={onNodesChange_}
       onEdgesChange={onEdgesChange_}
     >
