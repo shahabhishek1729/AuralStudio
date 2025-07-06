@@ -30,6 +30,8 @@ const isBlock = (c: RTLNode) => GLOBAL_BLOCK_NODES.includes(c.kind);
 const excludeBlocks = (c: RTLNode) => c.children.filter((c_) => !isBlock(c_));
 
 export const RTLNodeComponent = React.memo(({ data }: { data: any }) => {
+  const [tmp, setTmp] = useState(0);
+
   function RenderNode(
     node: RTLNode,
     address: string,
@@ -85,6 +87,9 @@ export const RTLNodeComponent = React.memo(({ data }: { data: any }) => {
                 [ix],
                 node.address === selectedAddr ? pieceIx ?? [-1] : [-1],
                 node.address,
+                undefined,
+                tmp,
+                setTmp,
               ),
             )}
           </div>
@@ -189,6 +194,9 @@ export const RTLNodeComponent = React.memo(({ data }: { data: any }) => {
   const { node, selectedAddr, renderedAddr, pieceIx, parentIndents } = data;
   const address = node.address;
   const updateNodeInternals = useUpdateNodeInternals();
+
+  const elem = document.getElementById(`${selectedAddr},${pieceIx}`);
+  if (elem && elem instanceof HTMLInputElement) elem.focus();
 
   useEffect(() => {
     updateNodeInternals(address);

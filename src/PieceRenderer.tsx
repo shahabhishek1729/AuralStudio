@@ -12,7 +12,7 @@ import type {
   op_kind,
   token_metadata,
 } from "./typing/metadata";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { arrEq } from "./utils/utils";
 import { TokenMenu } from "./components/MenuTemplates";
 import { FAIL_SOUND } from "./App";
@@ -25,6 +25,8 @@ export function RenderPiece(
   pieceIx: number[],
   parentAddr: string,
   pieceIxFull?: number[], // Only used in RenderArgs to prevent slicing addrs.
+  tmp?: number,
+  setTmp?: React.Dispatch<React.SetStateAction<number>>,
 ) {
   const piece = all_pieces[i[i.length - 1]];
   const kind = extractPieceType(piece);
@@ -56,15 +58,10 @@ export function RenderPiece(
             selected={selected}
             parentAddr={parentAddr}
             pieceIx={pieceIxFull || pieceIx}
+            tmp={tmp}
+            setTmp={setTmp}
           />
         );
-
-        if (selected) {
-          const elem = document.getElementById(
-            `${parentAddr},${pieceIx.join(",")}`,
-          );
-          elem?.focus();
-        }
 
         return ident;
       case "NUMBER":
@@ -112,6 +109,8 @@ export function RenderPiece(
             myIx={i}
             pieceIx={pieceIx}
             parentAddr={parentAddr}
+            tmp={tmp}
+            setTmp={setTmp}
           />
         );
       case "FNCALL":
@@ -122,6 +121,8 @@ export function RenderPiece(
             myIx={i}
             pieceIx={pieceIx}
             parentAddr={parentAddr}
+            tmp={tmp}
+            setTmp={setTmp}
           />
         );
       case "PendingVal":
@@ -222,6 +223,8 @@ interface IdentProps {
   chained: boolean;
   selected: boolean;
   parentAddr: string;
+  tmp: number;
+  setTmp: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export function RenderIdent({
@@ -232,6 +235,8 @@ export function RenderIdent({
   selected,
   parentAddr,
   pieceIx,
+  tmp,
+  setTmp,
 }: IdentProps) {
   const i_ = i[i.length - 1];
   const puzzle_color = chained ? "" : "transparent";
@@ -243,6 +248,17 @@ export function RenderIdent({
   const foreground = selected ? "black" : SYMBOL_MAP["ident"][1];
 
   const [value, setValue] = useState(name);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus when selected becomes true
+  useEffect(() => {
+    if (selected && inputRef.current) {
+      // Use requestAnimationFrame to ensure the DOM is updated
+      requestAnimationFrame(() => {
+        if (inputRef.current) setTmp(tmp + 1);
+      });
+    }
+  }, [selected]);
 
   return (
     <div
@@ -263,6 +279,7 @@ export function RenderIdent({
     >
       {selected ? (
         <input
+          ref={inputRef}
           id={`${parentAddr},${selected ? (pieceIx ?? []).join(",") : i}`}
           style={{
             fontFamily: "JetBrains Mono",
@@ -275,10 +292,10 @@ export function RenderIdent({
             width: `${getWidth("ident")}ch`,
           }}
           value={value}
-          autoFocus={true}
           onChange={(e) => setValue(e.target.value.replace(" ", "_"))}
           onFocus={(e) => e.target.select()}
           onBlur={({ target }) => target.focus()}
+          autoFocus={true}
         />
       ) : (
         <span
@@ -322,6 +339,8 @@ interface CompoundProps {
   pieceIx: number[];
   chained: boolean;
   parentAddr: string;
+  tmp: number;
+  setTmp: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export function RenderList({
@@ -330,8 +349,19 @@ export function RenderList({
   myIx,
   pieceIx,
   parentAddr,
+  tmp,
+  setTmp,
 }: CompoundProps) {
-  return RenderArgs("list", pieces, chained, myIx, pieceIx, parentAddr);
+  return RenderArgs(
+    "list",
+    pieces,
+    chained,
+    myIx,
+    pieceIx,
+    parentAddr,
+    tmp,
+    setTmp,
+  );
 }
 
 export function RenderCall({
@@ -340,8 +370,19 @@ export function RenderCall({
   myIx,
   pieceIx,
   parentAddr,
+  tmp,
+  setTmp,
 }: CompoundProps) {
-  return RenderArgs("fncall", pieces, chained, myIx, pieceIx, parentAddr);
+  return RenderArgs(
+    "fncall",
+    pieces,
+    chained,
+    myIx,
+    pieceIx,
+    parentAddr,
+    tmp,
+    setTmp,
+  );
 }
 
 export function RenderArgs(
@@ -351,6 +392,8 @@ export function RenderArgs(
   myIx: number[],
   pieceIx: number[],
   parentAddr: string,
+  tmp: number,
+  setTmp: React.Dispatch<React.SetStateAction<number>>,
 ) {
   const colorKind = kind === "list" ? "constant" : kind;
   const name =
@@ -389,6 +432,8 @@ export function RenderArgs(
                 pieceIx,
                 parentAddr,
                 pieceIx,
+                tmp,
+                setTmp,
               )}
             </div>
             {elementDone(pieces, i + 1) ? (
@@ -521,6 +566,20 @@ export function ChainSymbol(
     : SYMBOL_MAP[type as keyof symbol_metadata][1];
 
   const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus when selected becomes true
+  useEffect(() => {
+    if (selected && inputRef.current) {
+      // Use requestAnimationFrame to ensure the DOM is updated
+      requestAnimationFrame(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          inputRef.current.select();
+        }
+      });
+    }
+  }, [selected]);
 
   return (
     <div
@@ -540,6 +599,7 @@ export function ChainSymbol(
     >
       {selected ? (
         <input
+          ref={inputRef}
           id={`${parentAddr},${pieceIx}`}
           style={{
             fontFamily: "JetBrains Mono",
@@ -587,6 +647,20 @@ export function Symbol(
     : SYMBOL_MAP[type as keyof symbol_metadata][1];
 
   const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus when selected becomes true
+  useEffect(() => {
+    if (selected && inputRef.current) {
+      // Use requestAnimationFrame to ensure the DOM is updated
+      requestAnimationFrame(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          inputRef.current.select();
+        }
+      });
+    }
+  }, [selected]);
 
   return (
     <div
@@ -607,6 +681,7 @@ export function Symbol(
     >
       {selected && ["text", "constant", "ident", "fncall"].includes(type) ? (
         <input
+          ref={inputRef}
           id={`${parentAddr},${pieceIx}`}
           style={{
             fontFamily: "JetBrains Mono",
