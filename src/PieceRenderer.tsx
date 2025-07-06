@@ -58,10 +58,13 @@ export function RenderPiece(
             pieceIx={pieceIxFull || pieceIx}
           />
         );
-        const elem = document.getElementById(
-          `${parentAddr},${selected ? (pieceIx ?? []).join(",") : i}`,
-        );
-        if (elem) elem.focus();
+
+        if (selected) {
+          const elem = document.getElementById(
+            `${parentAddr},${pieceIx.join(",")}`,
+          );
+          elem?.focus();
+        }
 
         return ident;
       case "NUMBER":
@@ -269,11 +272,13 @@ export function RenderIdent({
             fontSize: `${SYMBOL_MAP["ident"][2]}px`,
             padding: "0px",
             boxShadow: "none",
-            width: "8ch",
+            width: `${getWidth("ident")}ch`,
           }}
           value={value}
+          autoFocus={true}
           onChange={(e) => setValue(e.target.value.replace(" ", "_"))}
           onFocus={(e) => e.target.select()}
+          onBlur={({ target }) => target.focus()}
         />
       ) : (
         <span
@@ -543,7 +548,7 @@ export function ChainSymbol(
             background: "white",
             fontSize: `${SYMBOL_MAP[type as keyof symbol_metadata][2]}px`,
             padding: "0px",
-            width: `${value.length + 2}ch`,
+            width: `${getWidth("fncall")}ch`,
             boxShadow: "none",
           }}
           value={value}
@@ -610,7 +615,7 @@ export function Symbol(
             background: "white",
             fontSize: `${SYMBOL_MAP[type as keyof symbol_metadata][2]}px`,
             padding: "0px",
-            width: `${value.length + 2}ch`,
+            width: `${getWidth(type)}ch`,
             boxShadow: "none",
           }}
           value={value}
@@ -753,4 +758,12 @@ export function Token({
       </div>
     </div>
   );
+}
+
+function getWidth(type: string): number {
+  if (type === "text") return 12;
+  else if (type === "constant") return 4;
+  else if (type === "ident") return 8;
+  // FNCALL
+  else return 8;
 }
