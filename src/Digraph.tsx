@@ -181,25 +181,48 @@ function ChildDAG({
     if (targetElement) {
       const rect = targetElement.getBoundingClientRect();
       
-      // Check if element is outside the visible area
-      const elementCenterX = rect.left + rect.width / 2;
-      const elementCenterY = rect.top + rect.height / 2;
-      
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       
-      // Only scroll if the element is significantly outside the viewport
-      const margin = 100; // pixels from edge to trigger scroll
-      const shouldScrollX = elementCenterX < margin || elementCenterX > viewportWidth - margin;
-      const shouldScrollY = elementCenterY < margin || elementCenterY > viewportHeight - margin;
+      // Check if any part of the element is outside the visible area
+      const elementLeft = rect.left;
+      const elementRight = rect.right;
+      const elementTop = rect.top;
+      const elementBottom = rect.bottom;
+      
+      // Add a small margin to prevent scrolling when element is just barely visible
+      const margin = 20; // pixels from edge to trigger scroll
+      
+      const shouldScrollX = elementLeft < margin || elementRight > viewportWidth - margin;
+      const shouldScrollY = elementTop < margin || elementBottom > viewportHeight - margin;
       
       if (shouldScrollX || shouldScrollY) {
         // Set flag to prevent SlidingBorder updates during scroll
         window.isAutoScrolling = true;
         
-        // Simple approach: calculate the offset needed to center the element
-        const offsetX = elementCenterX - viewportWidth / 2;
-        const offsetY = elementCenterY - viewportHeight / 2;
+        // Calculate the offset needed to bring the element fully into view
+        let offsetX = 0;
+        let offsetY = 0;
+        
+        if (shouldScrollX) {
+          if (elementLeft < margin) {
+            // Element is too far left, scroll right
+            offsetX = elementLeft - margin;
+          } else if (elementRight > viewportWidth - margin) {
+            // Element is too far right, scroll left
+            offsetX = elementRight - (viewportWidth - margin);
+          }
+        }
+        
+        if (shouldScrollY) {
+          if (elementTop < margin) {
+            // Element is too far up, scroll down
+            offsetY = elementTop - margin;
+          } else if (elementBottom > viewportHeight - margin) {
+            // Element is too far down, scroll up
+            offsetY = elementBottom - (viewportHeight - margin);
+          }
+        }
         
         const viewport = getViewport();
         
