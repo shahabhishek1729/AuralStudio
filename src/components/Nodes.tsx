@@ -42,7 +42,7 @@ export const RTLNodeComponent = React.memo(({ data }: { data: any }) => {
     parent?: RTLNode,
   ) {
     return (
-      <div id={outerBlockId(node)} key={address}>
+      <div id={outerBlockId(node)} key={`inner_${address}`}>
         <div
           id={address}
           style={{ ...FLEX_ROW, alignItems: "center", gap: "8px" }}
@@ -120,7 +120,7 @@ export const RTLNodeComponent = React.memo(({ data }: { data: any }) => {
                 }}
               />
               {node.children.map((child) => (
-                <div>
+                <div key={`outer_${child.address}`}>
                   {RenderNode(
                     child,
                     child.address,
@@ -156,7 +156,7 @@ export const RTLNodeComponent = React.memo(({ data }: { data: any }) => {
             <div style={FLEX_ROW}>
               {/* NOTE: Should ony have 2 children (CONDTLY, CONDTLN) */}
               {node.children.map((child) => (
-                <div>
+                <div key={`outer_${child.address}`}>
                   {RenderNode(
                     child,
                     child.address,
