@@ -3,6 +3,9 @@
  * digraph - can render operators, tokens, identifiers, numbers, chains, etc.
  */
 
+// TODO: Remove optionality of tmp and setTmp parameters (currently included ?
+// to make these components compatible with MenuTemplates).
+
 import rattle_icon from "./assets/rattle_icon.png";
 import function_arrow from "./assets/function_arrow.png";
 import { RTLPiece, _PieceInterface } from "./typing/digraph";
@@ -24,9 +27,9 @@ export function RenderPiece(
   i: number[],
   pieceIx: number[],
   parentAddr: string,
-  pieceIxFull: number[], // Only used in RenderArgs to prevent slicing addrs.
-  tmp: number,
-  setTmp: React.Dispatch<React.SetStateAction<number>>,
+  pieceIxFull?: number[], // Only used in RenderArgs to prevent slicing addrs.
+  tmp?: number,
+  setTmp?: React.Dispatch<React.SetStateAction<number>>,
 ) {
   const piece = all_pieces[i[i.length - 1]];
   const kind = extractPieceType(piece);
@@ -151,8 +154,8 @@ interface NumberProps {
   chained: boolean;
   selected: boolean;
   parentAddr: string;
-  tmp: number;
-  setTmp: React.Dispatch<React.SetStateAction<number>>;
+  tmp?: number;
+  setTmp?: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export function RenderNumber({
@@ -197,8 +200,8 @@ interface TextProps {
   chained: boolean;
   selected: boolean;
   parentAddr: string;
-  tmp: number;
-  setTmp: React.Dispatch<React.SetStateAction<number>>;
+  tmp?: number;
+  setTmp?: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export function RenderText({
@@ -239,8 +242,8 @@ interface IdentProps {
   chained: boolean;
   selected: boolean;
   parentAddr: string;
-  tmp: number;
-  setTmp: React.Dispatch<React.SetStateAction<number>>;
+  tmp?: number;
+  setTmp?: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export function RenderIdent({
@@ -268,7 +271,7 @@ export function RenderIdent({
 
   // Auto-focus when selected becomes true
   useEffect(() => {
-    if (selected && inputRef.current) {
+    if (selected && inputRef.current && tmp !== undefined && setTmp) {
       // Use requestAnimationFrame to ensure the DOM is updated
       requestAnimationFrame(() => {
         if (inputRef.current) setTmp(tmp + 1);
@@ -355,8 +358,8 @@ interface CompoundProps {
   pieceIx: number[];
   chained: boolean;
   parentAddr: string;
-  tmp: number;
-  setTmp: React.Dispatch<React.SetStateAction<number>>;
+  tmp?: number;
+  setTmp?: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export function RenderList({
@@ -408,8 +411,8 @@ export function RenderArgs(
   myIx: number[],
   pieceIx: number[],
   parentAddr: string,
-  tmp: number,
-  setTmp: React.Dispatch<React.SetStateAction<number>>,
+  tmp?: number,
+  setTmp?: React.Dispatch<React.SetStateAction<number>>,
 ) {
   const colorKind = kind === "list" ? "constant" : kind;
   const name =

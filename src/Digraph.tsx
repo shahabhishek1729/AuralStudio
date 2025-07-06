@@ -129,7 +129,7 @@ function ChildDAG({
 
   const [nodes_, setNodes_, onNodesChange_] = useNodesState([]);
   const [edges_, setEdges_, onEdgesChange_] = useEdgesState([]);
-  const { fitView, getViewport, setViewport, getNode } = useReactFlow();
+  const { fitView, getViewport, setViewport } = useReactFlow();
 
   // Function to check if SlidingBorder is visible and scroll to it if needed
   const scrollToSlidingBorder = useCallback(() => {
@@ -180,30 +180,32 @@ function ChildDAG({
 
     if (targetElement) {
       const rect = targetElement.getBoundingClientRect();
-      
+
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      
+
       // Check if any part of the element is outside the visible area
       const elementLeft = rect.left;
       const elementRight = rect.right;
       const elementTop = rect.top;
       const elementBottom = rect.bottom;
-      
+
       // Add a small margin to prevent scrolling when element is just barely visible
       const margin = 20; // pixels from edge to trigger scroll
-      
-      const shouldScrollX = elementLeft < margin || elementRight > viewportWidth - margin;
-      const shouldScrollY = elementTop < margin || elementBottom > viewportHeight - margin;
-      
+
+      const shouldScrollX =
+        elementLeft < margin || elementRight > viewportWidth - margin;
+      const shouldScrollY =
+        elementTop < margin || elementBottom > viewportHeight - margin;
+
       if (shouldScrollX || shouldScrollY) {
         // Set flag to prevent SlidingBorder updates during scroll
         window.isAutoScrolling = true;
-        
+
         // Calculate the offset needed to bring the element fully into view
         let offsetX = 0;
         let offsetY = 0;
-        
+
         if (shouldScrollX) {
           if (elementLeft < margin) {
             // Element is too far left, scroll right
@@ -213,7 +215,7 @@ function ChildDAG({
             offsetX = elementRight - (viewportWidth - margin);
           }
         }
-        
+
         if (shouldScrollY) {
           if (elementTop < margin) {
             // Element is too far up, scroll down
@@ -223,15 +225,18 @@ function ChildDAG({
             offsetY = elementBottom - (viewportHeight - margin);
           }
         }
-        
+
         const viewport = getViewport();
-        
-        setViewport({
-          x: viewport.x - offsetX,
-          y: viewport.y - offsetY,
-          zoom: viewport.zoom,
-        }, { duration: 300 });
-        
+
+        setViewport(
+          {
+            x: viewport.x - offsetX,
+            y: viewport.y - offsetY,
+            zoom: viewport.zoom,
+          },
+          { duration: 300 },
+        );
+
         // Clear the flag after the animation completes
         setTimeout(() => {
           window.isAutoScrolling = false;
