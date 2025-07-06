@@ -307,6 +307,10 @@ export const FileNodeComponent = ({ data }: { data: any }) => {
     updateNodeInternals("filenode");
   }, [updateNodeInternals]);
 
+  // Check if the filenode is being edited
+  const elem = document.getElementById("edit_filename");
+  if (elem && elem instanceof HTMLInputElement) elem.focus();
+
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;

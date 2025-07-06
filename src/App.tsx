@@ -203,12 +203,6 @@ function App() {
         return;
       }
 
-      // 7.XXX: For efficiency reasons, we don't want to invoke a server
-      // function when the user is just typing out an ident (we can handle this
-      // entirely on the frontend).
-      if (payload.mode === "TYPE" && e.key !== "Enter" && e.key !== "Escape")
-        return;
-
       let value = null;
       const elem = document.getElementById(
         `${payload.blockLoc},${payload.pieceIx}`,
@@ -216,6 +210,12 @@ function App() {
 
       if (elem && elem instanceof HTMLInputElement)
         value = (elem as HTMLInputElement).value;
+
+      // 7.XXX: For efficiency reasons, we don't want to invoke a server
+      // function when the user is just typing out an ident (we can handle this
+      // entirely on the frontend).
+      if (payload.mode === "TYPE" && e.key !== "Enter" && e.key !== "Escape")
+        return;
 
       invoke<[boolean, string, Canvas]>("handle_event", {
         event: JSON.stringify({ key: e.key }),
@@ -263,8 +263,6 @@ function App() {
       // Switch on editingFilename mode
       payload.mode = "TYPE";
       payload.blockLoc = "";
-      const elem = document.getElementById("edit_filename");
-      if (elem) elem.focus();
     } else {
       payload.mode = "VIEW";
       invoke("handle_event", {
