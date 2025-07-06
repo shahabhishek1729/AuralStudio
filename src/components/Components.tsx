@@ -128,17 +128,26 @@ export const SearchBar = () => {
   );
 };
 
-export function WindowButton(color: string, onClick: () => void) {
+export function WindowButton(
+  color: string,
+  onClick: () => void,
+  showText: boolean,
+  onHover: () => void,
+) {
   const text = color === "#FF605C" ? "×" : color === "#FFBD44" ? "-" : "+";
   return (
     <div
       className="relative group h-4 w-4 rounded-full flex items-center justify-center"
       style={{ background: color, cursor: "default" }}
       onClick={onClick}
+      onMouseEnter={onHover}
+      onMouseLeave={onHover}
     >
-      <span className="absolute inset-0 flex items-center justify-center text-black font-mono text-[16px] opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        {text}
-      </span>
+      {showText ? (
+        <span className="absolute inset-0 flex items-center justify-center text-gray-600 font-mono text-[16px]">
+          {text}
+        </span>
+      ) : null}
     </div>
   );
 }

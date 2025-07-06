@@ -1,4 +1,4 @@
-import { SetStateAction } from "react";
+import { SetStateAction, useState } from "react";
 import { RDisplay } from "../typing/display";
 import { CheckmarkIcon, ErrorIcon, WindowButton } from "./Components";
 
@@ -8,6 +8,8 @@ export default function RunPanel(
   output: string,
   err: string | null,
 ) {
+  const [showWindowText, setShowWindowText] = useState(false);
+
   return runDisplay === "FLOAT" ? (
     <div
       className="flex rounded-full"
@@ -67,13 +69,31 @@ export default function RunPanel(
         >
           <div className="flex flex-col w-full absolute top-6 left-6">
             <div className="flex flex-row" style={{ gap: "8px" }}>
-              {WindowButton("#FF605C", () => setRDisplay("FLOAT"))}
-              {WindowButton("#FFBD44", () => setRDisplay("FLOAT"))}
-              {WindowButton("#00CA4E", () => {})}
+              {WindowButton(
+                "#FF605C",
+                () => setRDisplay("FLOAT"),
+                showWindowText,
+                () => setShowWindowText(!showWindowText),
+              )}
+              {WindowButton(
+                "#FFBD44",
+                () => setRDisplay("FLOAT"),
+                showWindowText,
+                () => setShowWindowText(!showWindowText),
+              )}
+              {WindowButton(
+                "#00CA4E",
+                () => {},
+                showWindowText,
+                () => setShowWindowText(!showWindowText),
+              )}
             </div>
 
             <div id="runStatus" className="flex flex-row mt-6 items-center">
-              <h1 className="mr-3 font-bold text-5xl">
+              <h1
+                className="mr-3 font-bold text-5xl"
+                style={{ fontFamily: "JetBrains Mono" }}
+              >
                 {err ? "Failed" : "Success"}
               </h1>
               <div className="mt-2">
