@@ -1,16 +1,18 @@
 ---------------------------------------
 KIND  : NAME            | KEY  | DONE | 
 ---------------------------------------
-CMD   : Move left       | h    | ✅   |
-CMD   : Move right      | l    | ✅   |
-CMD   : Move up         | k    | ✅   |
-CMD   : Move down       | j    | ✅   |
+CMD   : Move left       | w    | ✅   |
+CMD   : Move right      | a    | ✅   |
+CMD   : Move up         | s    | ✅   |
+CMD   : Move down       | d    | ✅   |
 CMD   : Move in         | ␣    | ✅   |
 CMD   : Move out        | ⌫    | ✅   |
 CMD   : Run program     | r    | ✅   |
 CMD   : Save file       | s    | ✅   |
 CMD   : New note        | n    | ✅   |
-CMD   : See error       | e    | ✅   |
+CMD   : See error       | p    | ✅   |
+CMD   : Walk-through    | i    | ✅   |
+CMD   : Edit mode       | e    | ✅   |
 ---------------------------------------
 HOME  : New project     | n    | ✅   |
 HOME  : Open project    | o    | x    |
