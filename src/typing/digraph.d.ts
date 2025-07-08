@@ -101,6 +101,10 @@ export interface Canvas {
   output: string | null;
   /** The error to be displayed in the output panel */
   err: string | null;
+  /** Whether or not we are allowed to type into nodes.
+	  * This is used to distinguish between InplaceEdit mode
+	  * and insertions of things like variables. */
+  noEdit: boolean;
 }
 
 /**

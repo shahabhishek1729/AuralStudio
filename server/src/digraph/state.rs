@@ -299,6 +299,7 @@ pub(crate) struct Canvas {
     pub(crate) piece_ix: Option<Vec<usize>>,
     pub(crate) output: Option<String>,
     pub(crate) err: Option<String>,
+    pub(crate) no_edit: bool,
 }
 
 impl Default for Canvas {
@@ -312,6 +313,7 @@ impl Default for Canvas {
             piece_ix: None,
             output: None,
             err: None,
+            no_edit: false,
         }
     }
 }

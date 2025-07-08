@@ -40,6 +40,7 @@ export const RTLNodeComponent = React.memo(({ data }: { data: any }) => {
     parentIndents: number,
     pieceIx: number[] | null,
     parent?: RTLNode,
+    noEdit?: boolean,
   ) {
     return (
       <div id={outerBlockId(node)} key={`inner_${address}`}>
@@ -90,6 +91,7 @@ export const RTLNodeComponent = React.memo(({ data }: { data: any }) => {
                 undefined,
                 tmp,
                 setTmp,
+                noEdit,
               ),
             )}
           </div>
@@ -128,6 +130,7 @@ export const RTLNodeComponent = React.memo(({ data }: { data: any }) => {
                     selectedAddr,
                     parentIndents,
                     pieceIx,
+                    noEdit,
                   )}
                   <div style={{ height: "8px" }} />
                 </div>
@@ -164,6 +167,8 @@ export const RTLNodeComponent = React.memo(({ data }: { data: any }) => {
                     selectedAddr,
                     parentIndents,
                     pieceIx,
+                    node,
+                    noEdit,
                   )}
                   <div style={{ height: "8px" }} />
                 </div>
@@ -191,7 +196,8 @@ export const RTLNodeComponent = React.memo(({ data }: { data: any }) => {
     return () => observer.disconnect();
   }, [ref, data.node.address]);
 
-  const { node, selectedAddr, renderedAddr, pieceIx, parentIndents } = data;
+  const { node, selectedAddr, renderedAddr, pieceIx, parentIndents, noEdit } =
+    data;
   const address = node.address;
   const updateNodeInternals = useUpdateNodeInternals();
 
@@ -249,6 +255,7 @@ export const RTLNodeComponent = React.memo(({ data }: { data: any }) => {
           parentIndents,
           pieceIx,
           undefined,
+          noEdit,
         )}
 
         <div style={{ ...FLEX_ROW, marginTop: "0.5rem" }}>

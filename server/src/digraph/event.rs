@@ -150,6 +150,7 @@ impl KeyboardEvent {
                 let curr_node = unsafe { &mut **curr_node };
 
                 // Allow escaping in TYPE mode only when adding function params.
+                // state.no_edit = true;
                 if state.mode == ADMode::TYPE
                     && !(curr_node.kind == NodeKind::FNDEF && *piece_ix != vec![0])
                 {
@@ -520,7 +521,8 @@ impl KeyboardEvent {
                         let mut pix = state.piece_ix.clone().expect("must have non-null piece_ix");
                         pix.pop();
                         if pix.is_empty() {
-                            state.piece_ix = None
+                            state.piece_ix = None;
+                            state.no_edit = false;
                         } else {
                             state.piece_ix = Some(pix);
                         }
@@ -572,7 +574,8 @@ impl KeyboardEvent {
                 let curr_piece = &curr_node.pieces[PieceIdx(pix)];
                 match curr_piece {
                     Piece::IDENT(_) | Piece::NUMBER(_) | Piece::TEXT(_) => {
-                        state.mode = ADMode::TYPE
+                        state.mode = ADMode::TYPE;
+                        state.no_edit = true;
                     }
                     Piece::PendingVal => state.mode = ADMode::EDIT(Expecting::Value),
                     Piece::PendingOp => state.mode = ADMode::EDIT(Expecting::Op),

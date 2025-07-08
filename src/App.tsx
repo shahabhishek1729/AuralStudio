@@ -31,6 +31,7 @@ function App() {
     pieceIx: null,
     output: null,
     err: null,
+    noEdit: false,
   });
 
   let [idg, setIdg] = useState<IDGraph>({
@@ -94,6 +95,7 @@ function App() {
         pieceIx: null,
         output: null,
         err: null,
+        noEdit: false,
       });
     });
   }, [display]);

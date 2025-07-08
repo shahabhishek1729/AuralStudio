@@ -30,6 +30,7 @@ export function RenderPiece(
   pieceIxFull?: number[], // Only used in RenderArgs to prevent slicing addrs.
   tmp?: number,
   setTmp?: React.Dispatch<React.SetStateAction<number>>,
+  noEdit?: boolean,
 ) {
   const piece = all_pieces[i[i.length - 1]];
   const kind = extractPieceType(piece);
@@ -63,6 +64,7 @@ export function RenderPiece(
             pieceIx={pieceIxFull || pieceIx}
             tmp={tmp}
             setTmp={setTmp}
+            noEdit={noEdit}
           />
         );
 
@@ -118,6 +120,7 @@ export function RenderPiece(
             parentAddr={parentAddr}
             tmp={tmp}
             setTmp={setTmp}
+            noEdit={noEdit}
           />
         );
       case "FNCALL":
@@ -130,6 +133,7 @@ export function RenderPiece(
             parentAddr={parentAddr}
             tmp={tmp}
             setTmp={setTmp}
+            noEdit={noEdit}
           />
         );
       case "PendingVal":
@@ -244,6 +248,7 @@ interface IdentProps {
   parentAddr: string;
   tmp?: number;
   setTmp?: React.Dispatch<React.SetStateAction<number>>;
+  noEdit?: boolean;
 }
 
 export function RenderIdent({
@@ -256,6 +261,7 @@ export function RenderIdent({
   pieceIx,
   tmp,
   setTmp,
+  noEdit,
 }: IdentProps) {
   const i_ = i[i.length - 1];
   const puzzle_color = chained ? "" : "transparent";
@@ -296,7 +302,7 @@ export function RenderIdent({
         paddingRight: "10px",
       }}
     >
-      {selected ? (
+      {selected && !noEdit ? (
         <input
           ref={inputRef}
           id={`${parentAddr},${selected ? (pieceIx ?? []).join(",") : i}`}
@@ -312,7 +318,6 @@ export function RenderIdent({
           }}
           value={value}
           onChange={(e) => setValue(e.target.value.replace(" ", "_"))}
-          onFocus={(e) => e.target.select()}
           onBlur={({ target }) => target.focus()}
           autoFocus={true}
         />
@@ -360,6 +365,7 @@ interface CompoundProps {
   parentAddr: string;
   tmp?: number;
   setTmp?: React.Dispatch<React.SetStateAction<number>>;
+  noEdit?: boolean;
 }
 
 export function RenderList({
@@ -370,6 +376,7 @@ export function RenderList({
   parentAddr,
   tmp,
   setTmp,
+  noEdit,
 }: CompoundProps) {
   return RenderArgs(
     "list",
@@ -380,6 +387,7 @@ export function RenderList({
     parentAddr,
     tmp,
     setTmp,
+    noEdit,
   );
 }
 
@@ -391,6 +399,7 @@ export function RenderCall({
   parentAddr,
   tmp,
   setTmp,
+  noEdit,
 }: CompoundProps) {
   return RenderArgs(
     "fncall",
@@ -401,6 +410,7 @@ export function RenderCall({
     parentAddr,
     tmp,
     setTmp,
+    noEdit,
   );
 }
 
@@ -413,6 +423,7 @@ export function RenderArgs(
   parentAddr: string,
   tmp?: number,
   setTmp?: React.Dispatch<React.SetStateAction<number>>,
+  noEdit?: boolean,
 ) {
   const colorKind = kind === "list" ? "constant" : kind;
   const name =
@@ -453,6 +464,7 @@ export function RenderArgs(
                 pieceIx,
                 tmp,
                 setTmp,
+                noEdit,
               )}
             </div>
             {elementDone(pieces, i + 1) ? (
@@ -594,7 +606,7 @@ export function ChainSymbol(
       requestAnimationFrame(() => {
         if (inputRef.current) {
           inputRef.current.focus();
-          inputRef.current.select();
+          // inputRef.current.select();
         }
       });
     }
@@ -632,7 +644,6 @@ export function ChainSymbol(
           }}
           value={value}
           onChange={(e) => setValue(e.target.value.replace(" ", "_"))}
-          onFocus={(e) => e.target.select()}
         />
       ) : (
         <p
@@ -730,7 +741,6 @@ export function Symbol(
             }
             setValue(e.target.value);
           }}
-          onFocus={(e) => e.target.select()}
         />
       ) : (
         <span

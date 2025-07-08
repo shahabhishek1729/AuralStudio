@@ -260,6 +260,7 @@ function ChildDAG({
           pieceIx: payload.pieceIx,
           parentIndents: 0,
           flipped,
+          noEdit: payload.noEdit,
         },
       });
 
