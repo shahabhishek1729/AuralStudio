@@ -10,7 +10,7 @@ fn test_expr() {
 }
 
 #[test]
-fn factorial_test() {
+fn test_factorial_test() {
     let expr =
         "define factorial of x\nlet base be 1\nif x equals base\nreturn 1\ndone if\nreturn x times factorial of x minus 1 done";
 
@@ -23,7 +23,7 @@ fn factorial_test() {
 }
 
 #[test]
-fn quick_test() {
+fn test_quick_test() {
     let expr = "from_mp3 of string x done done";
 
     let mut decompiler = Decompiler::new(expr).unwrap();
@@ -121,7 +121,7 @@ fn test_imports_alias() {
 }
 
 #[test]
-fn another_test() {
+fn test_another_test() {
     let source = "let x be 5\nif x modulo 2 equals 0 \noutput string even done\ndone if\notherwise\noutput string odd done\ndone otherwise ";
     let mut decompiler = Decompiler::new(source).unwrap();
     decompiler.decompile().unwrap();
