@@ -244,6 +244,7 @@ mod tests {
             piece_ix: None,
             output: None,
             err: None,
+            no_edit: false,
         };
 
         let mut idg = IDGraph::from_state(&state);
@@ -304,6 +305,7 @@ mod tests {
             piece_ix: None,
             output: None,
             err: None,
+            no_edit: false,
         };
 
         let mut idg = IDGraph::from_state(&state);

@@ -720,6 +720,7 @@ mod tests {
             piece_ix: None,
             output: None,
             err: None,
+            no_edit: false,
         };
 
         let _dag = IDGraph::from_state(&state);
@@ -744,6 +745,7 @@ mod tests {
             piece_ix: None,
             output: None,
             err: None,
+            no_edit: false,
         };
 
         let _dag = IDGraph::from_state(&state);

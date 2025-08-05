@@ -708,6 +708,7 @@ mod tests {
                     graph: nodes.to_vec(),
                     piece_ix: None,
                     err: None,
+                    no_edit: false,
                 };
                 state.to_insert().expect("Could not toggle mode");
                 assert_eq!(state.block_loc, addr!($($new_id),+));
@@ -815,6 +816,7 @@ mod tests {
                 graph: nodes.to_vec(),
                 piece_ix: None,
                 err: None,
+                no_edit: false,
             };
             state.to_insert().expect("Could not toggle node");
             assert_eq!(state.block_loc, addr!(1, 0, 2));
@@ -847,6 +849,7 @@ mod tests {
                 graph: nodes.to_vec(),
                 piece_ix: None,
                 err: None,
+                no_edit: false,
             };
             state.to_insert().expect("Could not toggle node");
             assert_eq!(state.block_loc, addr!(0, 1, 2, 0));

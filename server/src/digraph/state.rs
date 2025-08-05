@@ -505,6 +505,7 @@ mod tests {
                 piece_ix: None,
                 output: None,
                 err: None,
+                no_edit: false,
             };
             let mut failed = false;
             $(
@@ -535,6 +536,7 @@ mod tests {
                 piece_ix: None,
                 output: None,
                 err: None,
+                no_edit: false,
             };
             $(
                 let coerced = state.block_loc.coerce(&(state.graph).get_hash()).expect("Coercion should work");
