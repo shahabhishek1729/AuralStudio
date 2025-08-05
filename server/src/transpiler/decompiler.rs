@@ -344,8 +344,8 @@ impl Decompiler {
 
         if next_op.line != curr_line {
             return Err(Box::new(PoorlyFormattedSE::new(
-                        "index".to_string(),
-                        Some("After using the at keyword, specify the index that you would like to retrieve from your list".to_string()),
+                        "index".into(),
+                        Some("After using the at keyword, specify the index that you would like to retrieve from your list".into()),
                         self._line,
                     )));
         }
@@ -356,8 +356,8 @@ impl Decompiler {
         } else {
             if next_op.literal.is_none() {
                 return Err(Box::new(PoorlyFormattedSE::new(
-                            "index".to_string(),
-                            Some("I expected to find a value after the \"at\" keyword, but didn't. Make sure to specify the index you wish to retrieve, or if you intended to use a more complex expression, wrap the expression with a call to result".to_string()),
+                            "index".into(),
+                            Some("I expected to find a value after the \"at\" keyword, but didn't. Make sure to specify the index you wish to retrieve, or if you intended to use a more complex expression, wrap the expression with a call to result".into()),
                             self._line,
                         )));
             }
@@ -379,7 +379,7 @@ impl Decompiler {
             let c = self.tokens[self.curr].to_owned();
             return c;
         }
-        return Token::new(RTLToken::EOF, "".to_string(), None, 1);
+        return Token::new(RTLToken::EOF, "".into(), None, 1);
     }
 
     /// Peeks at the next token without consuming the current token.
@@ -411,7 +411,7 @@ impl Decompiler {
         let next_a = lookahead_!(self, 2);
         if next_a.is_none() {
             // return Err(String::from(
-            //     "Poorly formatted function signature".to_string(),
+            //     "Poorly formatted function signature".into(),
             // ));
             return Err(Box::new(PoorlyFormattedSE::new(
                 String::from("function signature"),
@@ -628,7 +628,7 @@ impl Decompiler {
                 self.indent_();
             }
             _ => {
-                // return Err("Poorly formatted class declaration".to_string());
+                // return Err("Poorly formatted class declaration".into());
                 return Err(Box::new(PoorlyFormattedSE::new(
                     String::from("class declaration"),
                     None,
@@ -793,7 +793,7 @@ impl Decompiler {
                 None,
                 next.line,
             )));
-            // return Err("Poorly formatted dictionary. Every key should have a value".to_string());
+            // return Err("Poorly formatted dictionary. Every key should have a value".into());
         }
 
         let mut dict = String::from("{");
@@ -890,7 +890,7 @@ impl Decompiler {
             RTLToken::ListVal => self.decompile_lists(false)?,
             RTLToken::TupleVal => self.decompile_tuples(false)?,
             RTLToken::FnCallIdentifier => self.decompile_calls_(false)?,
-            RTLToken::ExprEnd => "".to_string(),
+            RTLToken::ExprEnd => "".into(),
             _ => return Err(Box::new(MiscellaneousSE::new(String::from(""), prev.line))),
         });
 
