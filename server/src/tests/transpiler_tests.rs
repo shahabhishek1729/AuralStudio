@@ -255,6 +255,14 @@ fn test_quantity2() {
 }
 
 #[test]
+fn test_special_functions() {
+    let source = "increase of x and 3 done";
+    let mut decompiler = Decompiler::new(source).unwrap();
+    decompiler.decompile().unwrap();
+    assert_eq!(decompiler.py, "x += 3");
+}
+
+#[test]
 fn test_star() {
     let source = "output star list of 1 and 2 and 3 done done";
     let mut decompiler = Decompiler::new(source).unwrap();

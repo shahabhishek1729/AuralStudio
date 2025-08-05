@@ -704,26 +704,31 @@ impl Decompiler {
             next = self.advance_();
         }
 
-        if fn_name == "both" || fn_name == "either" {
-            if args.len() <= 1 {
-                return Err(Box::new(UnequalArgsSE::new(
-                    fn_name,
-                    "2 or more".to_string(),
-                    1usize,
-                    self._line,
-                )));
-            }
+        if (fn_name == "both" || fn_name == "either") && args.len() <= 1 {
+            return Err(Box::new(UnequalArgsSE::new(
+                fn_name,
+                "2 or more".into(),
+                1usize,
+                self._line,
+            )));
         }
 
-        if fn_name == "result" || fn_name == "inverse" {
-            if args.len() > 1 {
-                return Err(Box::new(UnequalArgsSE::new(
-                    fn_name,
-                    "1".to_string(),
-                    args.len(),
-                    self._line,
-                )));
-            }
+        if (fn_name == "result" || fn_name == "inverse") && args.len() > 1 {
+            return Err(Box::new(UnequalArgsSE::new(
+                fn_name,
+                "1".into(),
+                args.len(),
+                self._line,
+            )));
+        }
+
+        if (fn_name == "increase" || fn_name == "decrease") && args.len() != 2 {
+            return Err(Box::new(UnequalArgsSE::new(
+                fn_name,
+                "2".into(),
+                args.len(),
+                self._line,
+            )));
         }
 
         return match &fn_name[..] {
@@ -731,6 +736,8 @@ impl Decompiler {
             "either" => Ok(args.join(" or ")),
             "inverse" => Ok(format!("not {}", args.join(""))),
             "result" => Ok(format!("({})", args.join(""))),
+            "increase" => Ok(args.join(" += ")),
+            "decrease" => Ok(args.join(" -= ")),
             _ => Ok(format!("{}({})", fn_name, args.join(", "))),
         };
     }
