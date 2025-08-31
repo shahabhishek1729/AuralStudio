@@ -52,14 +52,14 @@ export const CheckmarkIcon = () => {
         width: "20px",
         height: "20px",
         borderRadius: "50%",
-        backgroundColor: "#21b06b",
+        backgroundColor: "#21b06b22",
       }}
     >
       <svg
         width="16"
         height="16"
         viewBox="0 0 24 24"
-        fill="white"
+        fill="#21b06b"
         xmlns="http://www.w3.org/2000/svg"
       >
         <path d="M9 16.2l-4.2-4.2L3 13.8l6 6 12-12-1.8-1.8L9 16.2z" />
