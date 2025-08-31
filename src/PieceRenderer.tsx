@@ -425,7 +425,6 @@ export function RenderArgs(
   setTmp?: React.Dispatch<React.SetStateAction<number>>,
   noEdit?: boolean,
 ) {
-  const colorKind = kind === "list" ? "constant" : kind;
   const name =
     kind === "fncall" ? (pieces[0] as _PieceInterface).IDENT : "list";
 
@@ -438,7 +437,7 @@ export function RenderArgs(
       }}
     >
       {ChainSymbol(
-        colorKind,
+        kind,
         chained,
         false,
         parentAddr,
@@ -447,7 +446,7 @@ export function RenderArgs(
       )}
       <div
         style={{
-          border: `1px solid ${SYMBOL_MAP[colorKind as keyof symbol_metadata][0]}`,
+          border: `1px solid ${SYMBOL_MAP[kind as keyof symbol_metadata][0]}`,
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
@@ -474,15 +473,14 @@ export function RenderArgs(
                     ? SYMBOL_MAP["PendingOp"]
                     : SYMBOL_MAP["constant"])[3],
                   width: "1px",
-                  backgroundColor:
-                    SYMBOL_MAP[colorKind as keyof symbol_metadata][0],
+                  backgroundColor: SYMBOL_MAP[kind as keyof symbol_metadata][0],
                 }}
               />
             ) : null}
           </div>
         ))}
       </div>
-      {ChainSymbol(colorKind, chained, true, parentAddr, [], "done")}
+      {ChainSymbol(kind, chained, true, parentAddr, [], "done")}
     </div>
   );
 }
@@ -535,7 +533,7 @@ export const TOKEN_MAP: token_metadata = {
   output: ["#FF4197", null, "#99275A"],
   return: ["#A838AB", null, "#441745"],
   list: ["#FF8A00", null, "#995300"],
-  pending: ["#FFFFFF", null, "#9C9C9C"],
+  pending: ["#FFFFFF44", null, "#9C9C9C44"],
   continue: ["#06975A", null, ""],
   break: ["#06975A", null, ""],
 };
@@ -549,8 +547,8 @@ export const SYMBOL_MAP: symbol_metadata = {
   operator: ["#330634", "#DB6BDE", 20, 25, "#441745"],
   text: ["#374f40", "#FFFFFF", 16, 36, "#374f40"],
   ident: ["#333333", "#FFFFFF", 16, 36, "#333333"],
-  fncall: ["#179187", "#FFFFFF", 16, 36, "#072B28"],
-  list: ["#FF8A00", "#FFFFFF", 16, 36, "#995300"],
+  fncall: ["#17918744", "#179187", 16, 36, "#17918744"],
+  list: ["#FF8A0044", "#FF8A00", 16, 36, "#FF8A0044"],
   PendingVal: ["#333333", "#FFFFFF", 16, 36, "#333333"],
   PendingOp: ["#333333", "#FFFFFF", 16, 25, "#333333"],
 };
