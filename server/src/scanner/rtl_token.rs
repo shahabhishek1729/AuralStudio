@@ -74,6 +74,10 @@ pub enum RTLToken {
     VarIdentifier,
     /// Rattle keyword for declaring a class (`class` in Python)
     ClassIdentifier,
+    /// Rattle keyword for declaring a class (`class` in Python)
+    FieldIdentifier,
+    /// Rattle keyword for declaring a class (`class` in Python)
+    MethodIdentifier,
     /// Rattle keyword for opening an if statement (`if` in Python)
     IfIdentifier,
     /// Rattle keyword for opening an else if statement (`elif` in Python)

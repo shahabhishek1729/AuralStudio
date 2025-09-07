@@ -41,7 +41,9 @@ lazy_static! {
         let mut m = HashMap::new();
         m.insert("output", RTLToken::PrintToken);
         m.insert("done define", RTLToken::BlockEnd);
-        m.insert("done type", RTLToken::BlockEnd);
+        m.insert("done object", RTLToken::BlockEnd);
+        m.insert("done properties", RTLToken::BlockEnd);
+        m.insert("done actions", RTLToken::BlockEnd);
         m.insert("done otherwise if", RTLToken::BlockEnd);
         m.insert("done if", RTLToken::BlockEnd);
         m.insert("done otherwise", RTLToken::BlockEnd);
@@ -72,7 +74,9 @@ lazy_static! {
         m.insert("define", RTLToken::FunctionIdentifier);
         m.insert("call", RTLToken::FnCallIdentifier);
         m.insert("let", RTLToken::VarIdentifier);
-        m.insert("type", RTLToken::ClassIdentifier);
+        m.insert("object", RTLToken::ClassIdentifier);
+        m.insert("properties", RTLToken::FieldIdentifier);
+        m.insert("actions", RTLToken::MethodIdentifier);
         m.insert("if", RTLToken::IfIdentifier);
         m.insert("otherwise if", RTLToken::ElifIdentifier);
         m.insert("otherwise", RTLToken::ElseIdentifier);

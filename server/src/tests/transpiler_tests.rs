@@ -221,13 +221,32 @@ fn test_indexing5() {
 #[test]
 fn test_classes() {
     let source =
-        "type Dog\ndefine __init__ of self\ndone define\ndone type\n\nlet dog be Dog of done";
+        "object Dog\ndefine __init__ of self\ndone define\ndone object\n\nlet dog be Dog of done";
     let mut decompiler = Decompiler::new(source).unwrap();
     decompiler.decompile().unwrap();
     assert_eq!(
         decompiler.py,
         "class Dog:\n    def __init__(self):\n        \n    \n\ndog = Dog()"
     );
+}
+
+#[test]
+fn class_instantiation() {
+    let source = "object Dog
+properties
+breed 
+age
+weight
+done properties
+actions
+define create of b and a and w
+let breed be b
+let age be a
+let weight be w
+done define
+destroy
+done actions
+";
 }
 
 #[test]
