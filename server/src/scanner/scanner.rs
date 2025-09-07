@@ -106,6 +106,7 @@ lazy_static! {
         m.insert("tuple", RTLToken::TupleVal);
         m.insert("dictionary", RTLToken::DictVal);
         m.insert("at", RTLToken::IdxOperator);
+        m.insert("to", RTLToken::SliceOperator);
         m.insert("pretend", RTLToken::PENDING);
         // m.insert("escape", RTLToken::EscapeIdentifier);
         m

@@ -199,7 +199,7 @@ fn test_indexing3() {
     let source = "l at result of 3 plus 4 done";
     let mut decompiler = Decompiler::new(source).unwrap();
     decompiler.decompile().unwrap();
-    assert_eq!(decompiler.py, "l[3 + 4]");
+    assert_eq!(decompiler.py, "l[(3 + 4)]");
 }
 
 #[test]
@@ -207,7 +207,7 @@ fn test_indexing4() {
     let source = "let l at result of 3 plus 4 done be 4";
     let mut decompiler = Decompiler::new(source).unwrap();
     decompiler.decompile().unwrap();
-    assert_eq!(decompiler.py, "l[3 + 4] = 4");
+    assert_eq!(decompiler.py, "l[(3 + 4)] = 4");
 }
 
 #[test]
@@ -216,6 +216,32 @@ fn test_indexing5() {
     let mut decompiler = Decompiler::new(source).unwrap();
     decompiler.decompile().unwrap();
     assert_eq!(decompiler.py, "print(l[0])");
+}
+
+#[test]
+fn test_slicing1() {
+    let source = "output l at 0 to 1";
+    let mut decompiler = Decompiler::new(source).unwrap();
+    decompiler.decompile().unwrap();
+    assert_eq!(decompiler.py, "print(l[0:1])");
+}
+
+#[test]
+fn test_slicing_qty() {
+    let source = "output l at result of 0 plus 1 done to 1";
+    let mut decompiler = Decompiler::new(source).unwrap();
+    decompiler.decompile().unwrap();
+    assert_eq!(decompiler.py, "print(l[(0 + 1):1])");
+
+    let source = "output l at 4 to result of 1 plus 6 done";
+    let mut decompiler = Decompiler::new(source).unwrap();
+    decompiler.decompile().unwrap();
+    assert_eq!(decompiler.py, "print(l[4:(1 + 6)])");
+
+    let source = "output l at result of 0 plus 1 done to result of 1 plus 8 done";
+    let mut decompiler = Decompiler::new(source).unwrap();
+    decompiler.decompile().unwrap();
+    assert_eq!(decompiler.py, "print(l[(0 + 1):(1 + 8)])");
 }
 
 #[test]
@@ -232,7 +258,7 @@ fn test_classes() {
 
 #[test]
 fn class_instantiation() {
-    let source = "object Dog
+    let _source = "object Dog
 properties
 breed 
 age

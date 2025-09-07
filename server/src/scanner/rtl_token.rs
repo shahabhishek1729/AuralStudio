@@ -146,6 +146,8 @@ pub enum RTLToken {
     AndDelim,
     /// The token used to index into lists, tuples or dictionaries ('[' and ']' in Python)
     IdxOperator,
+    /// The token used to slice lists, tuples or dictionaries (':' in Python)
+    SliceOperator,
     /// A digraph operation that is still in progress
     PENDING,
 }

@@ -277,7 +277,7 @@ impl Decompiler {
             RTLToken::LtComparator => self.push_str(" <= "),
             RTLToken::LtEqComparator => self.push_str(" <= "),
             RTLToken::IdxOperator => {
-                self.parse_idx(true)?;
+                self.parse_idx(true, false)?;
             }
             RTLToken::ObjIdentifier => self.push_str(&self.tokens[self.curr].unwrap_identifier()),
             RTLToken::LineBreak => {
@@ -338,7 +338,7 @@ impl Decompiler {
         Ok(())
     }
 
-    fn parse_idx(&mut self, inplace: bool) -> RESVAL<Option<String>> {
+    fn parse_idx(&mut self, inplace: bool, rec: bool) -> RESVAL<Option<String>> {
         let curr_line = self.tokens[self.curr].line;
         let next_op = self.advance_();
 
@@ -351,25 +351,41 @@ impl Decompiler {
         }
 
         let idx_expr = if next_op.unwrap_identifier() == "result" {
-            let res = self.decompile_calls_(false)?;
-            format!("[{}]", &res[1..res.len() - 1])
+            self.decompile_calls_(false)?
         } else {
             if next_op.literal.is_none() {
                 return Err(Box::new(PoorlyFormattedSE::new(
                             "index".into(),
-                            Some("I expected to find a value after the \"at\" keyword, but didn't. Make sure to specify the index you wish to retrieve, or if you intended to use a more complex expression, wrap the expression with a call to result".into()),
+                            Some("I expected to find a value after the \"at\" keyword, but didn't. Make sure to specify the index you wish to retrieve, or if you intended to use a more complex expression, make sure you wrap it in a result".into()),
                             self._line,
                         )));
             }
-            format!("[{}]", next_op.literal.unwrap())
+            format!("{}", next_op.literal.unwrap())
         };
+
+        let idx_expr = format!(
+            "{}",
+            match lookahead_!(self, 2) {
+                Some(next_op2) if next_op2.rtl_token == RTLToken::SliceOperator => {
+                    let _ = self.advance_(); // Moves to the SliceOperator
+                    format!(
+                        "[{}:{}]",
+                        idx_expr,
+                        self.parse_idx(false, true)?
+                            .expect("returns a value when inplace is false")
+                    )
+                }
+                _ if rec => format!("{}", idx_expr),
+                _ => format!("[{}]", idx_expr),
+            }
+        );
 
         if inplace {
             self.push_str(&idx_expr);
+            Ok(None)
         } else {
-            return Ok(Some(idx_expr));
+            Ok(Some(idx_expr))
         }
-        return Ok(None);
     }
 
     /// Moves one token forward and consumes the current token
@@ -495,7 +511,7 @@ impl Decompiler {
         self.push_str(&var_name);
 
         if next.rtl_token == RTLToken::IdxOperator {
-            let _ = self.parse_idx(true)?;
+            let _ = self.parse_idx(true, false)?;
             next = self.advance_();
         }
 
@@ -967,7 +983,7 @@ impl Decompiler {
                     RTLToken::ExprEnd => {}
                     RTLToken::IdxOperator => {
                         let _ = self.advance_();
-                        expr.push_str(&self.parse_idx(false)?.unwrap_or(String::new()));
+                        expr.push_str(&self.parse_idx(false, false)?.unwrap_or(String::new()));
                         broken = true;
                         break;
                     }
