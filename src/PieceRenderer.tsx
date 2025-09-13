@@ -558,6 +558,7 @@ const OP_TO_NAME: op_kind = {
   SUB: "-",
   MUL: "*",
   DIV: "÷",
+  INTDIV: "//",
   MOD: "%",
   EQ: "==",
   NE: "!=",

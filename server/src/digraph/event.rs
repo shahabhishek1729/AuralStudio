@@ -263,6 +263,7 @@ impl KeyboardEvent {
             Command::ChainSub => new_piece(state, Piece::OP(OpKind::SUB))?,
             Command::ChainMul => new_piece(state, Piece::OP(OpKind::MUL))?,
             Command::ChainDiv => new_piece(state, Piece::OP(OpKind::DIV))?,
+            Command::ChainIntDiv => new_piece(state, Piece::OP(OpKind::INTDIV))?,
             Command::ChainMod => new_piece(state, Piece::OP(OpKind::MOD))?,
             Command::ChainGt => new_piece(state, Piece::OP(OpKind::GT))?,
             Command::ChainLt => new_piece(state, Piece::OP(OpKind::LT))?,

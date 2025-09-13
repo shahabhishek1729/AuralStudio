@@ -415,6 +415,8 @@ pub(crate) enum OpKind {
     MUL,
     /// /
     DIV,
+    /// //
+    INTDIV,
     /// %
     MOD,
     /// ==
@@ -811,6 +813,7 @@ impl Parser {
             RTLToken::SubOperation => Ok(Piece::OP(OpKind::SUB)),
             RTLToken::MulOperation => Ok(Piece::OP(OpKind::MUL)),
             RTLToken::DivOperation => Ok(Piece::OP(OpKind::DIV)),
+            RTLToken::IntDivOperation => Ok(Piece::OP(OpKind::INTDIV)),
             RTLToken::ModOperation => Ok(Piece::OP(OpKind::MOD)),
             RTLToken::EqComparator => Ok(Piece::OP(OpKind::EQ)),
             RTLToken::NeComparator => Ok(Piece::OP(OpKind::NE)),

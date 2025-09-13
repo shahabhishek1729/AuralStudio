@@ -57,6 +57,7 @@ export interface op_kind {
   SUB: string;
   MUL: string;
   DIV: string;
+  INTDIV: string;
   MOD: string;
   EQ: string;
   NE: string;

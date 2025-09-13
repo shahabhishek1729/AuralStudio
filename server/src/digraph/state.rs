@@ -407,6 +407,7 @@ impl Canvas {
                         crate::digraph::parser::OpKind::SUB => "minus".into(),
                         crate::digraph::parser::OpKind::MUL => "times".into(),
                         crate::digraph::parser::OpKind::DIV => "over".into(),
+                        crate::digraph::parser::OpKind::INTDIV => "floor divide".into(),
                         crate::digraph::parser::OpKind::MOD => "modulo".into(),
                         crate::digraph::parser::OpKind::EQ => "equals".into(),
                         crate::digraph::parser::OpKind::NE => "not equals".into(),

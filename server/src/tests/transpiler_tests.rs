@@ -359,6 +359,17 @@ fn test_for() {
 }
 
 #[test]
+fn test_for2() {
+    let source = "define f of x\nfor i in range of 5 done\npretend\ndone for\ndone define";
+    let mut decompiler = Decompiler::new(source).unwrap();
+    decompiler.decompile().unwrap();
+    assert_eq!(
+        decompiler.py,
+        "def f(x):\n    for i in range(1, 5):\n        ...\n        \n    "
+    )
+}
+
+#[test]
 fn test_while() {
     let source = "define f of x\nwhile i greater than 0\npretend\ndone while\ndone define";
     let mut decompiler = Decompiler::new(source).unwrap();
